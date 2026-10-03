@@ -7,19 +7,16 @@ license.workspace = true
 
 [lib]
 name = "syn_ffi"
-# `lib` is what an app's own cdylib (the Android `syn-android` crate) links;
-# `cdylib` lets this repository generate and check the bindings on its own.
-crate-type = ["lib", "cdylib"]
-
-[[bin]]
-# `cargo run -p syn-ffi --features cli --bin uniffi-bindgen -- generate …`.
-# An app pins the same syn-ffi revision and calls `uniffi_bindgen_main`, so
-# its bindings generator can never be a different UniFFI than the scaffolding.
-name = "uniffi-bindgen"
-path = "src/bin/uniffi-bindgen.rs"
-required-features = ["cli"]
+# A plain library on purpose: each app links it into its own native library
+# (Android: a cdylib, `syn-android`; iOS: a staticlib), and the bindings are
+# generated from that. A cdylib here would be built a second time inside
+# every app and shipped next to the real one.
+crate-type = ["lib"]
 
 [features]
+# The bindings generator, for an app's own `uniffi-bindgen` binary: it calls
+# `syn_ffi::uniffi_bindgen_main`, so the generator is always the same UniFFI
+# as the scaffolding it reads.
 cli = ["uniffi/cli"]
 
 [dependencies]

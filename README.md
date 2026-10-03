@@ -56,13 +56,8 @@ the scaffolding are always the same UniFFI version:
 syn-ffi = { git = "https://github.com/dmitryweiner/synesthesia-core", rev = "…" }
 ```
 
-Bindings for a quick look from here:
-
-```bash
-cargo build -p syn-ffi
-cargo run -p syn-ffi --features cli --bin uniffi-bindgen -- \
-  generate --library target/debug/libsyn_ffi.so --language kotlin --out-dir /tmp/kt
-```
+The Android app's `core/rust/` (`syn-android` + `uniffi-bindgen`) and its
+`core/build.gradle.kts` are the worked example.
 
 ## History
 
