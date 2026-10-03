@@ -164,7 +164,9 @@ pub struct AppState {
     #[serde(rename = "mod")]
     pub modulation: ModState,
     pub coupling: BTreeMap<String, f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// The web app's `presetName`. Points written by synesthesia-rust before
+    /// this was fixed spelled it `preset_name`; they still load.
+    #[serde(rename = "presetName", alias = "preset_name", default, skip_serializing_if = "Option::is_none")]
     pub preset_name: Option<String>,
 }
 
@@ -227,6 +229,18 @@ pub fn presets() -> &'static [Preset] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_preset_name_is_spelled_as_the_web_app_spells_it() {
+        let p = &presets()[0];
+        assert_eq!(p.state.preset_name.as_deref(), Some(p.name.as_str()));
+        let json = serde_json::to_string(&p.state).unwrap();
+        assert!(json.contains("\"presetName\":\"Fractal garden\""), "{json}");
+        assert!(!json.contains("preset_name"));
+        let old = json.replace("\"presetName\"", "\"preset_name\"");
+        let back: AppState = serde_json::from_str(&old).unwrap();
+        assert_eq!(back.preset_name.as_deref(), Some("Fractal garden"));
+    }
 
     #[test]
     fn the_twelve_presets_parse_and_round_trip() {
