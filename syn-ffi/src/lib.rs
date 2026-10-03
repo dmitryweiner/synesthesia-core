@@ -248,8 +248,7 @@ mod tests {
             last = p.render(4800);
         }
         assert_eq!(last.len(), 4800 * 4);
-        let samples: Vec<f32> =
-            last.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
+        let samples: Vec<f32> = last.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect();
         assert!(samples.iter().any(|v| *v != 0.0));
         assert!((p.time() - 2.0).abs() < 1e-9);
         let f = p.frame_at(1.0).expect("a frame");
