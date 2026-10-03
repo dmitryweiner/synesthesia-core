@@ -563,7 +563,17 @@ version = "0.1.0"
 dependencies = [
  "serde_json",
  "syn-core",
+ "syn-player",
+ "thiserror",
  "uniffi",
+]
+
+[[package]]
+name = "syn-player"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "syn-core",
 ]
 
 [[package]]

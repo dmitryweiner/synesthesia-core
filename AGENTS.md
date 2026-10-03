@@ -29,6 +29,10 @@ the user talks to agents in Russian.
 - **Never write an oscillator as `sin(2π·f·t)` with absolute `t`** —
   accumulate phase.
 - **Never allocate, lock or log on the render path** (`Engine::render`).
+  `syn_player::Player::render_into` takes one uncontended lock (only the
+  audio thread uses it) and `try_lock`s the frame ring, so a reader can
+  cost a frame, never the sound. Crossing UniFFI allocates the returned
+  buffer once per call — the price of the FFI, paid outside the engine.
 - An app depends on a pinned revision. After pushing a change here, bump
   the revision in the app deliberately and run its checks.
 - Measure first: a performance claim comes with a number from a bench.
@@ -49,5 +53,8 @@ syn-core/src/sim/         the CPU picture: field, noise, fields, advect,
 syn-core/src/state.rs     AppState v1 and the 12 presets
 syn-core/src/schema.rs    the dumped schema
 syn-core/src/share.rs     `#s=` tokens
-syn-ffi/src/lib.rs        the UniFFI surface
+syn-player/src/lib.rs     Player: commands in, whole-block rendering, PCM out in
+                          any chunk size, fades, frames stamped on the engine
+                          clock and looked up by the played time
+syn-ffi/src/lib.rs        the UniFFI surface (SoundPlayer, AudioFrame, …)
 ```

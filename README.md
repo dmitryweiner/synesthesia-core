@@ -24,8 +24,11 @@ against its output sample by sample (`golden/`).
 syn-core/   the model: generators, modulation, FX, engine, features,
             analysis, the point, the genome, the search, the scout, the
             CPU picture (`sim/`). No I/O, no threads, deterministic.
-syn-ffi/    the foreign interface (UniFFI): records and functions an app
-            calls; generates the Kotlin and Swift bindings
+syn-player/ the render side every app shares: the engine behind a command
+            queue, PCM out in any chunk size, fades, feature frames on the
+            played clock
+syn-ffi/    the foreign interface (UniFFI): records, functions and the live
+            player an app calls; generates the Kotlin and Swift bindings
 assets/     presets.json, schema.json, genomes.json — dumped from the web app
 golden/     63 reference takes of the 21 generators, rendered by the web app
 scripts/    check.sh; dump-presets.mjs and dump-golden.mjs (need ../synesthesia)
