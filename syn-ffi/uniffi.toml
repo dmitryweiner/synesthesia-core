@@ -1,0 +1,6 @@
+# What the generated bindings are called in each app's language.
+[bindings.kotlin]
+package_name = "io.github.dmitryweiner.synesthesia.core"
+
+[bindings.swift]
+module_name = "SynesthesiaCore"

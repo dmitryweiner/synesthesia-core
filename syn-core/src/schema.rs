@@ -11,7 +11,8 @@ use serde::Deserialize;
 use crate::modmatrix::{LfoDef, ParamRanges};
 use crate::state::CardState;
 
-const SCHEMA_JSON: &str = include_str!("../../assets/schema.json");
+/// The schema as dumped, for a caller that hands it on whole (the FFI).
+pub const SCHEMA_JSON: &str = include_str!("../../assets/schema.json");
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct SliderDef {

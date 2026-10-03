@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["syn-core", "syn-ffi"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+# The LICENSE file in this repository (and in every sibling project) is the
+# GPL v3; synesthesia-rust's Cargo metadata said MIT, which disagreed with it.
+license = "GPL-3.0-only"
+repository = "https://github.com/dmitryweiner/synesthesia-core"
+
+# The model crate forbids unsafe code. syn-ffi does not inherit this: the
+# UniFFI scaffolding it generates is `extern "C"` and `#[no_mangle]`, which
+# the lint counts as unsafe. syn-ffi itself writes no unsafe block.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+# The model's tests run whole simulations (golden takes, Gray–Scott presets);
+# unoptimized, they would dominate `scripts/check.sh`.
+[profile.dev.package.syn-core]
+opt-level = 1

@@ -1,0 +1,28 @@
+[package]
+name = "syn-ffi"
+description = "The core's foreign interface: one UniFFI surface for the Kotlin (Android) and Swift (iOS) apps."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "syn_ffi"
+# `lib` is what an app's own cdylib (the Android `syn-android` crate) links;
+# `cdylib` lets this repository generate and check the bindings on its own.
+crate-type = ["lib", "cdylib"]
+
+[[bin]]
+# `cargo run -p syn-ffi --features cli --bin uniffi-bindgen -- generate …`.
+# An app pins the same syn-ffi revision and calls `uniffi_bindgen_main`, so
+# its bindings generator can never be a different UniFFI than the scaffolding.
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+required-features = ["cli"]
+
+[features]
+cli = ["uniffi/cli"]
+
+[dependencies]
+syn-core = { path = "../syn-core" }
+uniffi = "=0.32.2"
+serde_json = "1"
