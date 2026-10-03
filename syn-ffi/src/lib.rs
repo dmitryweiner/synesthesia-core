@@ -7,12 +7,14 @@
 //!   control logic); this crate converts types and nothing else.
 //! - The types it exposes are records and plain values a UI can hold, never
 //!   `syn-core`'s internals.
-//! - It grows by phase: presets, the schema and the live player now; the
-//!   session and the picture as the Android plan reaches them.
+//! - It grows by phase: presets, the schema, the live player and the session
+//!   ([`session`]) now; the picture as the Android plan reaches it.
 //! - Points cross as the web app's `AppState` JSON; a malformed one is a
 //!   [`CoreError`], never a panic.
 
 use std::sync::{Arc, Mutex};
+
+pub mod session;
 
 uniffi::setup_scaffolding!();
 
@@ -20,9 +22,11 @@ uniffi::setup_scaffolding!();
 pub enum CoreError {
     #[error("not a point: {reason}")]
     InvalidPoint { reason: String },
+    #[error("no built-in point {index}")]
+    NoSuchPreset { index: u32 },
 }
 
-fn parse_point(json: &str) -> Result<syn_core::AppState, CoreError> {
+pub(crate) fn parse_point(json: &str) -> Result<syn_core::AppState, CoreError> {
     serde_json::from_str(json).map_err(|e| CoreError::InvalidPoint { reason: e.to_string() })
 }
 

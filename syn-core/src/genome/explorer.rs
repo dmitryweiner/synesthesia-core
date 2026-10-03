@@ -6,7 +6,9 @@
 //! * **dislike** — go back to the anchor and step elsewhere, avoiding the
 //!   dimensions that were just rejected, with a larger spread;
 //! * **surprise** — jump near a given point and restart the search there;
-//! * **undo** — pop the last change.
+//! * **undo** — pop the last change;
+//! * **edit** — a point set by hand in Settings: one undoable step, and the
+//!   new anchor (the user said "this" as plainly as a 👍 can).
 //!
 //! `propose_like` / `propose_dislike` preview a press without committing, so
 //! the scout can score several candidates before one is taken.
@@ -34,8 +36,10 @@ pub enum ExplorerAction {
     Dislike,
     Surprise,
     Undo,
+    Edit,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ExplorerOptions {
     pub sigma0: f64,
     pub sigma_min: f64,
@@ -180,6 +184,18 @@ impl Explorer {
         &self.current
     }
 
+    /// A point set by hand (Settings): undoable, and the anchor from now on.
+    /// Not repaired — no formula at all, or a coupling below the floor, is
+    /// what the user chose; the next 👍/👎 repairs as usual.
+    pub fn edit(&mut self, g: Genome) -> &Genome {
+        self.push();
+        self.current = g.clone();
+        self.anchor = g;
+        self.last_action = ExplorerAction::Edit;
+        self.version += 1;
+        &self.current
+    }
+
     /// Loads a point: fresh start, history cleared.
     pub fn load(&mut self, g: Genome) {
         self.current = g.clone();
@@ -267,6 +283,21 @@ mod tests {
         assert_eq!(ex.sigma, ExplorerOptions::default().sigma0);
         let moved = diff_dims(&target, &ex.current).len();
         assert!(moved < target.len() / 2, "surprise should land near the target, moved {moved} genes");
+    }
+
+    #[test]
+    fn an_edit_is_one_undoable_step_and_the_new_anchor() {
+        let (mut ex, mut rng) = start();
+        ex.like(None, &mut rng);
+        let before = ex.current.clone();
+        let mut edited = before.clone();
+        let i = genes().iter().position(|d| d.kind == GeneKind::Cont).expect("a continuous gene");
+        edited[i] = 1.0 - edited[i];
+        ex.edit(edited.clone());
+        assert_eq!(ex.current, edited);
+        assert_eq!(ex.anchor, edited, "the edited point is what the next step starts from");
+        assert_eq!(ex.last_action, ExplorerAction::Edit);
+        assert_eq!(ex.undo().map(Vec::as_slice), Some(before.as_slice()), "one undo takes the edit back");
     }
 
     #[test]

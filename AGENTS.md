@@ -15,12 +15,16 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
 
 ## Rules
 
-- **No I/O, no threads, no clocks in `syn-core`.** The caller supplies time,
-  files, devices and thread pools (the scout runs inside whatever rayon pool
-  the caller installs). This is what makes the core portable.
+- **No I/O, no threads, no clocks in `syn-core` or `syn-session`.** The caller
+  supplies time, files, devices and thread pools (the scout runs inside
+  whatever rayon pool the caller installs — `syn_session::ScoutPool` builds
+  one). This is what makes the core portable: `syn-session` takes `now` as an
+  argument and hands work back as effects.
 - **`syn-ffi` is thin.** It converts types; logic goes into `syn-core`
-  (the model), `syn-player` (the live render side) or, from the Android
-  plan's phase 2, `syn-session` (the control logic).
+  (the model), `syn-player` (the live render side) or `syn-session` (the
+  control logic). Its one exception is written down where it lives: the
+  session's scout job waits in `syn-ffi` for a thread the app brings, and is
+  run without the session locked.
   Every change to its surface changes the generated Kotlin and Swift, so
   name things for an app developer, and keep records plain.
 - **Never change the `AppState` shape or the gene order** — point files, the
@@ -62,5 +66,9 @@ syn-core/src/share.rs     `#s=` tokens
 syn-player/src/lib.rs     Player: commands in, whole-block rendering, PCM out in
                           any chunk size, fades, frames stamped on the engine
                           clock and looked up by the played time
-syn-ffi/src/lib.rs        the UniFFI surface (SoundPlayer, AudioFrame, …)
+syn-session/src/lib.rs    Session: the explorer and the 2 s morph, the scout's
+                          scheduling and its pool, the name and step count,
+                          the status line. Pure; host tests pin main.ts's feel
+syn-ffi/src/lib.rs        the UniFFI surface: presets, schema, SoundPlayer
+syn-ffi/src/session.rs    … and the session: effects, view, the scout job
 ```

@@ -27,9 +27,12 @@ syn-core/   the model: generators, modulation, FX, engine, features,
 syn-player/ the render side every app shares: the engine behind a command
             queue, PCM out in any chunk size, fades, feature frames on the
             played clock
-syn-ffi/    the foreign interface (UniFFI): records, functions and the live
-            player an app calls; the Kotlin and Swift bindings are
-            generated from it
+syn-session/ the control logic every app shares: 👍 👎 🎲 ↩, the morph, when
+            the scout may render, the point's name, the status line. Pure:
+            `tick(now)` and commands in, effects out
+syn-ffi/    the foreign interface (UniFFI): records, functions, the live
+            player and the session an app calls; the Kotlin and Swift
+            bindings are generated from it
 assets/     presets.json, schema.json, genomes.json — dumped from the web app
 golden/     63 reference takes of the 21 generators, rendered by the web app
 scripts/    check.sh; dump-presets.mjs and dump-golden.mjs (need ../synesthesia)

@@ -564,6 +564,7 @@ dependencies = [
  "serde_json",
  "syn-core",
  "syn-player",
+ "syn-session",
  "thiserror",
  "uniffi",
 ]
@@ -573,6 +574,14 @@ name = "syn-player"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "syn-core",
+]
+
+[[package]]
+name = "syn-session"
+version = "0.1.0"
+dependencies = [
+ "rayon",
  "syn-core",
 ]
 

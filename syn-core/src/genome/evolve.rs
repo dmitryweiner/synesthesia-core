@@ -115,6 +115,22 @@ pub fn diff_dims(a: &[f64], b: &[f64]) -> Vec<usize> {
     (0..a.len().min(b.len())).filter(|i| a[*i] != b[*i]).collect()
 }
 
+/// How close two genes may be and still count as the same value: far tighter
+/// than any slider step, far looser than the last bits.
+pub const SAME_GENE: f64 = 1e-9;
+
+/// Whether two genomes are the same point, to the precision a point is kept
+/// in — the web app's `samePoint` (`src/ui/settingsModel.ts`), which compares
+/// the parameters at 9 significant digits.
+///
+/// Encoding a point and decoding it again moves the last bits of the
+/// log-scaled genes (a rate, a filter frequency), so an app that asks "did
+/// the user change anything in Settings?" must not ask [`diff_dims`], which
+/// is exact: it would call every close an edit.
+pub fn same_genome(a: &[f64], b: &[f64]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).all(|(x, y)| (x - y).abs() <= SAME_GENE)
+}
+
 /// Scales the explicit sound→image couplings up until they sum to the floor.
 fn lift_coupling_floor(g: &mut Genome) {
     let floor = schema().coupling_floor;
@@ -406,8 +422,21 @@ pub fn diff_summary(a: &Genome, b: &Genome) -> Vec<GeneChange> {
 mod tests {
     use super::*;
     use crate::dsp::rng::Mulberry32;
-    use crate::genome::codec::{encode_genome, is_valid_genome};
+    use crate::genome::codec::{decode_genome, encode_genome, is_valid_genome};
     use crate::state::presets;
+
+    #[test]
+    fn a_point_that_went_through_the_codec_is_still_the_same_point() {
+        for p in presets() {
+            let g = encode_genome(&p.state);
+            let round_trip = encode_genome(&decode_genome(&g));
+            assert!(same_genome(&g, &round_trip), "{} came back as another point", p.name);
+            let mut nudged = g.clone();
+            let i = genes().iter().position(|d| d.kind == GeneKind::Cont).expect("a continuous gene");
+            nudged[i] += 1e-3; // the smallest move a slider makes
+            assert!(!same_genome(&g, &nudged), "a slider's step is a change");
+        }
+    }
 
     #[test]
     fn a_random_genome_is_valid_and_playable() {
