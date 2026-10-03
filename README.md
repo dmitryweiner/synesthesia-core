@@ -11,7 +11,7 @@ native app:
 | app | how it uses the core |
 |---|---|
 | [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | through `syn-ffi` (UniFFI → Kotlin), pinned by git revision |
-| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core` directly — it was born there and moved here |
+| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | still its own copy of `syn-core`, where it was born; switching to this repository is planned ([TODO.md](TODO.md)) |
 | iOS (planned) | through `syn-ffi` (UniFFI → Swift) |
 
 The web app stays the specification: ranges, defaults, presets and the gene
@@ -28,15 +28,18 @@ syn-player/ the render side every app shares: the engine behind a command
             queue, PCM out in any chunk size, fades, feature frames on the
             played clock
 syn-ffi/    the foreign interface (UniFFI): records, functions and the live
-            player an app calls; generates the Kotlin and Swift bindings
+            player an app calls; the Kotlin and Swift bindings are
+            generated from it
 assets/     presets.json, schema.json, genomes.json — dumped from the web app
 golden/     63 reference takes of the 21 generators, rendered by the web app
 scripts/    check.sh; dump-presets.mjs and dump-golden.mjs (need ../synesthesia)
+TODO.md     agreed follow-ups that are not done yet
 ```
 
 ## Checking it
 
 ```bash
+rustup update stable    # CI uses the latest stable; an older clippy misses its lints
 ./scripts/check.sh      # fmt --check, clippy -D warnings, every test
 ```
 

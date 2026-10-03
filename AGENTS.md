@@ -2,13 +2,14 @@
 
 (Claude Code reads CLAUDE.md, which points here.)
 
-The shared model of Synesthesia, used by the Android app, the console app
-and (later) an iOS app. Docs, UI strings and code comments are in English;
+The shared model of Synesthesia, used by the Android app, and meant for
+the console app (which still has its own copy — TODO.md) and an iOS app. Docs, UI strings and code comments are in English;
 the user talks to agents in Russian.
 
 ## Commands
 
 ```bash
+rustup update stable    # first: CI uses the latest stable, and a newer clippy finds more
 ./scripts/check.sh      # after every change: fmt, clippy -D warnings, tests
 ```
 
@@ -17,7 +18,9 @@ the user talks to agents in Russian.
 - **No I/O, no threads, no clocks in `syn-core`.** The caller supplies time,
   files, devices and thread pools (the scout runs inside whatever rayon pool
   the caller installs). This is what makes the core portable.
-- **`syn-ffi` is thin.** It converts types; logic goes into `syn-core`.
+- **`syn-ffi` is thin.** It converts types; logic goes into `syn-core`
+  (the model), `syn-player` (the live render side) or, from the Android
+  plan's phase 2, `syn-session` (the control logic).
   Every change to its surface changes the generated Kotlin and Swift, so
   name things for an app developer, and keep records plain.
 - **Never change the `AppState` shape or the gene order** — point files, the
@@ -34,7 +37,10 @@ the user talks to agents in Russian.
   cost a frame, never the sound. Crossing UniFFI allocates the returned
   buffer once per call — the price of the FFI, paid outside the engine.
 - An app depends on a pinned revision. After pushing a change here, bump
-  the revision in the app deliberately and run its checks.
+  the revision in the app deliberately and run its checks
+  (synesthesia-android: `rev` in `core/rust/Cargo.toml`, then its
+  `scripts/check.sh`; its AGENTS.md shows a local `[patch]` for trying a
+  change before pushing).
 - Measure first: a performance claim comes with a number from a bench.
 
 ## Module map
