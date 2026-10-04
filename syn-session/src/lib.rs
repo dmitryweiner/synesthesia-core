@@ -28,6 +28,8 @@
 //! hard switch and a fresh picture; closing Settings is one undoable step and
 //! a jump, because the sound is already there.
 
+pub mod points;
+
 use std::sync::Arc;
 
 use syn_core::dsp::rng::{Mulberry32, Rng};
@@ -503,6 +505,24 @@ impl Session {
         );
         self.say(&mut fx, msg);
         self.on_settled(now, &mut fx);
+        fx
+    }
+
+    /// The point was kept under `name` (💾): it is the user's own named point
+    /// from now on, so the title says that and not "the preset, five steps
+    /// ago". The search is untouched — undo still walks back through it.
+    pub fn kept_as(&mut self, now: f64, name: &str) -> Vec<Effect> {
+        let mut fx = Vec::new();
+        if name.is_empty() {
+            return fx;
+        }
+        self.base_name = name.to_string();
+        self.named = true;
+        self.steps = 0;
+        let msg = format!("kept as “{name}”");
+        self.say(&mut fx, msg);
+        fx.push(Effect::SaveLastPoint(Box::new(self.point())));
+        let _ = now;
         fx
     }
 
@@ -1079,6 +1099,25 @@ mod tests {
         }
         let want = (MORPH_SECONDS / PUSH_INTERVAL) as usize;
         assert!(pushes.abs_diff(want) <= 2, "{pushes} pushes, wanted about {want}");
+    }
+
+    #[test]
+    fn a_kept_point_takes_the_name_it_was_kept_under() {
+        let mut s = session();
+        let preset = presets()[0].name.clone();
+        s.like(0.0);
+        s.tick(2.0);
+        assert_eq!(s.view().name, format!("{preset} · 1 step"));
+        assert_eq!(s.point().preset_name, None, "a stepped point is nobody's yet");
+
+        let fx = s.kept_as(2.0, "Dawn");
+        assert_eq!(s.view().name, "Dawn", "the title is the name it was kept under");
+        assert_eq!(s.view().steps, 0, "and the steps start again from it");
+        assert_eq!(s.point().preset_name.as_deref(), Some("Dawn"));
+        assert!(said(&fx).expect("a status line").contains("Dawn"));
+        assert_eq!(saved(&fx).and_then(|p| p.preset_name.clone()).as_deref(), Some("Dawn"));
+        assert!(s.view().can_undo, "the search is untouched: ↩ still walks back");
+        assert!(s.kept_as(3.0, "").is_empty(), "a point is not kept under no name");
     }
 
     #[test]

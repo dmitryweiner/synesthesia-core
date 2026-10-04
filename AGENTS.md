@@ -65,15 +65,19 @@ syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
                           quality (the ladder and the boot probe)
 syn-core/src/state.rs     AppState v1 and the 12 presets
 syn-core/src/schema.rs    the dumped schema
-syn-core/src/share.rs     `#s=` tokens
+syn-core/src/share.rs     `#s=` tokens, and what a link opens (parse_launch)
 syn-player/src/lib.rs     Player: commands in, whole-block rendering, PCM out in
                           any chunk size, fades, frames stamped on the engine
                           clock and looked up by the played time
 syn-session/src/lib.rs    Session: the explorer and the 2 s morph, the scout's
                           scheduling and its pool, the name and step count,
                           the status line. Pure; host tests pin main.ts's feel
+syn-session/src/points.rs the kept points and their file — the console's, so
+                          a point file opens in both; the naming rules
 syn-ffi/src/lib.rs        the UniFFI surface: presets, schema, SoundPlayer
 syn-ffi/src/session.rs    … the session: effects, view, the scout job
-syn-ffi/src/picture.rs    … and the picture: a frame's uniforms, the seed
-                          spots, the quality rung, the sizes
+syn-ffi/src/picture.rs    … the picture: a frame's uniforms, the seed spots,
+                          the quality rung, the sizes
+syn-ffi/src/points.rs     … and the points: the kept list, `#s=` tokens, what
+                          a link opens
 ```

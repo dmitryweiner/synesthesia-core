@@ -9,6 +9,10 @@ repository.workspace = true
 [dependencies]
 syn-core = { path = "../syn-core" }
 rayon = "1"
+# The points file is the web app's JSON, read and written here so that every
+# app's file is the same file (synesthesia-android PLAN.md, decision 7).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [lints]
 workspace = true

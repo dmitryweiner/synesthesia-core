@@ -8,13 +8,15 @@
 //! - The types it exposes are records and plain values a UI can hold, never
 //!   `syn-core`'s internals.
 //! - It grows by phase: presets, the schema, the live player, the session
-//!   ([`session`]) and the picture ([`picture`]).
+//!   ([`session`]), the picture ([`picture`]) and the kept points
+//!   ([`points`]).
 //! - Points cross as the web app's `AppState` JSON; a malformed one is a
 //!   [`CoreError`], never a panic.
 
 use std::sync::{Arc, Mutex};
 
 pub mod picture;
+pub mod points;
 pub mod session;
 
 uniffi::setup_scaffolding!();
@@ -25,6 +27,8 @@ pub enum CoreError {
     InvalidPoint { reason: String },
     #[error("no built-in point {index}")]
     NoSuchPreset { index: u32 },
+    #[error("not a points file: {reason}")]
+    BadPointsFile { reason: String },
 }
 
 pub(crate) fn parse_point(json: &str) -> Result<syn_core::AppState, CoreError> {
