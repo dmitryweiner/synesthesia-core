@@ -106,11 +106,11 @@ mod tests {
     #[test]
     fn the_gene_list_is_the_one_the_web_app_derives() {
         let g = genes();
-        assert_eq!(g.len(), 237, "gene count changed — share compatibility depends on it");
+        assert_eq!(g.len(), 250, "gene count changed — share compatibility depends on it");
         assert_eq!(g[0].id, "a.additive.enabled");
         assert_eq!(gene_index("fx.filterOn"), gene_index_of("fx.filterOn").unwrap());
         assert_eq!(route_slots(), 12);
-        assert_eq!(mod_targets().len(), 122);
+        assert_eq!(mod_targets().len(), 133);
     }
 
     #[test]

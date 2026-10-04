@@ -34,6 +34,7 @@ fn lfo_shape_name(shape: LfoShape) -> &'static str {
         LfoShape::Saw => "saw",
         LfoShape::Square => "square",
         LfoShape::Random => "random",
+        LfoShape::Pink => "pink",
     }
 }
 
@@ -43,6 +44,7 @@ fn lfo_shape_from(name: &str) -> LfoShape {
         "saw" => LfoShape::Saw,
         "square" => LfoShape::Square,
         "random" => LfoShape::Random,
+        "pink" => LfoShape::Pink,
         _ => LfoShape::Sine,
     }
 }

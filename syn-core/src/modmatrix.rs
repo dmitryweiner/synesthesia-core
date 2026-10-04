@@ -19,6 +19,10 @@ pub enum LfoShape {
     Square,
     /// Sample & hold: a pure function of the cycle number.
     Random,
+    /// 1/f fluctuations: five octaves of value noise, each hashing its own
+    /// lattice, so it glides and — like sample & hold — is still a pure
+    /// function of the phase.
+    Pink,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
@@ -69,6 +73,36 @@ fn hash01(n: f64) -> f64 {
     f64::from(t ^ (t >> 14)) / 4_294_967_296.0
 }
 
+/// Octaves of value noise behind [`LfoShape::Pink`] (Voss–McCartney at equal
+/// amplitude). Measured in the web app: 1/f (−3 dB per octave) from about
+/// rate/2 to 4·rate, steeper above, where the top octave's smoothing takes
+/// over.
+const PINK_OCTAVES: usize = 5;
+/// `tanh` of the octave mean: the same spread as the measured prototype
+/// (which clamped `sum/5 · 2.2` at ±1), but rare peaks stay round rather than
+/// flat.
+const PINK_GAIN: f64 = 2.4;
+
+/// Cosine-interpolated value noise on octave `octave`'s own lattice —
+/// `n · PINK_OCTAVES + octave` never collides across octaves.
+fn value_noise(u: f64, octave: usize) -> f64 {
+    let n = u.floor();
+    let a = 2.0 * hash01(n * PINK_OCTAVES as f64 + octave as f64) - 1.0;
+    let b = 2.0 * hash01((n + 1.0) * PINK_OCTAVES as f64 + octave as f64) - 1.0;
+    let w = 0.5 - 0.5 * (std::f64::consts::PI * (u - n)).cos();
+    a + (b - a) * w
+}
+
+fn pink_value(ph: f64) -> f64 {
+    let mut sum = 0.0;
+    let mut scale = 1.0;
+    for j in 0..PINK_OCTAVES {
+        sum += value_noise(ph * scale, j);
+        scale *= 2.0;
+    }
+    (PINK_GAIN * sum / PINK_OCTAVES as f64).tanh()
+}
+
 /// LFO value at absolute time `t` (seconds) → [-1, 1].
 pub fn lfo_value(lfo: &LfoDef, t: f64) -> f64 {
     let ph = lfo.rate * t + lfo.phase;
@@ -91,6 +125,7 @@ pub fn lfo_value(lfo: &LfoDef, t: f64) -> f64 {
             }
         }
         LfoShape::Random => 2.0 * hash01(ph.floor()) - 1.0,
+        LfoShape::Pink => pink_value(ph),
     }
 }
 

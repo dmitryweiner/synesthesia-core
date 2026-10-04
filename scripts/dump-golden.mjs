@@ -10,7 +10,7 @@
 //   b   8 kHz, 16000 samples (2 s)   — long horizon, events forced to fire
 //   c  48 kHz, 4096 samples, one LFO route — the block-rate modulation path
 import { writeFileSync } from 'node:fs';
-import { ensureServer, launchBrowser, openApp } from '../../synesthesia/scripts/lib.mjs';
+import { startServer, launchBrowser, openApp } from '../../synesthesia/scripts/lib.mjs';
 
 const OUT = new URL('../golden/', import.meta.url);
 const BLOCK = 128;
@@ -22,7 +22,7 @@ const FAST = {
   shepSpeed: 0.5, lfoHz: 60, bbRate: 4000,
 };
 
-const server = await ensureServer(false);
+const server = await startServer(false);
 const browser = await launchBrowser();
 const page = await (await browser.newContext()).newPage();
 await openApp(page, `${server.BASE}/?preset=0&res=128`);

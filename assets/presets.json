@@ -29,6 +29,7 @@
      "delayTime": 0.66,
      "delayFb": 0.5,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": true,
      "phaserRate": 0.25,
      "phaserDepth": 0.7,
@@ -220,6 +221,26 @@
       "params": {
        "gain": 0.1,
        "velvetDensity": 2000
+      }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
       }
      }
     }
@@ -417,6 +438,7 @@
      "delayTime": 0.63,
      "delayFb": 0.62,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": true,
      "phaserRate": 0.47,
      "phaserDepth": 0.59,
@@ -609,6 +631,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -742,6 +784,7 @@
      "delayTime": 0.35,
      "delayFb": 0.4,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -934,6 +977,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -1080,6 +1143,7 @@
      "delayTime": 1.3,
      "delayFb": 0.5,
      "delayMix": 0.35,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -1271,6 +1335,26 @@
       "params": {
        "gain": 0.1,
        "velvetDensity": 2000
+      }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
       }
      }
     }
@@ -1467,6 +1551,7 @@
      "delayTime": 0.35,
      "delayFb": 0.4,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -1659,6 +1744,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -1823,6 +1928,7 @@
      "delayTime": 0.55,
      "delayFb": 0.35,
      "delayMix": 0.25,
+     "delayShimmer": 0,
      "phaserOn": true,
      "phaserRate": 0.18,
      "phaserDepth": 0.55,
@@ -2015,6 +2121,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -2198,6 +2324,7 @@
      "delayTime": 0.6,
      "delayFb": 0.45,
      "delayMix": 0.4,
+     "delayShimmer": 0,
      "phaserOn": true,
      "phaserRate": 0.3,
      "phaserDepth": 0.75,
@@ -2390,6 +2517,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -2568,6 +2715,7 @@
      "delayTime": 0.5,
      "delayFb": 0.4,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -2760,6 +2908,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -2900,6 +3068,7 @@
      "delayTime": 0.8,
      "delayFb": 0.4,
      "delayMix": 0.25,
+     "delayShimmer": 0,
      "phaserOn": true,
      "phaserRate": 0.12,
      "phaserDepth": 0.65,
@@ -3092,6 +3261,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -3275,6 +3464,7 @@
      "delayTime": 0.35,
      "delayFb": 0.4,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -3467,6 +3657,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -3600,6 +3810,7 @@
      "delayTime": 0.5,
      "delayFb": 0.35,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -3792,6 +4003,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -3938,6 +4169,7 @@
      "delayTime": 0.35,
      "delayFb": 0.4,
      "delayMix": 0.3,
+     "delayShimmer": 0,
      "phaserOn": false,
      "phaserRate": 0.5,
      "phaserDepth": 0.7,
@@ -4130,6 +4362,26 @@
        "gain": 0.1,
        "velvetDensity": 2000
       }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
      }
     }
    },
@@ -4225,6 +4477,1186 @@
     "spectrumToTint": 0.7
    },
    "presetName": "Subway basalt"
+  }
+ },
+ {
+  "name": "Overtone steppe",
+  "state": {
+   "v": 1,
+   "audio": {
+    "masterGain": 0.72,
+    "fx": {
+     "filterOn": true,
+     "filterType": "peaking",
+     "filterFreq": 1000,
+     "filterQ": 30,
+     "filterGain": 20,
+     "filterVowel": 0,
+     "filterCombFb": 0.5,
+     "chorusOn": true,
+     "chorusMode": "chorus",
+     "chorusRate": 0.05,
+     "chorusDepth": 5,
+     "chorusMix": 0.25,
+     "chorusFb": 0.2,
+     "reverbOn": true,
+     "reverbDecay": 6,
+     "reverbMix": 0.42,
+     "limiterOn": true,
+     "limiterThr": -12,
+     "limiterRel": 0.15,
+     "delayOn": true,
+     "delayTime": 0.93,
+     "delayFb": 0.42,
+     "delayMix": 0.28,
+     "delayShimmer": 0,
+     "phaserOn": true,
+     "phaserRate": 0.15,
+     "phaserDepth": 0.6,
+     "phaserStages": 6,
+     "phaserFb": 0.35,
+     "phaserMix": 0.35
+    },
+    "formulas": {
+     "additive": {
+      "enabled": true,
+      "params": {
+       "gain": 0.55,
+       "fund": 55,
+       "N": 36,
+       "move": 0.05
+      }
+     },
+     "lorenz": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "sigma": 10,
+       "rho": 28,
+       "beta": 2.6667,
+       "lBase": 120,
+       "lFreqScale": 40,
+       "lAmp": 0.25
+      }
+     },
+     "rossler": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "rossA": 0.2,
+       "rossB": 0.2,
+       "rossC": 5.7,
+       "rossBase": 120,
+       "rossFreqScale": 30,
+       "rossAmp": 0.25
+      }
+     },
+     "gliss": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "f0": 55,
+       "k": 0.15
+      }
+     },
+     "shepard": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "shepBase": 55,
+       "shepSpeed": 0.1,
+       "shepOctaves": 6
+      }
+     },
+     "bell": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "bellF0": 320,
+       "bellRatio": 1.4,
+       "bellIndex": 4,
+       "bellDecay": 3,
+       "bellPeriod": 6
+      }
+     },
+     "risset": {
+      "enabled": false,
+      "params": {
+       "gain": 0.4,
+       "rissF0": 480,
+       "rissDecay": 5,
+       "rissPeriod": 6
+      }
+     },
+     "fm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "fc": 220,
+       "fm": 2,
+       "I": 3
+      }
+     },
+     "beats": {
+      "enabled": true,
+      "params": {
+       "gain": 0.38,
+       "fbeat": 55,
+       "df": 0.25
+      }
+     },
+     "pm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "f": 220,
+       "f2pm": 3
+      }
+     },
+     "quasi": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "fq": 120,
+       "Aq": 220,
+       "wq": 0.8
+      }
+     },
+     "logistic": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "base": 110,
+       "depth": 330,
+       "r": 3.86,
+       "lfoHz": 40
+      }
+     },
+     "dist": {
+      "enabled": true,
+      "params": {
+       "gain": 0.28,
+       "fd": 55,
+       "alpha": 0.9
+      }
+     },
+     "karplus": {
+      "enabled": false,
+      "params": {
+       "gain": 0.14,
+       "ksFreq": 110,
+       "ksDamp": 0.985,
+       "ksBright": 0.5
+      }
+     },
+     "bytebeat": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "bbRecipe": 1,
+       "bbRate": 8000
+      }
+     },
+     "ocean": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "oceanRate": 0.12,
+       "oceanCut": 600,
+       "oceanDepth": 0.7
+      }
+     },
+     "rain": {
+      "enabled": false,
+      "params": {
+       "gain": 0.35,
+       "rainDensity": 4,
+       "rainPitch": 900,
+       "rainBed": 0.15
+      }
+     },
+     "noiselp": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "nCut": 800
+      }
+     },
+     "pinknoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "pinkBright": 0.3
+      }
+     },
+     "brownnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "brownStep": 0.02
+      }
+     },
+     "velvetnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "velvetDensity": 2000
+      }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
+     }
+    }
+   },
+   "visual": {
+    "cards": {
+     "reaction": {
+      "on": true,
+      "params": {
+       "feed": 0.032,
+       "kill": 0.058,
+       "diffU": 0.2097,
+       "diffV": 0.105,
+       "speed": 18
+      }
+     },
+     "fieldVariation": {
+      "on": true,
+      "params": {
+       "feedVarAmount": 0.014,
+       "feedVarScale": 3,
+       "feedVarWarp": 1.4,
+       "killVarAmount": 0.007,
+       "killVarScale": 4,
+       "killVarWarp": 1.2
+      }
+     },
+     "flow": {
+      "on": true,
+      "params": {
+       "curlStrength": 0.008,
+       "curlScale": 2.5,
+       "driftX": 0.005,
+       "driftY": 0,
+       "advectAmount": 0.25,
+       "evolveRate": 0.006
+      }
+     },
+     "palette": {
+      "on": true,
+      "params": {
+       "shift": 0,
+       "contrast": 1.2,
+       "bands": 2,
+       "relief": 1.4,
+       "lightAngle": 2,
+       "gloss": 0.5,
+       "paletteId": 0
+      }
+     }
+    }
+   },
+   "mod": {
+    "lfos": [
+     {
+      "shape": "sine",
+      "rate": 0.019,
+      "phase": 0
+     },
+     {
+      "shape": "triangle",
+      "rate": 0.037,
+      "phase": 0.5
+     },
+     {
+      "shape": "sine",
+      "rate": 0.053,
+      "phase": 0.25
+     },
+     {
+      "shape": "random",
+      "rate": 0.029,
+      "phase": 0
+     }
+    ],
+    "routes": [
+     {
+      "src": 0,
+      "target": "fx",
+      "param": "filterFreq",
+      "depth": 0.15,
+      "exp": true
+     },
+     {
+      "src": 1,
+      "target": "fx",
+      "param": "filterGain",
+      "depth": 0.12
+     },
+     {
+      "src": 2,
+      "target": "fx",
+      "param": "chorusDepth",
+      "depth": 0.3
+     },
+     {
+      "src": 2,
+      "target": "fx",
+      "param": "reverbMix",
+      "depth": 0.25
+     },
+     {
+      "src": 3,
+      "target": "additive",
+      "param": "move",
+      "depth": 0.08
+     },
+     {
+      "src": 3,
+      "target": "beats",
+      "param": "df",
+      "depth": 0.01
+     },
+     {
+      "src": 3,
+      "target": "fx",
+      "param": "delayFb",
+      "depth": 0.2
+     },
+     {
+      "src": 0,
+      "target": "palette",
+      "param": "lightAngle",
+      "depth": 0.5
+     },
+     {
+      "src": 1,
+      "target": "reaction",
+      "param": "feed",
+      "depth": 0.1
+     }
+    ]
+   },
+   "coupling": {
+    "loudToFlow": 0,
+    "loudToCurl": 0,
+    "loudToGloss": 0.5,
+    "brightToShift": 0.6,
+    "onsetToLight": 0.3,
+    "loudToPulse": 0.7,
+    "onsetToFlash": 0.3,
+    "onsetToSeed": 0.4,
+    "spectrumToTint": 0.8
+   },
+   "presetName": "Overtone steppe"
+  }
+ },
+ {
+  "name": "Candle glaze",
+  "state": {
+   "v": 1,
+   "audio": {
+    "masterGain": 0.72,
+    "fx": {
+     "filterOn": true,
+     "filterType": "highshelf",
+     "filterFreq": 1500,
+     "filterQ": 0.7,
+     "filterGain": 0,
+     "filterVowel": 0,
+     "filterCombFb": 0.5,
+     "chorusOn": true,
+     "chorusMode": "chorus",
+     "chorusRate": 0.06,
+     "chorusDepth": 6,
+     "chorusMix": 0.3,
+     "chorusFb": 0.2,
+     "reverbOn": true,
+     "reverbDecay": 5.5,
+     "reverbMix": 0.4,
+     "limiterOn": true,
+     "limiterThr": -12,
+     "limiterRel": 0.15,
+     "delayOn": true,
+     "delayTime": 0.71,
+     "delayFb": 0.45,
+     "delayMix": 0.3,
+     "delayShimmer": 0.35,
+     "phaserOn": true,
+     "phaserRate": 0.2,
+     "phaserDepth": 0.6,
+     "phaserStages": 6,
+     "phaserFb": 0.35,
+     "phaserMix": 0.35
+    },
+    "formulas": {
+     "additive": {
+      "enabled": true,
+      "params": {
+       "gain": 0.5,
+       "fund": 49,
+       "N": 28,
+       "move": 0.25
+      }
+     },
+     "lorenz": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "sigma": 10,
+       "rho": 28,
+       "beta": 2.6667,
+       "lBase": 120,
+       "lFreqScale": 40,
+       "lAmp": 0.25
+      }
+     },
+     "rossler": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "rossA": 0.2,
+       "rossB": 0.2,
+       "rossC": 5.7,
+       "rossBase": 120,
+       "rossFreqScale": 30,
+       "rossAmp": 0.25
+      }
+     },
+     "gliss": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "f0": 55,
+       "k": 0.15
+      }
+     },
+     "shepard": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "shepBase": 55,
+       "shepSpeed": 0.1,
+       "shepOctaves": 6
+      }
+     },
+     "bell": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "bellF0": 320,
+       "bellRatio": 1.4,
+       "bellIndex": 4,
+       "bellDecay": 3,
+       "bellPeriod": 6
+      }
+     },
+     "risset": {
+      "enabled": false,
+      "params": {
+       "gain": 0.4,
+       "rissF0": 480,
+       "rissDecay": 5,
+       "rissPeriod": 6
+      }
+     },
+     "fm": {
+      "enabled": true,
+      "params": {
+       "gain": 0.14,
+       "fc": 1568,
+       "fm": 49,
+       "I": 4
+      }
+     },
+     "beats": {
+      "enabled": true,
+      "params": {
+       "gain": 0.22,
+       "fbeat": 98,
+       "df": 0.3
+      }
+     },
+     "pm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "f": 220,
+       "f2pm": 3
+      }
+     },
+     "quasi": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "fq": 120,
+       "Aq": 220,
+       "wq": 0.8
+      }
+     },
+     "logistic": {
+      "enabled": true,
+      "params": {
+       "gain": 0.14,
+       "base": 784,
+       "depth": 1000,
+       "r": 3.72,
+       "lfoHz": 7
+      }
+     },
+     "dist": {
+      "enabled": true,
+      "params": {
+       "gain": 0.26,
+       "fd": 49,
+       "alpha": 0.9
+      }
+     },
+     "karplus": {
+      "enabled": false,
+      "params": {
+       "gain": 0.14,
+       "ksFreq": 110,
+       "ksDamp": 0.985,
+       "ksBright": 0.5
+      }
+     },
+     "bytebeat": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "bbRecipe": 1,
+       "bbRate": 8000
+      }
+     },
+     "ocean": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "oceanRate": 0.12,
+       "oceanCut": 600,
+       "oceanDepth": 0.7
+      }
+     },
+     "rain": {
+      "enabled": false,
+      "params": {
+       "gain": 0.35,
+       "rainDensity": 4,
+       "rainPitch": 900,
+       "rainBed": 0.15
+      }
+     },
+     "noiselp": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "nCut": 800
+      }
+     },
+     "pinknoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "pinkBright": 0.3
+      }
+     },
+     "brownnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "brownStep": 0.02
+      }
+     },
+     "velvetnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "velvetDensity": 2000
+      }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
+     }
+    }
+   },
+   "visual": {
+    "cards": {
+     "reaction": {
+      "on": true,
+      "params": {
+       "feed": 0.037,
+       "kill": 0.06,
+       "diffU": 0.2097,
+       "diffV": 0.105,
+       "speed": 16
+      }
+     },
+     "fieldVariation": {
+      "on": true,
+      "params": {
+       "feedVarAmount": 0.008,
+       "feedVarScale": 3,
+       "feedVarWarp": 1.2,
+       "killVarAmount": 0.004,
+       "killVarScale": 4,
+       "killVarWarp": 1
+      }
+     },
+     "flow": {
+      "on": true,
+      "params": {
+       "curlStrength": 0.01,
+       "curlScale": 2.5,
+       "driftX": 0,
+       "driftY": -0.003,
+       "advectAmount": 0.3,
+       "evolveRate": 0.008
+      }
+     },
+     "palette": {
+      "on": true,
+      "params": {
+       "shift": 0,
+       "contrast": 1.2,
+       "bands": 1,
+       "relief": 1.2,
+       "lightAngle": 2,
+       "gloss": 0.45,
+       "paletteId": 1
+      }
+     }
+    }
+   },
+   "mod": {
+    "lfos": [
+     {
+      "shape": "pink",
+      "rate": 0.021,
+      "phase": 0
+     },
+     {
+      "shape": "pink",
+      "rate": 0.034,
+      "phase": 0.3
+     },
+     {
+      "shape": "pink",
+      "rate": 0.34,
+      "phase": 0.6
+     },
+     {
+      "shape": "pink",
+      "rate": 0.013,
+      "phase": 0.9
+     }
+    ],
+    "routes": [
+     {
+      "src": 0,
+      "target": "fx",
+      "param": "filterFreq",
+      "depth": 0.15,
+      "exp": true
+     },
+     {
+      "src": 0,
+      "target": "fx",
+      "param": "filterGain",
+      "depth": 0.3
+     },
+     {
+      "src": 0,
+      "target": "logistic",
+      "param": "r",
+      "depth": 0.2
+     },
+     {
+      "src": 0,
+      "target": "reaction",
+      "param": "feed",
+      "depth": 0.15
+     },
+     {
+      "src": 2,
+      "target": "fm",
+      "param": "I",
+      "depth": 0.15
+     },
+     {
+      "src": 1,
+      "target": "palette",
+      "param": "lightAngle",
+      "depth": 0.4
+     },
+     {
+      "src": 1,
+      "target": "fx",
+      "param": "phaserRate",
+      "depth": 0.1,
+      "exp": true
+     },
+     {
+      "src": 2,
+      "target": "fx",
+      "param": "chorusDepth",
+      "depth": 0.3
+     },
+     {
+      "src": 2,
+      "target": "logistic",
+      "param": "lfoHz",
+      "depth": 0.12,
+      "exp": true
+     },
+     {
+      "src": 3,
+      "target": "beats",
+      "param": "df",
+      "depth": 0.01
+     },
+     {
+      "src": 3,
+      "target": "fx",
+      "param": "delayShimmer",
+      "depth": 0.25
+     },
+     {
+      "src": 3,
+      "target": "palette",
+      "param": "shift",
+      "depth": 0.1
+     }
+    ]
+   },
+   "coupling": {
+    "loudToFlow": 0,
+    "loudToCurl": 0,
+    "loudToGloss": 0.5,
+    "brightToShift": 0.4,
+    "onsetToLight": 0.3,
+    "loudToPulse": 0.7,
+    "onsetToFlash": 0.3,
+    "onsetToSeed": 0.4,
+    "spectrumToTint": 0.6
+   },
+   "presetName": "Candle glaze"
+  }
+ },
+ {
+  "name": "Tanpura halo",
+  "state": {
+   "v": 1,
+   "audio": {
+    "masterGain": 0.68,
+    "fx": {
+     "filterOn": true,
+     "filterType": "lowpass",
+     "filterFreq": 2000,
+     "filterQ": 0.7,
+     "filterGain": 0,
+     "filterVowel": 0,
+     "filterCombFb": 0.5,
+     "chorusOn": true,
+     "chorusMode": "chorus",
+     "chorusRate": 0.05,
+     "chorusDepth": 5,
+     "chorusMix": 0.25,
+     "chorusFb": 0.15,
+     "reverbOn": true,
+     "reverbDecay": 7,
+     "reverbMix": 0.45,
+     "limiterOn": true,
+     "limiterThr": -12,
+     "limiterRel": 0.15,
+     "delayOn": true,
+     "delayTime": 0.75,
+     "delayFb": 0.55,
+     "delayMix": 0.35,
+     "delayShimmer": 0.5,
+     "phaserOn": false,
+     "phaserRate": 0.5,
+     "phaserDepth": 0.7,
+     "phaserStages": 4,
+     "phaserFb": 0.3,
+     "phaserMix": 0.5
+    },
+    "formulas": {
+     "additive": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "fund": 110,
+       "N": 12,
+       "move": 0.35
+      }
+     },
+     "lorenz": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "sigma": 10,
+       "rho": 28,
+       "beta": 2.6667,
+       "lBase": 120,
+       "lFreqScale": 40,
+       "lAmp": 0.25
+      }
+     },
+     "rossler": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "rossA": 0.2,
+       "rossB": 0.2,
+       "rossC": 5.7,
+       "rossBase": 120,
+       "rossFreqScale": 30,
+       "rossAmp": 0.25
+      }
+     },
+     "gliss": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "f0": 55,
+       "k": 0.15
+      }
+     },
+     "shepard": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "shepBase": 55,
+       "shepSpeed": 0.1,
+       "shepOctaves": 6
+      }
+     },
+     "bell": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "bellF0": 320,
+       "bellRatio": 1.4,
+       "bellIndex": 4,
+       "bellDecay": 3,
+       "bellPeriod": 6
+      }
+     },
+     "risset": {
+      "enabled": false,
+      "params": {
+       "gain": 0.4,
+       "rissF0": 480,
+       "rissDecay": 5,
+       "rissPeriod": 6
+      }
+     },
+     "fm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "fc": 220,
+       "fm": 2,
+       "I": 3
+      }
+     },
+     "beats": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "fbeat": 220,
+       "df": 0.8
+      }
+     },
+     "pm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "f": 220,
+       "f2pm": 3
+      }
+     },
+     "quasi": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "fq": 120,
+       "Aq": 220,
+       "wq": 0.8
+      }
+     },
+     "logistic": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "base": 110,
+       "depth": 330,
+       "r": 3.86,
+       "lfoHz": 40
+      }
+     },
+     "dist": {
+      "enabled": true,
+      "params": {
+       "gain": 0.42,
+       "fd": 65,
+       "alpha": 0.9
+      }
+     },
+     "karplus": {
+      "enabled": false,
+      "params": {
+       "gain": 0.14,
+       "ksFreq": 110,
+       "ksDamp": 0.985,
+       "ksBright": 0.5
+      }
+     },
+     "bytebeat": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "bbRecipe": 1,
+       "bbRate": 8000
+      }
+     },
+     "ocean": {
+      "enabled": true,
+      "params": {
+       "gain": 0.313,
+       "oceanRate": 0.07,
+       "oceanCut": 600,
+       "oceanDepth": 0.8
+      }
+     },
+     "rain": {
+      "enabled": false,
+      "params": {
+       "gain": 0.35,
+       "rainDensity": 4,
+       "rainPitch": 900,
+       "rainBed": 0.15
+      }
+     },
+     "noiselp": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "nCut": 800
+      }
+     },
+     "pinknoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "pinkBright": 0.3
+      }
+     },
+     "brownnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "brownStep": 0.02
+      }
+     },
+     "velvetnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "velvetDensity": 2000
+      }
+     },
+     "tanpura": {
+      "enabled": true,
+      "params": {
+       "gain": 0.56,
+       "tanSa": 65,
+       "tanCycle": 28,
+       "tanJawari": 0.6,
+       "tanSustain": 30,
+       "tanBright": 0.3
+      }
+     },
+     "bowl": {
+      "enabled": true,
+      "params": {
+       "gain": 0.4,
+       "bowlF": 130,
+       "bowlBeat": 0.3,
+       "bowlBright": 0.35
+      }
+     }
+    }
+   },
+   "visual": {
+    "cards": {
+     "reaction": {
+      "on": true,
+      "params": {
+       "feed": 0.034,
+       "kill": 0.063,
+       "diffU": 0.2097,
+       "diffV": 0.105,
+       "speed": 14
+      }
+     },
+     "fieldVariation": {
+      "on": false,
+      "params": {
+       "feedVarAmount": 0.015,
+       "feedVarScale": 4,
+       "feedVarWarp": 1,
+       "killVarAmount": 0.008,
+       "killVarScale": 5,
+       "killVarWarp": 1
+      }
+     },
+     "flow": {
+      "on": true,
+      "params": {
+       "curlStrength": 0.006,
+       "curlScale": 3,
+       "driftX": 0,
+       "driftY": 0,
+       "advectAmount": 0.2,
+       "evolveRate": 0.006
+      }
+     },
+     "palette": {
+      "on": true,
+      "params": {
+       "shift": 0,
+       "contrast": 1.2,
+       "bands": 2,
+       "relief": 1.2,
+       "lightAngle": 2,
+       "gloss": 0.5,
+       "paletteId": 2
+      }
+     }
+    }
+   },
+   "mod": {
+    "lfos": [
+     {
+      "shape": "sine",
+      "rate": 0.019,
+      "phase": 0
+     },
+     {
+      "shape": "pink",
+      "rate": 0.029,
+      "phase": 0.5
+     },
+     {
+      "shape": "triangle",
+      "rate": 0.041,
+      "phase": 0.25
+     },
+     {
+      "shape": "random",
+      "rate": 0.023,
+      "phase": 0
+     }
+    ],
+    "routes": [
+     {
+      "src": 0,
+      "target": "fx",
+      "param": "delayShimmer",
+      "depth": 0.3
+     },
+     {
+      "src": 0,
+      "target": "palette",
+      "param": "gloss",
+      "depth": 0.3
+     },
+     {
+      "src": 1,
+      "target": "tanpura",
+      "param": "tanJawari",
+      "depth": 0.2
+     },
+     {
+      "src": 2,
+      "target": "fx",
+      "param": "reverbMix",
+      "depth": 0.2
+     },
+     {
+      "src": 2,
+      "target": "fx",
+      "param": "chorusDepth",
+      "depth": 0.3
+     },
+     {
+      "src": 2,
+      "target": "bowl",
+      "param": "gain",
+      "depth": 0.12
+     },
+     {
+      "src": 3,
+      "target": "fx",
+      "param": "delayFb",
+      "depth": 0.1
+     },
+     {
+      "src": 0,
+      "target": "palette",
+      "param": "lightAngle",
+      "depth": 0.4
+     }
+    ]
+   },
+   "coupling": {
+    "loudToFlow": 0,
+    "loudToCurl": 0,
+    "loudToGloss": 0.4,
+    "brightToShift": 0,
+    "onsetToLight": 0.4,
+    "loudToPulse": 0.6,
+    "onsetToFlash": 0.25,
+    "onsetToSeed": 0.6,
+    "spectrumToTint": 0.5
+   },
+   "presetName": "Tanpura halo"
   }
  }
 ]

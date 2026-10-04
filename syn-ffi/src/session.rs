@@ -377,7 +377,8 @@ mod tests {
         let s = Session::on_preset(0, config()).expect("preset 0");
         let fx = s.load_preset(0.0, 5).expect("preset 5");
         assert_eq!(effects(&fx), ["switch", "reseed", "status", "save"]);
-        assert!(matches!(s.load_preset(0.0, 12), Err(CoreError::NoSuchPreset { index: 12 })));
+        let past_the_end = crate::presets().len() as u32;
+        assert!(matches!(s.load_preset(0.0, past_the_end), Err(CoreError::NoSuchPreset { .. })));
         assert!(matches!(Session::on_preset(99, config()), Err(CoreError::NoSuchPreset { .. })));
         assert!(matches!(s.load(0.0, "x".into(), "{}".into()), Err(CoreError::InvalidPoint { .. })));
     }

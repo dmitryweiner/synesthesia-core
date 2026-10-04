@@ -13,6 +13,7 @@ use super::biquad::{Biquad, BiquadType, Coeffs};
 use super::delayline::DelayLine;
 use super::limiter::Limiter;
 use super::reverb::Fdn;
+use super::shimmer::OctaveShimmer;
 
 /// Smoothing time constant for FX parameters, seconds (web: `FX_SMOOTH_TC`).
 const SMOOTH_TC: f64 = 0.03;
@@ -61,6 +62,7 @@ struct Smoothed {
     delay_time: Smooth,
     delay_fb: Smooth,
     delay_mix: Smooth,
+    delay_shimmer: Smooth,
     reverb_mix: Smooth,
     limiter_thr: Smooth,
     limiter_rel: Smooth,
@@ -84,6 +86,8 @@ pub struct FxChain {
     phaser_fb_state: f64,
 
     delay: DelayLine,
+    /// In the delay's feedback loop, as the web app's graph has it.
+    shimmer: OctaveShimmer,
     reverb: Fdn,
     limiter: Limiter,
     last_reverb_decay: f64,
@@ -105,6 +109,7 @@ impl FxChain {
             phaser_phase: 0.0,
             phaser_fb_state: 0.0,
             delay: DelayLine::new((sr * 3.0) as usize + 4),
+            shimmer: OctaveShimmer::new(sr),
             reverb: Fdn::new(sr),
             limiter: Limiter::new(sr),
             last_reverb_decay: f64::NAN,
@@ -139,6 +144,7 @@ impl FxChain {
         self.s.delay_time.jump(fx.delay_time);
         self.s.delay_fb.jump(fx.delay_fb);
         self.s.delay_mix.jump(fx.delay_mix);
+        self.s.delay_shimmer.jump(fx.delay_shimmer);
         self.s.reverb_mix.jump(fx.reverb_mix);
         self.s.limiter_thr.jump(fx.limiter_thr);
         self.s.limiter_rel.jump(fx.limiter_rel);
@@ -153,6 +159,7 @@ impl FxChain {
         self.comb.clear();
         self.chorus.clear();
         self.delay.clear();
+        self.shimmer.clear();
         self.reverb.clear();
         self.limiter.clear();
         self.chorus_phase = 0.0;
@@ -189,6 +196,7 @@ impl FxChain {
         let delay_time = self.s.delay_time.glide(fx.delay_time, coef).clamp(0.001, 3.0);
         let delay_fb = self.s.delay_fb.glide(fx.delay_fb, coef).clamp(0.0, 0.95);
         let delay_mix = self.s.delay_mix.glide(fx.delay_mix, coef).clamp(0.0, 1.0);
+        let delay_shimmer = self.s.delay_shimmer.glide(fx.delay_shimmer, coef).clamp(0.0, 1.0);
         let reverb_mix = self.s.reverb_mix.glide(fx.reverb_mix, coef).clamp(0.0, 1.0);
         let limiter_thr = self.s.limiter_thr.glide(fx.limiter_thr, coef);
         let limiter_rel = self.s.limiter_rel.glide(fx.limiter_rel, coef);
@@ -226,7 +234,11 @@ impl FxChain {
         let p_hi = PHASER_F_LO + 3600.0 * phaser_depth;
         let p_centre = 0.5 * (PHASER_F_LO + p_hi);
         let p_half = 0.5 * (p_hi - PHASER_F_LO);
-        let delay_samples = delay_time * sr + MIN_LOOP_DELAY;
+        // Twice the quantum: the delay node's own latency, and the shimmer
+        // worklet's, which sits in the loop whenever the delay is on — amount
+        // zero or not (the browser's graph is wired that way, and the presets
+        // were tuned through it).
+        let delay_samples = delay_time * sr + 2.0 * MIN_LOOP_DELAY;
 
         let decay_moved = !matches!(
             (fx.reverb_decay - self.last_reverb_decay).abs().partial_cmp(&0.05),
@@ -285,7 +297,9 @@ impl FxChain {
 
             if fx.delay_on {
                 let wet = self.delay.read(delay_samples);
-                self.delay.write(x + wet * delay_fb);
+                // The feedback goes round through the shimmer, as the web
+                // app's graph does it: delay → fb → shimmer → delay.
+                self.delay.write(x + self.shimmer.tick(wet * delay_fb, delay_shimmer));
                 x = x * (1.0 - delay_mix) + wet * delay_mix;
             }
 
@@ -426,13 +440,15 @@ mod tests {
         let mut buf = vec![0.0f32; (sr * 0.6) as usize];
         buf[0] = 1.0;
         chain.process(&mut buf);
-        // The echo lands a render quantum late, like the browser's (see
-        // MIN_LOOP_DELAY), so look in a window rather than at one sample.
-        let peak_near = |centre: f64| {
-            let c = (sr * centre) as usize;
-            (c - 200..c + 400).fold(0.0f32, |m, i| m.max(buf[i].abs()))
+        // Each trip round the loop is two render quanta late, like the
+        // browser's (MIN_LOOP_DELAY: the delay node's own latency and the
+        // shimmer worklet's), so the nth echo is n times that late and the
+        // peak is looked for in a window.
+        let echo = |n: usize| {
+            let c = (sr * 0.25 * n as f64) as usize + n * 2 * MIN_LOOP_DELAY as usize;
+            (c - 200..c + 200).fold(0.0f32, |m, i| m.max(buf[i].abs()))
         };
-        assert!(peak_near(0.25) > 0.5, "no echo at 250 ms: {}", peak_near(0.25));
-        assert!(peak_near(0.5) > 0.2, "no second echo: {}", peak_near(0.5));
+        assert!(echo(1) > 0.5, "no echo at 250 ms: {}", echo(1));
+        assert!(echo(2) > 0.2, "no second echo: {}", echo(2));
     }
 }

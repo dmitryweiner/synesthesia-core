@@ -6,11 +6,11 @@
 //
 // Needs ../synesthesia (its dev server and its Playwright are reused).
 import { writeFileSync } from 'node:fs';
-import { ensureServer, launchBrowser, openApp } from '../../synesthesia/scripts/lib.mjs';
+import { startServer, launchBrowser, openApp } from '../../synesthesia/scripts/lib.mjs';
 
 const OUT = new URL('../assets/', import.meta.url);
 
-const server = await ensureServer(false);
+const server = await startServer(false);
 const browser = await launchBrowser();
 const page = await (await browser.newContext()).newPage();
 await openApp(page, `${server.BASE}/?preset=0&res=128`);

@@ -231,9 +231,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_twelve_presets_are_listed_in_order() {
+    fn the_built_in_presets_are_listed_in_order() {
         let list = presets();
-        assert_eq!(list.len(), 12);
+        assert_eq!(list.len(), syn_core::state::presets().len(), "as many as the core holds");
         for (i, p) in list.iter().enumerate() {
             assert_eq!(p.index as usize, i);
             assert!(!p.name.is_empty());
@@ -245,7 +245,7 @@ mod tests {
         let json = preset_state_json(0).expect("preset 0");
         let state: syn_core::AppState = serde_json::from_str(&json).expect("parses back");
         assert_eq!(state, syn_core::state::presets()[0].state);
-        assert!(preset_state_json(12).is_none());
+        assert!(preset_state_json(presets().len() as u32).is_none());
     }
 
     #[test]

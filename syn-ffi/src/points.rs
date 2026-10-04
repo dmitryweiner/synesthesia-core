@@ -205,6 +205,6 @@ mod tests {
         assert_eq!(point_from_link(site.into()), LinkPoint::Nothing);
         // A preset number out of range is the app's to notice, not the link's.
         assert_eq!(point_from_link(format!("{site}?preset=99")), LinkPoint::Preset { index: 99 });
-        assert_eq!(presets().len(), 12);
+        assert!(presets().len() < 99, "which is past the end of the built-in list");
     }
 }

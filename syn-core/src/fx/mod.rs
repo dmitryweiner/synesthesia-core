@@ -4,7 +4,8 @@
 //!
 //! ```text
 //! mix → [filter | formants | comb] → [chorus/flanger] → [phaser]
-//!     → [delay] → [reverb] → [limiter] → master
+//!     → [delay, its feedback through the shimmer] → [reverb] → [limiter]
+//!     → master
 //! ```
 
 pub mod biquad;
@@ -12,5 +13,6 @@ pub mod chain;
 pub mod delayline;
 pub mod limiter;
 pub mod reverb;
+pub mod shimmer;
 
 pub use chain::FxChain;

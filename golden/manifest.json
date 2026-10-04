@@ -1591,6 +1591,174 @@
      ]
     }
    }
+  },
+  {
+   "id": "tanpura",
+   "take": "a",
+   "file": "tanpura.a.f32",
+   "sr": 48000,
+   "n": 8192,
+   "params": {
+    "gain": 0.3,
+    "tanSa": 55,
+    "tanCycle": 5,
+    "tanJawari": 0.5,
+    "tanSustain": 16,
+    "tanBright": 0.45
+   },
+   "mod": null
+  },
+  {
+   "id": "tanpura",
+   "take": "b",
+   "file": "tanpura.b.f32",
+   "sr": 8000,
+   "n": 16000,
+   "params": {
+    "gain": 0.3,
+    "tanSa": 55,
+    "tanCycle": 5,
+    "tanJawari": 0.5,
+    "tanSustain": 16,
+    "tanBright": 0.45
+   },
+   "mod": null
+  },
+  {
+   "id": "tanpura",
+   "take": "c",
+   "file": "tanpura.c.f32",
+   "sr": 48000,
+   "n": 4096,
+   "params": {
+    "gain": 0.3,
+    "tanSa": 55,
+    "tanCycle": 5,
+    "tanJawari": 0.5,
+    "tanSustain": 16,
+    "tanBright": 0.45
+   },
+   "mod": {
+    "lfos": [
+     {
+      "shape": "triangle",
+      "rate": 3,
+      "phase": 0.25
+     }
+    ],
+    "routes": [
+     {
+      "src": 0,
+      "target": "tanpura",
+      "param": "tanSa",
+      "depth": 0.6,
+      "exp": true
+     }
+    ],
+    "ranges": {
+     "gain": [
+      0,
+      1
+     ],
+     "tanSa": [
+      30,
+      220
+     ],
+     "tanCycle": [
+      2,
+      40
+     ],
+     "tanJawari": [
+      0,
+      1
+     ],
+     "tanSustain": [
+      2,
+      30
+     ],
+     "tanBright": [
+      0,
+      1
+     ]
+    }
+   }
+  },
+  {
+   "id": "bowl",
+   "take": "a",
+   "file": "bowl.a.f32",
+   "sr": 48000,
+   "n": 8192,
+   "params": {
+    "gain": 0.25,
+    "bowlF": 130,
+    "bowlBeat": 0.4,
+    "bowlBright": 0.4
+   },
+   "mod": null
+  },
+  {
+   "id": "bowl",
+   "take": "b",
+   "file": "bowl.b.f32",
+   "sr": 8000,
+   "n": 16000,
+   "params": {
+    "gain": 0.25,
+    "bowlF": 130,
+    "bowlBeat": 0.4,
+    "bowlBright": 0.4
+   },
+   "mod": null
+  },
+  {
+   "id": "bowl",
+   "take": "c",
+   "file": "bowl.c.f32",
+   "sr": 48000,
+   "n": 4096,
+   "params": {
+    "gain": 0.25,
+    "bowlF": 130,
+    "bowlBeat": 0.4,
+    "bowlBright": 0.4
+   },
+   "mod": {
+    "lfos": [
+     {
+      "shape": "triangle",
+      "rate": 3,
+      "phase": 0.25
+     }
+    ],
+    "routes": [
+     {
+      "src": 0,
+      "target": "bowl",
+      "param": "bowlF",
+      "depth": 0.6,
+      "exp": true
+     }
+    ],
+    "ranges": {
+     "gain": [
+      0,
+      1
+     ],
+     "bowlF": [
+      40,
+      800
+     ],
+     "bowlBeat": [
+      0.05,
+      3
+     ],
+     "bowlBright": [
+      0,
+      1
+     ]
+    }
+   }
   }
  ]
 }

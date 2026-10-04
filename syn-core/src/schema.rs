@@ -246,8 +246,8 @@ mod tests {
     #[test]
     fn the_dump_carries_every_formula() {
         let s = schema();
-        assert_eq!(s.formula_ids.len(), 21);
-        assert_eq!(s.formulas.len(), 21);
+        assert_eq!(s.formula_ids.len(), 23);
+        assert_eq!(s.formulas.len(), 23);
         for id in &s.formula_ids {
             let def = formula_def(id).unwrap_or_else(|| panic!("no def for {id}"));
             assert!(def.sliders.iter().any(|s| s.k == "gain"), "{id} has no gain");

@@ -30,7 +30,10 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
 - **Never change the `AppState` shape or the gene order** — point files, the
   web app and every native app depend on both.
 - **Never hand-edit `assets/` or `golden/`** — re-dump them from the web app
-  (`scripts/dump-*.mjs`, needs `../synesthesia`).
+  (`scripts/dump-*.mjs`, needs `../synesthesia` with its `npm install` done).
+  A re-dump is also not enough on its own: if the web app has grown a
+  generator, an LFO shape or an FX parameter, the model needs it **first**, or
+  the new presets load and play with their instrument silently missing.
 - **Golden failures are real**: a generator stopped being bit-exact with the
   TypeScript. Never loosen the tolerance.
 - **Never write an oscillator as `sin(2π·f·t)` with absolute `t`** —
@@ -50,11 +53,13 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
 ## Module map
 
 ```
-syn-core/src/dsp/         21 generators (bit-exact with the TS), gate, mulberry32
-syn-core/src/modmatrix.rs LFOs as pure functions of time; routes onto fx,
-                          formulas and visual cards
-syn-core/src/fx/          the DSP chain (biquads, comb, chorus, phaser, delay,
-                          FDN reverb, limiter)
+syn-core/src/dsp/         23 generators (bit-exact with the TS), gate, mulberry32,
+                          tanpura (four KS strings and the jawari buzz)
+syn-core/src/modmatrix.rs LFOs as pure functions of time (sine … S&H, and pink:
+                          1/f value noise); routes onto fx, formulas and cards
+syn-core/src/fx/          the DSP chain (biquads, comb, chorus, phaser, delay
+                          with the octave-up shimmer in its loop, FDN reverb,
+                          limiter)
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout

@@ -44,6 +44,11 @@ pub struct FxState {
     pub delay_time: f64,
     pub delay_fb: f64,
     pub delay_mix: f64,
+    /// How much of the delay's feedback comes back an octave up. Defaults to
+    /// zero — the plain echo — so a point written before shimmer existed
+    /// sounds as it did, and an older point file that has no such key loads.
+    #[serde(default)]
+    pub delay_shimmer: f64,
     pub phaser_on: bool,
     pub phaser_rate: f64,
     pub phaser_depth: f64,
@@ -83,6 +88,7 @@ impl FxState {
             "delayTime" => self.delay_time,
             "delayFb" => self.delay_fb,
             "delayMix" => self.delay_mix,
+            "delayShimmer" => self.delay_shimmer,
             "phaserRate" => self.phaser_rate,
             "phaserDepth" => self.phaser_depth,
             "phaserFb" => self.phaser_fb,
@@ -110,6 +116,7 @@ impl FxState {
             "delayTime" => self.delay_time = v,
             "delayFb" => self.delay_fb = v,
             "delayMix" => self.delay_mix = v,
+            "delayShimmer" => self.delay_shimmer = v,
             "phaserRate" => self.phaser_rate = v,
             "phaserDepth" => self.phaser_depth = v,
             "phaserFb" => self.phaser_fb = v,
@@ -243,9 +250,9 @@ mod tests {
     }
 
     #[test]
-    fn the_twelve_presets_parse_and_round_trip() {
+    fn every_preset_parses_and_round_trips() {
         let ps = presets();
-        assert_eq!(ps.len(), 12);
+        assert_eq!(ps.len(), 15, "the web app's built-in points, as dumped");
         for p in ps {
             assert!(!p.state.enabled_formulas().is_empty(), "{} has no sound", p.name);
             let json = serde_json::to_string(&p.state).unwrap();
@@ -258,7 +265,7 @@ mod tests {
     fn a_fresh_point_matches_the_web_defaults() {
         let s = AppState::new();
         assert_eq!(s.v, 1);
-        assert_eq!(s.audio.formulas.len(), 21);
+        assert_eq!(s.audio.formulas.len(), 23);
         assert_eq!(s.modulation.lfos.len(), 4);
         assert!(s.audio.fx.limiter_on);
         assert_eq!(s.audio.fx.filter_type, "lowpass");

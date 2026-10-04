@@ -924,7 +924,7 @@ mod tests {
         assert_eq!(v.steps, 0);
         assert!(!v.can_undo, "a load clears the history");
         assert!(!v.morphing);
-        assert!(s.load_preset(3.0, 12).is_none());
+        assert!(s.load_preset(3.0, presets().len()).is_none(), "past the end of the built-in list");
     }
 
     #[test]

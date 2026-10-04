@@ -1,7 +1,7 @@
 # Synesthesia — core
 
 The portable model of [Synesthesia](https://github.com/dmitryweiner/synesthesia):
-one point in a ~500-gene space makes sound (21 formula generators, an FX
+one point in a ~500-gene space makes sound (23 formula generators, an FX
 chain, 4 shared LFOs) and a picture (Gray–Scott reaction-diffusion driven by
 the sound), and 👍/👎 steer the search through it.
 
@@ -48,10 +48,10 @@ rustup update stable    # CI uses the latest stable; an older clippy misses its 
 ./scripts/check.sh      # fmt --check, clippy -D warnings, every test
 ```
 
-- **The 21 generators are diffed sample by sample** against the 63 golden
-  takes; all match within 1e-6.
+- **The 23 generators are diffed sample by sample** against the 69 golden
+  takes; they match exactly (worst difference 0 as of 2026-10-04).
 - **The genome is the web app's genome**: every preset encodes to the same
-  237 genes to 1.1e-16.
+  250 genes to 1.1e-16.
 - **The picture** has no reference samples (the browser seeds it with
   `Math.random()`); its invariants are the contract.
 

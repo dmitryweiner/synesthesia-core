@@ -21,6 +21,16 @@ use crate::modmatrix::{effective_param, lfo_value, LfoDef, ModRoute, ParamRanges
 
 use super::rng::Rng;
 
+/// A singing bowl, the rubbed kind that hums: its modes are inharmonic
+/// (≈ 1 : 2.71 : 5.12 : 8.21 in Tibetan bowls) and each comes as a PAIR split
+/// by a fraction of a hertz, because a bowl is never perfectly round. Every
+/// partial therefore beats slowly — higher modes faster, ∝ √ratio — which is
+/// the bowl's breathing wah. The second tone of each pair is quieter, so a
+/// partial swells and ebbs but never falls silent.
+const BOWL_RATIO: [f64; 4] = [1.0, 2.71, 5.12, 8.21];
+const BOWL_AMP: [f64; 4] = [1.0, 0.6, 0.35, 0.2];
+const BOWL_PAIR: f64 = 0.7;
+
 const TWO_PI: f64 = std::f64::consts::TAU;
 /// Restart a glissando after 4 octaves.
 const GLISS_SPAN: f64 = 2.772_588_722_239_781; // ln(16)
@@ -30,7 +40,7 @@ pub type Params = BTreeMap<String, f64>;
 
 macro_rules! formula_ids {
     ($($variant:ident => $name:literal),+ $(,)?) => {
-        /// The 21 formulas, in the order the genome stores them.
+        /// The formulas, in the order the genome stores them.
         #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
         pub enum FormulaId { $($variant),+ }
 
@@ -55,6 +65,7 @@ formula_ids! {
     Pinknoise => "pinknoise", Brownnoise => "brownnoise", Velvetnoise => "velvetnoise",
     Rossler => "rossler", Shepard => "shepard", Bytebeat => "bytebeat",
     Bell => "bell", Ocean => "ocean", Risset => "risset", Rain => "rain",
+    Tanpura => "tanpura", Bowl => "bowl",
 }
 
 impl std::fmt::Display for FormulaId {
@@ -146,6 +157,10 @@ pub struct FormulaGenerator {
     ph4: f64,
     gliss_log: f64,
     riss_phases: [f64; 11],
+    /// Per bowl mode: the tone's phase and its beating twin's.
+    bowl_phases: [f64; 8],
+    /// Only for `tanpura`, as in the browser; it draws on `rng` below.
+    tanpura: Option<super::tanpura::Tanpura>,
 
     shepard_phases: [f32; 10],
     shepard_t: f64,
@@ -208,6 +223,8 @@ impl FormulaGenerator {
             ph4: 0.0,
             gliss_log: 0.0,
             riss_phases: [0.0; 11],
+            bowl_phases: [0.0; 8],
+            tanpura: (formula == FormulaId::Tanpura).then(|| super::tanpura::Tanpura::new(sample_rate)),
             shepard_phases: [0.0; 10],
             shepard_t: 0.0,
             bb_t: 0.0,
@@ -269,6 +286,10 @@ impl FormulaGenerator {
         self.ph4 = 0.0;
         self.gliss_log = 0.0;
         self.riss_phases = [0.0; 11];
+        self.bowl_phases = [0.0; 8];
+        if let Some(t) = &mut self.tanpura {
+            t.reset();
+        }
         self.logi = 0.33;
         self.lx = 0.1;
         self.ly = 0.0;
@@ -668,6 +689,47 @@ impl FormulaGenerator {
                     self.rain_lp += bed_a * (white - self.rain_lp);
 
                     *s = ((drop * 0.9 + self.rain_lp * bed * 0.6) * gain) as f32;
+                }
+            }
+            FormulaId::Tanpura => {
+                let sa = self.get("tanSa");
+                let cycle = self.get("tanCycle");
+                let jawari = self.get("tanJawari");
+                let sustain = self.get("tanSustain");
+                let bright = self.get("tanBright");
+                // Built for this formula in `new`; `expect` cannot fire.
+                let mut drone = self.tanpura.take().expect("a tanpura generator has its tanpura");
+                for s in out.iter_mut() {
+                    *s = (drone.next(self.rng.as_mut(), sa, cycle, jawari, sustain, bright) * gain) as f32;
+                }
+                self.tanpura = Some(drone);
+            }
+            FormulaId::Bowl => {
+                let f = self.get("bowlF").max(20.0);
+                let beat = self.get("bowlBeat").max(0.0);
+                let upper = 0.25 + 1.5 * self.get("bowlBright").clamp(0.0, 1.0);
+                // ∝ √ratio: the higher a mode, the faster its pair beats.
+                let split = BOWL_RATIO.map(f64::sqrt);
+                for s in out.iter_mut() {
+                    let mut sum = 0.0;
+                    let mut norm = 0.0;
+                    for k in 0..BOWL_RATIO.len() {
+                        let a = if k == 0 { 1.0 } else { BOWL_AMP[k] * upper };
+                        sum += a
+                            * (self.bowl_phases[2 * k].sin() + BOWL_PAIR * self.bowl_phases[2 * k + 1].sin());
+                        norm += a * (1.0 + BOWL_PAIR);
+                        let fk = f * BOWL_RATIO[k];
+                        self.bowl_phases[2 * k] += w * fk;
+                        self.bowl_phases[2 * k + 1] += w * (fk + beat * split[k]);
+                        if self.bowl_phases[2 * k] > TWO_PI {
+                            self.bowl_phases[2 * k] -= TWO_PI;
+                        }
+                        if self.bowl_phases[2 * k + 1] > TWO_PI {
+                            self.bowl_phases[2 * k + 1] -= TWO_PI;
+                        }
+                    }
+                    // |x| ≤ 1 at any brightness.
+                    *s = ((sum / norm) * gain) as f32;
                 }
             }
         }

@@ -20,7 +20,9 @@
   "bell",
   "ocean",
   "risset",
-  "rain"
+  "rain",
+  "tanpura",
+  "bowl"
  ],
  "defaultParams": {
   "gain": 0.2,
@@ -82,7 +84,15 @@
   "rissPeriod": 6,
   "rainDensity": 4,
   "rainPitch": 900,
-  "rainBed": 0.15
+  "rainBed": 0.15,
+  "tanSa": 55,
+  "tanCycle": 5,
+  "tanJawari": 0.5,
+  "tanSustain": 16,
+  "tanBright": 0.45,
+  "bowlF": 130,
+  "bowlBeat": 0.4,
+  "bowlBright": 0.4
  },
  "formulas": [
   {
@@ -919,6 +929,107 @@
      "exp": true
     }
    ]
+  },
+  {
+   "id": "tanpura",
+   "title": "Tanpura",
+   "tag": "Drone",
+   "desc": "four plucked strings Pa–Sa–Sa–Sa, jawari bridge buzz",
+   "sliders": [
+    {
+     "k": "gain",
+     "name": "Gain",
+     "min": 0,
+     "max": 1,
+     "step": 0.001,
+     "value": 0.3
+    },
+    {
+     "k": "tanSa",
+     "name": "Low Sa (Hz)",
+     "min": 30,
+     "max": 220,
+     "step": 0.1,
+     "value": 55,
+     "exp": true
+    },
+    {
+     "k": "tanCycle",
+     "name": "Cycle (s)",
+     "min": 2,
+     "max": 40,
+     "step": 0.1,
+     "value": 5,
+     "exp": true
+    },
+    {
+     "k": "tanJawari",
+     "name": "Jawari",
+     "min": 0,
+     "max": 1,
+     "step": 0.01,
+     "value": 0.5
+    },
+    {
+     "k": "tanSustain",
+     "name": "Sustain (s)",
+     "min": 2,
+     "max": 30,
+     "step": 0.1,
+     "value": 16,
+     "exp": true
+    },
+    {
+     "k": "tanBright",
+     "name": "Pluck brightness",
+     "min": 0,
+     "max": 1,
+     "step": 0.01,
+     "value": 0.45
+    }
+   ]
+  },
+  {
+   "id": "bowl",
+   "title": "Singing bowl",
+   "tag": "Drone",
+   "desc": "four inharmonic modes, each a slowly beating pair — a breathing hum",
+   "sliders": [
+    {
+     "k": "gain",
+     "name": "Gain",
+     "min": 0,
+     "max": 1,
+     "step": 0.001,
+     "value": 0.25
+    },
+    {
+     "k": "bowlF",
+     "name": "Pitch (Hz)",
+     "min": 40,
+     "max": 800,
+     "step": 0.1,
+     "value": 130,
+     "exp": true
+    },
+    {
+     "k": "bowlBeat",
+     "name": "Breathing (Hz)",
+     "min": 0.05,
+     "max": 3,
+     "step": 0.01,
+     "value": 0.4,
+     "exp": true
+    },
+    {
+     "k": "bowlBright",
+     "name": "Upper modes",
+     "min": 0,
+     "max": 1,
+     "step": 0.01,
+     "value": 0.4
+    }
+   ]
   }
  ],
  "maxEnabledFormulas": 5,
@@ -968,6 +1079,7 @@
   "delayTime": 0.35,
   "delayFb": 0.4,
   "delayMix": 0.3,
+  "delayShimmer": 0,
   "phaserOn": false,
   "phaserRate": 0.5,
   "phaserDepth": 0.7,
@@ -1064,7 +1176,8 @@
   "phaserMix",
   "reverbMix",
   "limiterThr",
-  "limiterRel"
+  "limiterRel",
+  "delayShimmer"
  ],
  "fxParamRanges": {
   "filterFreq": [
@@ -1142,6 +1255,10 @@
   "limiterRel": [
    0.02,
    1
+  ],
+  "delayShimmer": [
+   0,
+   1
   ]
  },
  "fxParamModule": {
@@ -1163,7 +1280,8 @@
   "phaserFb": "phaserOn",
   "phaserMix": "phaserOn",
   "limiterThr": "limiterOn",
-  "limiterRel": "limiterOn"
+  "limiterRel": "limiterOn",
+  "delayShimmer": "delayOn"
  },
  "fxExpParams": [
   "filterFreq",
@@ -2447,6 +2565,129 @@
    "activeIf": "a.velvetnoise.enabled"
   },
   {
+   "id": "a.tanpura.enabled",
+   "label": "Tanpura",
+   "kind": "bool",
+   "group": "a.tanpura",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "a.tanpura.gain",
+   "label": "Tanpura · Gain",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": 0,
+   "max": 1,
+   "step": 0.001,
+   "activeIf": "a.tanpura.enabled",
+   "neutral": 0
+  },
+  {
+   "id": "a.tanpura.tanSa",
+   "label": "Tanpura · Low Sa (Hz)",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": 30,
+   "max": 220,
+   "step": 0.1,
+   "exp": true,
+   "activeIf": "a.tanpura.enabled"
+  },
+  {
+   "id": "a.tanpura.tanCycle",
+   "label": "Tanpura · Cycle (s)",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": 2,
+   "max": 40,
+   "step": 0.1,
+   "exp": true,
+   "activeIf": "a.tanpura.enabled"
+  },
+  {
+   "id": "a.tanpura.tanJawari",
+   "label": "Tanpura · Jawari",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "activeIf": "a.tanpura.enabled"
+  },
+  {
+   "id": "a.tanpura.tanSustain",
+   "label": "Tanpura · Sustain (s)",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": 2,
+   "max": 30,
+   "step": 0.1,
+   "exp": true,
+   "activeIf": "a.tanpura.enabled"
+  },
+  {
+   "id": "a.tanpura.tanBright",
+   "label": "Tanpura · Pluck brightness",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "activeIf": "a.tanpura.enabled"
+  },
+  {
+   "id": "a.bowl.enabled",
+   "label": "Singing bowl",
+   "kind": "bool",
+   "group": "a.bowl",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "a.bowl.gain",
+   "label": "Singing bowl · Gain",
+   "kind": "cont",
+   "group": "a.bowl",
+   "min": 0,
+   "max": 1,
+   "step": 0.001,
+   "activeIf": "a.bowl.enabled",
+   "neutral": 0
+  },
+  {
+   "id": "a.bowl.bowlF",
+   "label": "Singing bowl · Pitch (Hz)",
+   "kind": "cont",
+   "group": "a.bowl",
+   "min": 40,
+   "max": 800,
+   "step": 0.1,
+   "exp": true,
+   "activeIf": "a.bowl.enabled"
+  },
+  {
+   "id": "a.bowl.bowlBeat",
+   "label": "Singing bowl · Breathing (Hz)",
+   "kind": "cont",
+   "group": "a.bowl",
+   "min": 0.05,
+   "max": 3,
+   "step": 0.01,
+   "exp": true,
+   "activeIf": "a.bowl.enabled"
+  },
+  {
+   "id": "a.bowl.bowlBright",
+   "label": "Singing bowl · Upper modes",
+   "kind": "cont",
+   "group": "a.bowl",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "activeIf": "a.bowl.enabled"
+  },
+  {
    "id": "fx.filterOn",
    "label": "Filter",
    "kind": "bool",
@@ -2687,6 +2928,17 @@
    "max": 1,
    "exp": false,
    "activeIf": "fx.limiterOn"
+  },
+  {
+   "id": "fx.delayShimmer",
+   "label": "Delay shimmer",
+   "kind": "cont",
+   "group": "fx",
+   "min": 0,
+   "max": 1,
+   "exp": false,
+   "activeIf": "fx.delayOn",
+   "neutral": 0
   },
   {
    "id": "fx.reverbDecay",
@@ -2982,7 +3234,7 @@
    "kind": "choice",
    "group": "lfo.0",
    "min": 0,
-   "max": 4
+   "max": 5
   },
   {
    "id": "lfo.0.rate",
@@ -3007,7 +3259,7 @@
    "kind": "choice",
    "group": "lfo.1",
    "min": 0,
-   "max": 4
+   "max": 5
   },
   {
    "id": "lfo.1.rate",
@@ -3032,7 +3284,7 @@
    "kind": "choice",
    "group": "lfo.2",
    "min": 0,
-   "max": 4
+   "max": 5
   },
   {
    "id": "lfo.2.rate",
@@ -3057,7 +3309,7 @@
    "kind": "choice",
    "group": "lfo.3",
    "min": 0,
-   "max": 4
+   "max": 5
   },
   {
    "id": "lfo.3.rate",
@@ -3099,7 +3351,7 @@
    "kind": "choice",
    "group": "route.0",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.0.on"
   },
   {
@@ -3144,7 +3396,7 @@
    "kind": "choice",
    "group": "route.1",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.1.on"
   },
   {
@@ -3189,7 +3441,7 @@
    "kind": "choice",
    "group": "route.2",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.2.on"
   },
   {
@@ -3234,7 +3486,7 @@
    "kind": "choice",
    "group": "route.3",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.3.on"
   },
   {
@@ -3279,7 +3531,7 @@
    "kind": "choice",
    "group": "route.4",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.4.on"
   },
   {
@@ -3324,7 +3576,7 @@
    "kind": "choice",
    "group": "route.5",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.5.on"
   },
   {
@@ -3369,7 +3621,7 @@
    "kind": "choice",
    "group": "route.6",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.6.on"
   },
   {
@@ -3414,7 +3666,7 @@
    "kind": "choice",
    "group": "route.7",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.7.on"
   },
   {
@@ -3459,7 +3711,7 @@
    "kind": "choice",
    "group": "route.8",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.8.on"
   },
   {
@@ -3504,7 +3756,7 @@
    "kind": "choice",
    "group": "route.9",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.9.on"
   },
   {
@@ -3549,7 +3801,7 @@
    "kind": "choice",
    "group": "route.10",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.10.on"
   },
   {
@@ -3594,7 +3846,7 @@
    "kind": "choice",
    "group": "route.11",
    "min": 0,
-   "max": 121,
+   "max": 132,
    "activeIf": "route.11.on"
   },
   {
@@ -4171,6 +4423,66 @@
    "label": "Velvet Noise · Density (imp/s)"
   },
   {
+   "target": "tanpura",
+   "param": "gain",
+   "exp": false,
+   "label": "Tanpura · Gain"
+  },
+  {
+   "target": "tanpura",
+   "param": "tanSa",
+   "exp": true,
+   "label": "Tanpura · Low Sa (Hz)"
+  },
+  {
+   "target": "tanpura",
+   "param": "tanCycle",
+   "exp": true,
+   "label": "Tanpura · Cycle (s)"
+  },
+  {
+   "target": "tanpura",
+   "param": "tanJawari",
+   "exp": false,
+   "label": "Tanpura · Jawari"
+  },
+  {
+   "target": "tanpura",
+   "param": "tanSustain",
+   "exp": true,
+   "label": "Tanpura · Sustain (s)"
+  },
+  {
+   "target": "tanpura",
+   "param": "tanBright",
+   "exp": false,
+   "label": "Tanpura · Pluck brightness"
+  },
+  {
+   "target": "bowl",
+   "param": "gain",
+   "exp": false,
+   "label": "Singing bowl · Gain"
+  },
+  {
+   "target": "bowl",
+   "param": "bowlF",
+   "exp": true,
+   "label": "Singing bowl · Pitch (Hz)"
+  },
+  {
+   "target": "bowl",
+   "param": "bowlBeat",
+   "exp": true,
+   "label": "Singing bowl · Breathing (Hz)"
+  },
+  {
+   "target": "bowl",
+   "param": "bowlBright",
+   "exp": false,
+   "label": "Singing bowl · Upper modes"
+  },
+  {
    "target": "fx",
    "param": "filterFreq",
    "exp": true,
@@ -4283,6 +4595,12 @@
    "param": "limiterRel",
    "exp": false,
    "label": "Limiter release"
+  },
+  {
+   "target": "fx",
+   "param": "delayShimmer",
+   "exp": false,
+   "label": "Delay shimmer"
   },
   {
    "target": "reaction",
@@ -4429,7 +4747,8 @@
   "triangle",
   "saw",
   "square",
-  "random"
+  "random",
+  "pink"
  ],
  "lfoRateRange": [
   0.003,
@@ -4531,6 +4850,7 @@
     "delayTime": 0.35,
     "delayFb": 0.4,
     "delayMix": 0.3,
+    "delayShimmer": 0,
     "phaserOn": false,
     "phaserRate": 0.5,
     "phaserDepth": 0.7,
@@ -4722,6 +5042,26 @@
      "params": {
       "gain": 0.1,
       "velvetDensity": 2000
+     }
+    },
+    "tanpura": {
+     "enabled": false,
+     "params": {
+      "gain": 0.3,
+      "tanSa": 55,
+      "tanCycle": 5,
+      "tanJawari": 0.5,
+      "tanSustain": 16,
+      "tanBright": 0.45
+     }
+    },
+    "bowl": {
+     "enabled": false,
+     "params": {
+      "gain": 0.25,
+      "bowlF": 130,
+      "bowlBeat": 0.4,
+      "bowlBright": 0.4
      }
     }
    }
