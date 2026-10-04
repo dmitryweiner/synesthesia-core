@@ -8,7 +8,33 @@
 use super::fields::taps;
 use crate::dsp::rng::{Mulberry32, Rng};
 
-const MAX_SPOTS: usize = 24;
+/// The most seed spots a fresh start has. It is also the length of
+/// `seed.frag`'s `uSpots` array, so a GPU renderer can upload what
+/// [`Seed::roll`] produces unchanged.
+pub const MAX_SPOTS: usize = 24;
+
+/// A fresh random start, as data rather than as pixels: the spots that
+/// `seed.frag` draws on a GPU and [`Field::seed`] draws here. Both paths can
+/// then begin from the same one, which is what makes them comparable
+/// (synesthesia-android PLAN.md, decision 4).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Seed {
+    /// Spot centres, UV 0..1.
+    pub spots: Vec<(f32, f32)>,
+    /// Spot radius, in height units.
+    pub radius: f32,
+}
+
+impl Seed {
+    /// 19–24 spots of radius 0.02–0.05 (`SimEngine.reseed`).
+    pub fn roll(rng: &mut Mulberry32) -> Self {
+        let count = MAX_SPOTS - (rng.next() * 6.0).floor() as usize;
+        Seed {
+            spots: (0..count).map(|_| (rng.next() as f32, rng.next() as f32)).collect(),
+            radius: (0.02 + rng.next() * 0.03) as f32,
+        }
+    }
+}
 
 /// GLSL `smoothstep`, including the reversed-edges form the shaders use to
 /// draw a disc that is 1 inside and fades out.
@@ -57,19 +83,18 @@ impl Field {
         self.w as f32 / self.h as f32
     }
 
-    /// A fresh random start (`SimEngine.reseed`): 19–24 spots of radius
-    /// 0.02–0.05 in height units, each a disc of `v` in a dip of `u`.
-    pub fn seed(&mut self, rng: &mut Mulberry32) {
-        let count = MAX_SPOTS - (rng.next() * 6.0).floor() as usize;
-        let spots: Vec<(f32, f32)> = (0..count).map(|_| (rng.next() as f32, rng.next() as f32)).collect();
-        let radius = (0.02 + rng.next() * 0.03) as f32;
+    /// Draws a [`Seed`]: each spot a disc of `v` in a dip of `u`, exactly as
+    /// `seed.frag` draws it.
+    pub fn seed(&mut self, seed: &Seed) {
+        let Seed { spots, radius } = seed;
+        let radius = *radius;
         let aspect = self.aspect();
         for y in 0..self.h {
             let vy = (y as f32 + 0.5) / self.h as f32;
             for x in 0..self.w {
                 let vx = (x as f32 + 0.5) / self.w as f32;
                 let (mut u, mut v) = (1.0f32, 0.0f32);
-                for &(sx, sy) in &spots {
+                for &(sx, sy) in spots {
                     let d = ((vx - sx) * aspect).hypot(vy - sy);
                     let blob = smoothstep(radius, radius * 0.2, d);
                     v = v.max(blob * 0.5);
@@ -278,7 +303,7 @@ mod tests {
     fn the_interior_kernel_agrees_with_the_clamped_one() {
         let mut rng = Mulberry32::new(7);
         let mut a = Field::blank(40, 30);
-        a.seed(&mut rng);
+        a.seed(&Seed::roll(&mut rng));
         let mut b = a.clone();
         let zero = zeros(&a);
         a.react(&default_rates(&zero), 0.2097, 0.105);
@@ -297,8 +322,8 @@ mod tests {
     #[test]
     fn seeding_places_spots_and_is_reproducible() {
         let (mut a, mut b) = (Field::blank(64, 40), Field::blank(64, 40));
-        a.seed(&mut Mulberry32::new(3));
-        b.seed(&mut Mulberry32::new(3));
+        a.seed(&Seed::roll(&mut Mulberry32::new(3)));
+        b.seed(&Seed::roll(&mut Mulberry32::new(3)));
         assert_eq!(a.v, b.v);
         let lit = a.v.iter().filter(|&&v| v > 0.25).count();
         assert!(lit > 20, "only {lit} cells seeded");
@@ -308,7 +333,7 @@ mod tests {
     #[test]
     fn resampling_keeps_the_pattern() {
         let mut a = Field::blank(40, 20);
-        a.seed(&mut Mulberry32::new(8));
+        a.seed(&Seed::roll(&mut Mulberry32::new(8)));
         let same = a.resampled(40, 20);
         assert!(a.v.iter().zip(&same.v).all(|(x, y)| (x - y).abs() < 1e-6), "identity");
         let big = a.resampled(80, 40);

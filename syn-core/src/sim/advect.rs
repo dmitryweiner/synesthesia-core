@@ -66,11 +66,12 @@ pub fn advect(
 mod tests {
     use super::*;
     use crate::dsp::rng::Mulberry32;
+    use crate::sim::field::Seed;
 
     #[test]
     fn a_whole_cell_of_drift_moves_the_field_by_one_cell() {
         let mut f = Field::blank(40, 20);
-        f.seed(&mut Mulberry32::new(5));
+        f.seed(&Seed::roll(&mut Mulberry32::new(5)));
         let before = f.clone();
         let mut tex = Texture2::new(20, 10);
         tex.a.fill(1.0 / 40.0); // one column per step, to the right
@@ -88,7 +89,7 @@ mod tests {
     #[test]
     fn no_velocity_is_an_exact_copy() {
         let mut f = Field::blank(30, 20);
-        f.seed(&mut Mulberry32::new(2));
+        f.seed(&Seed::roll(&mut Mulberry32::new(2)));
         let before = f.clone();
         let vel = (vec![0.0; 600], vec![0.0; 600]);
         advect(&mut f, &vel, 1.0, &mut Default::default());

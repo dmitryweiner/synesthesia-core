@@ -10,25 +10,29 @@
 pub mod advect;
 pub mod coupling;
 pub mod display;
+pub mod driver;
 pub mod field;
 pub mod fields;
 pub mod frame;
 pub mod noise;
 pub mod palette;
 pub mod picture;
+pub mod quality;
 
 use std::collections::BTreeMap;
 
-use crate::dsp::rng::{Mulberry32, Rng};
+use crate::dsp::rng::Mulberry32;
 use crate::state::{CardState, Params};
 
 pub use coupling::{DisplayFx, Ripple, RippleSet};
 pub use display::Image;
-pub use field::{Field, Rates};
+pub use driver::{Driver, Frame, Inject};
+pub use field::{Field, Rates, Seed, MAX_SPOTS};
 use fields::{half_size, ParamField, Velocity};
 pub use frame::{frame_params, FrameParams};
 pub use palette::Palette;
 pub use picture::Picture;
+pub use quality::{QualityProbe, QualityRung, QUALITY_LADDER};
 
 /// Nominal frame time `evolve_t` advances by per step; it is an aesthetic
 /// drift, not a clock (`EVOLVE_DT` in `engine.ts`).
@@ -279,25 +283,19 @@ impl Sim {
 
     /// A fresh start: new spots, the pattern wiped.
     pub fn reseed(&mut self) {
-        self.field.seed(&mut self.rng);
+        let seed = Seed::roll(&mut self.rng);
+        self.reseed_with(&seed);
+    }
+
+    /// A fresh start from a [`Seed`] someone else rolled — the GPU path's
+    /// renderer draws the same one into its texture.
+    pub fn reseed_with(&mut self, seed: &Seed) {
+        self.field.seed(seed);
     }
 
     /// Fresh growth in a disc (UV, radius in height units, amount 0..1).
     pub fn inject(&mut self, x: f32, y: f32, radius: f32, amount: f32) {
         self.field.inject(x, y, radius, amount);
-    }
-
-    /// An onset hit with the `onsetToSeed` coupling at `amount`: new growth at
-    /// a random spot away from the edges (`seedOnHit`). Returns where, for the
-    /// ripple, or `None` when the coupling is too weak to act.
-    pub fn seed_on_hit(&mut self, amount: f64) -> Option<(f32, f32)> {
-        if amount < 0.02 {
-            return None;
-        }
-        let x = (0.08 + self.rng.next() * 0.84) as f32;
-        let y = (0.08 + self.rng.next() * 0.84) as f32;
-        self.inject(x, y, (0.015 + 0.035 * amount) as f32, (0.4 + amount).min(1.0) as f32);
-        Some((x, y))
     }
 
     /// One web animation frame.

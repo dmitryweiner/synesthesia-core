@@ -4,33 +4,26 @@
 //! hits become growth and ripples, the point becomes this frame's params —
 //! and it is what both the live field thread and `render --picture` run.
 
-use super::coupling::RippleSet;
 use super::display::{render, Image};
-use super::frame::{frame_params, FrameParams};
+use super::driver::Driver;
+use super::frame::FrameParams;
 use super::{grid_for_pixels, Sim};
-use crate::sim::coupling::MAX_RIPPLES;
 use crate::visualizer::{Visualizer, VizInput};
 
 pub struct Picture {
     sim: Sim,
-    ripples: RippleSet,
+    /// What each frame does — the same decisions a GPU renderer makes
+    /// ([`Driver`]).
+    driver: Driver,
     image: Image,
     frame: Option<FrameParams>,
-    /// The engine's hit counter as last seen; `None` until the first step.
-    hits: Option<u64>,
 }
 
 impl Picture {
     /// A picture of `w`×`h` pixels on the grid [`grid_for_pixels`] picks.
     pub fn new(w: usize, h: usize, seed: u32) -> Self {
         let (gw, gh) = grid_for_pixels(w, h);
-        Self {
-            sim: Sim::new(gw, gh, seed),
-            ripples: RippleSet::default(),
-            image: Image::new(w, h),
-            frame: None,
-            hits: None,
-        }
+        Self { sim: Sim::new(gw, gh, seed), driver: Driver::new(seed), image: Image::new(w, h), frame: None }
     }
 
     pub fn sim(&self) -> &Sim {
@@ -47,10 +40,11 @@ impl Picture {
         self.image = Image::new(w, h);
     }
 
-    /// The picture as of the last step, with the ripples alive at `t`.
+    /// The picture as of the last step, with the ripples alive at `t` — the
+    /// redraw clock, which runs faster than the simulation's.
     pub fn draw(&mut self, t: f64) -> &Image {
         if let Some(f) = self.frame {
-            let ripples = self.ripples.active(t);
+            let ripples = self.driver.ripples_at(t);
             render(self.sim.field(), &f.palette, &f.fx, &ripples, &mut self.image);
         }
         &self.image
@@ -58,25 +52,21 @@ impl Picture {
 }
 
 impl Visualizer for Picture {
-    /// New hits since the last step (at most as many as there are ripples)
-    /// seed growth, then the field advances under the point's params as the
-    /// LFOs and the sound have them.
+    /// What the driver asks for — onset hits as fresh growth, a finger's
+    /// stamps — goes into the field, and then the field advances under the
+    /// point's params as the LFOs and the sound have them.
     fn step(&mut self, input: &VizInput) {
-        let new_hits = self.hits.map_or(0, |seen| input.hits.saturating_sub(seen)).min(MAX_RIPPLES as u64);
-        self.hits = Some(input.hits);
-        let amount = input.state.coupling.get("onsetToSeed").copied().unwrap_or(0.0);
-        for _ in 0..new_hits {
-            if let Some((x, y)) = self.sim.seed_on_hit(amount) {
-                self.ripples.add(x, y, amount as f32, input.time);
-            }
+        let frame = self.driver.frame(input, self.sim.field().aspect());
+        for i in &frame.injects {
+            self.sim.inject(i.x, i.y, i.radius, i.amount);
         }
-        let frame = frame_params(input.state, &input.features, input.time);
-        self.sim.step(&frame.sim);
-        self.frame = Some(frame);
+        self.sim.step(&frame.params.sim);
+        self.frame = Some(frame.params);
     }
 
     fn reseed(&mut self) {
-        self.sim.reseed();
+        let seed = self.driver.reseed();
+        self.sim.reseed_with(&seed);
     }
 }
 

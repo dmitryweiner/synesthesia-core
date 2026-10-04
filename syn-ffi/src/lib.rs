@@ -7,13 +7,14 @@
 //!   control logic); this crate converts types and nothing else.
 //! - The types it exposes are records and plain values a UI can hold, never
 //!   `syn-core`'s internals.
-//! - It grows by phase: presets, the schema, the live player and the session
-//!   ([`session`]) now; the picture as the Android plan reaches it.
+//! - It grows by phase: presets, the schema, the live player, the session
+//!   ([`session`]) and the picture ([`picture`]).
 //! - Points cross as the web app's `AppState` JSON; a malformed one is a
 //!   [`CoreError`], never a panic.
 
 use std::sync::{Arc, Mutex};
 
+pub mod picture;
 pub mod session;
 
 uniffi::setup_scaffolding!();

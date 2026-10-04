@@ -58,8 +58,11 @@ syn-core/src/fx/          the DSP chain (biquads, comb, chorus, phaser, delay,
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout
-syn-core/src/sim/         the CPU picture: field, noise, fields, advect,
-                          palette, coupling, display, frame, picture
+syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
+                          coupling, display, frame, picture (the CPU one);
+                          driver (what each frame does, for a renderer that
+                          owns its field — the GPU's and the CPU's alike),
+                          quality (the ladder and the boot probe)
 syn-core/src/state.rs     AppState v1 and the 12 presets
 syn-core/src/schema.rs    the dumped schema
 syn-core/src/share.rs     `#s=` tokens
@@ -70,5 +73,7 @@ syn-session/src/lib.rs    Session: the explorer and the 2 s morph, the scout's
                           scheduling and its pool, the name and step count,
                           the status line. Pure; host tests pin main.ts's feel
 syn-ffi/src/lib.rs        the UniFFI surface: presets, schema, SoundPlayer
-syn-ffi/src/session.rs    … and the session: effects, view, the scout job
+syn-ffi/src/session.rs    … the session: effects, view, the scout job
+syn-ffi/src/picture.rs    … and the picture: a frame's uniforms, the seed
+                          spots, the quality rung, the sizes
 ```
