@@ -19,7 +19,7 @@
 use crate::genome::codec::{decode_genome, encode_genome};
 use crate::genome::genes::{gene_from_value, gene_index_of, genes, is_gene_active, read_value, Genome};
 use crate::modmatrix::LfoShape;
-use crate::schema::{card_def, schema, GeneDef, GeneKind};
+use crate::schema::{card_def, formula_def, schema, GeneDef, GeneKind};
 use crate::state::AppState;
 
 /// Which tab a section sits on. The sound's parameters and the picture's are
@@ -35,6 +35,11 @@ pub struct Section {
     /// The gene group, or an FX module's on-key — what the controls share.
     pub id: String,
     pub title: String,
+    /// What this thing *is*, in the schema's own words: a formula's and a
+    /// card's one-line description ("Σ aₙ(t) sin(2π n f t)", "Lorenz ODE
+    /// mapped to freq/amp"). Empty where the schema has none — the FX
+    /// modules, the LFOs, the routes and the couplings name themselves.
+    pub description: String,
     pub tab: Tab,
     /// The switch that turns the whole section on, when it has one (a
     /// formula's `enabled`, a card's `on`, an FX module's, a route's).
@@ -98,6 +103,17 @@ fn fx_module(key: &str) -> Option<&'static str> {
     s.fx_on_keys.iter().find(|on| key.starts_with(on.strip_suffix("On").unwrap_or(on))).map(String::as_str)
 }
 
+/// "Additive · Σ aₙ(t) sin(2π n f t)" — the schema's own two words about a
+/// thing, joined as the web app shows them.
+fn describe(tag: &str, desc: &str) -> String {
+    match (tag.is_empty(), desc.is_empty()) {
+        (true, true) => String::new(),
+        (true, false) => desc.to_string(),
+        (false, true) => tag.to_string(),
+        (false, false) => format!("{tag} · {desc}"),
+    }
+}
+
 fn gene(id: &str) -> Option<&'static GeneDef> {
     schema().genes.iter().find(|g| g.id == id)
 }
@@ -131,6 +147,7 @@ pub fn sections() -> Vec<Section> {
             out.push(Section {
                 id: on_key.clone(),
                 title: toggle.label.clone(),
+                description: String::new(),
                 tab: Tab::Sound,
                 toggle: Some(toggle),
                 controls,
@@ -144,7 +161,8 @@ pub fn sections() -> Vec<Section> {
         let toggle =
             controls.iter().position(|g| g.id == format!("{group}.enabled")).map(|i| controls.remove(i));
         let title = toggle.map_or_else(|| id.clone(), |t| t.label.clone());
-        out.push(Section { id: group, title, tab: Tab::Sound, toggle, controls });
+        let description = formula_def(id).map_or_else(String::new, |f| describe(&f.tag, &f.desc));
+        out.push(Section { id: group, title, description, tab: Tab::Sound, toggle, controls });
     }
 
     for i in 0..s.lfo_count {
@@ -153,6 +171,7 @@ pub fn sections() -> Vec<Section> {
         out.push(Section {
             id: format!("lfo.{i}"),
             title: format!("LFO {}", i + 1),
+            description: String::new(),
             tab: Tab::Sound,
             toggle: None,
             controls: genes_in(&format!("lfo.{i}")),
@@ -164,14 +183,21 @@ pub fn sections() -> Vec<Section> {
         let mut controls = genes_in(&group);
         let toggle = controls.iter().position(|g| g.id == format!("{group}.on")).map(|i| controls.remove(i));
         let title = toggle.map_or_else(|| group.clone(), |t| t.label.clone());
-        out.push(Section { id: group, title, tab: Tab::Sound, toggle, controls });
+        out.push(Section { id: group, title, description: String::new(), tab: Tab::Sound, toggle, controls });
     }
 
     for card in &s.cards {
         let group = format!("v.{}", card.id);
         let mut controls = genes_in(&group);
         let toggle = controls.iter().position(|g| g.id == format!("{group}.on")).map(|i| controls.remove(i));
-        out.push(Section { id: group, title: card.title.clone(), tab: Tab::Picture, toggle, controls });
+        out.push(Section {
+            id: group,
+            title: card.title.clone(),
+            description: describe(&card.tag, &card.desc),
+            tab: Tab::Picture,
+            toggle,
+            controls,
+        });
     }
 
     let couplings = genes_in("coupling");
@@ -184,6 +210,7 @@ pub fn sections() -> Vec<Section> {
         out.push(Section {
             id: "coupling".into(),
             title,
+            description: String::new(),
             tab: Tab::Picture,
             toggle: None,
             controls: couplings,
@@ -315,6 +342,21 @@ mod tests {
         assert!(tanpura.controls.iter().any(|g| g.id == "a.tanpura.tanJawari"));
         let delay = page.iter().find(|s| s.id == "delayOn").expect("the delay");
         assert!(delay.controls.iter().any(|g| g.id == "fx.delayShimmer"), "the shimmer is editable");
+    }
+
+    #[test]
+    fn a_section_says_what_the_thing_is_where_the_schema_knows() {
+        let page = sections();
+        let described = |id: &str| page.iter().find(|s| s.id == id).map(|s| s.description.clone());
+        // A formula's and a card's own words, as the web app shows them.
+        let additive = described("a.additive").expect("the additive section");
+        assert!(additive.contains("Additive") && additive.contains("sin"), "{additive}");
+        assert!(described("a.tanpura").is_some_and(|d| !d.is_empty()), "the newest instrument too");
+        assert!(described("v.reaction").is_some_and(|d| !d.is_empty()));
+        // The rest name themselves; the schema has nothing to add.
+        assert_eq!(described("filterOn").as_deref(), Some(""));
+        assert_eq!(described("lfo.0").as_deref(), Some(""));
+        assert_eq!(described("coupling").as_deref(), Some(""));
     }
 
     #[test]

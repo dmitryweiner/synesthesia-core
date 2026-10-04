@@ -60,6 +60,9 @@ pub enum SettingsTab {
 pub struct Section {
     pub id: String,
     pub title: String,
+    /// What this thing is, in the schema's own words — a formula's or a
+    /// card's one-line description. Empty where the schema has none.
+    pub description: String,
     pub tab: SettingsTab,
     /// The switch that turns the whole section on, when it has one.
     pub toggle: Option<Control>,
@@ -93,6 +96,7 @@ pub fn settings_page() -> Vec<Section> {
         .map(|s| Section {
             id: s.id.clone(),
             title: s.title.clone(),
+            description: s.description.clone(),
             tab: match s.tab {
                 settings::Tab::Sound => SettingsTab::Sound,
                 settings::Tab::Picture => SettingsTab::Picture,
@@ -188,6 +192,7 @@ mod tests {
         assert!(delay.controls.iter().any(|c| c.id == "fx.delayShimmer"));
         let tanpura = page.iter().find(|s| s.id == "a.tanpura").expect("the tanpura");
         assert_eq!(tanpura.title, "Tanpura");
+        assert!(!tanpura.description.is_empty(), "and it says what it is");
         assert!(
             tanpura.controls.iter().any(|c| c.short_label == "Jawari"),
             "{:?}",
