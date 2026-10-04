@@ -5,8 +5,8 @@
 //! and it is what both the live field thread and `render --picture` run.
 
 use super::display::{render, Image};
-use super::driver::Driver;
-use super::frame::FrameParams;
+use super::driver::{Driver, Frame};
+use super::field::Seed;
 use super::{grid_for_pixels, Sim};
 use crate::visualizer::{Visualizer, VizInput};
 
@@ -16,7 +16,8 @@ pub struct Picture {
     /// ([`Driver`]).
     driver: Driver,
     image: Image,
-    frame: Option<FrameParams>,
+    /// What the last frame drawn was, so a redraw between steps has colours.
+    frame: Option<Frame>,
 }
 
 impl Picture {
@@ -28,6 +29,11 @@ impl Picture {
 
     pub fn sim(&self) -> &Sim {
         &self.sim
+    }
+
+    /// The picture as it was last drawn.
+    pub fn image(&self) -> &Image {
+        &self.image
     }
 
     /// A new size in pixels; the grid follows and the pattern is kept.
@@ -43,11 +49,38 @@ impl Picture {
     /// The picture as of the last step, with the ripples alive at `t` — the
     /// redraw clock, which runs faster than the simulation's.
     pub fn draw(&mut self, t: f64) -> &Image {
-        if let Some(f) = self.frame {
+        if let Some(f) = &self.frame {
+            let (palette, fx) = (f.params.palette, f.params.fx);
             let ripples = self.driver.ripples_at(t);
-            render(self.sim.field(), &f.palette, &f.fx, &ripples, &mut self.image);
+            render(self.sim.field(), &palette, &fx, &ripples, &mut self.image);
         }
         &self.image
+    }
+
+    /// Advances and draws from a frame someone else's [`Driver`] produced.
+    ///
+    /// This is the path an app takes when it already has a driver of its own
+    /// — a GPU renderer whose device turned out to have no float targets, and
+    /// the test that compares the two pictures on one seeded field
+    /// (synesthesia-android PLAN.md, decision 4). The ripples are the frame's
+    /// own, so the picture is of that exact moment.
+    pub fn render_frame(&mut self, frame: &Frame) -> &Image {
+        self.advance(frame);
+        render(self.sim.field(), &frame.params.palette, &frame.params.fx, &frame.ripples, &mut self.image);
+        &self.image
+    }
+
+    /// A fresh start from a seed someone else rolled, so that two renderers
+    /// can begin from the same spots.
+    pub fn seed_with(&mut self, seed: &Seed) {
+        self.sim.reseed_with(seed);
+    }
+
+    fn advance(&mut self, frame: &Frame) {
+        for i in &frame.injects {
+            self.sim.inject(i.x, i.y, i.radius, i.amount);
+        }
+        self.sim.step(&frame.params.sim, frame.evolve_t);
     }
 }
 
@@ -57,11 +90,8 @@ impl Visualizer for Picture {
     /// point's params as the LFOs and the sound have them.
     fn step(&mut self, input: &VizInput) {
         let frame = self.driver.frame(input, self.sim.field().aspect());
-        for i in &frame.injects {
-            self.sim.inject(i.x, i.y, i.radius, i.amount);
-        }
-        self.sim.step(&frame.params.sim);
-        self.frame = Some(frame.params);
+        self.advance(&frame);
+        self.frame = Some(frame);
     }
 
     fn reseed(&mut self) {

@@ -221,7 +221,6 @@ pub struct Sim {
     scratch: (Vec<f32>, Vec<f32>),
     /// The velocity per cell, in cells per step — rebuilt on each redraw.
     velocity_cells: (Vec<f32>, Vec<f32>),
-    evolve_t: f64,
     rng: Mulberry32,
     steps: u64,
     /// The step each field was last refreshed on.
@@ -242,7 +241,6 @@ impl Sim {
             offsets_from: 0,
             scratch: Default::default(),
             velocity_cells: Default::default(),
-            evolve_t: 0.0,
             rng: Mulberry32::new(seed),
             steps: 0,
             param_field_at: None,
@@ -298,15 +296,16 @@ impl Sim {
         self.field.inject(x, y, radius, amount);
     }
 
-    /// One web animation frame.
-    pub fn step(&mut self, p: &SimParams) {
+    /// One web animation frame. `evolve_t` is how far the noise fields have
+    /// drifted — [`Driver`](super::Driver) keeps it, because a clock is not
+    /// the model's business.
+    pub fn step(&mut self, p: &SimParams, evolve_t: f64) {
         self.steps += 1;
-        self.evolve_t += p.flow.evolve_rate * EVOLVE_DT;
         let aspect = self.field.aspect();
 
         let varied = p.field_variation.active();
         if varied && due(self.param_field_at, self.steps) {
-            self.param_field.update(&p.field_variation, self.evolve_t, aspect);
+            self.param_field.update(&p.field_variation, evolve_t, aspect);
             self.param_field_at = Some(self.steps);
         }
         if !varied {
@@ -331,7 +330,7 @@ impl Sim {
 
         if p.flow.advect_active() {
             if due(self.velocity_at, self.steps) {
-                if self.velocity.update(&p.flow, self.evolve_t, aspect) {
+                if self.velocity.update(&p.flow, evolve_t, aspect) {
                     advect::velocity_map(
                         &self.velocity.tex,
                         self.field.w,
@@ -393,8 +392,8 @@ mod tests {
         let p = SimParams::from_cards(&presets()[0].state.visual.cards);
         let (mut a, mut b) = (Sim::new(W, H, 9), Sim::new(W, H, 9));
         for _ in 0..20 {
-            a.step(&p);
-            b.step(&p);
+            a.step(&p, 0.0);
+            b.step(&p, 0.0);
         }
         assert_eq!(a.field().v(), b.field().v());
         assert_ne!(Sim::new(W, H, 10).field().v(), Sim::new(W, H, 9).field().v());
@@ -409,7 +408,7 @@ mod tests {
         p.flow.advect_amount = 0.0;
         let mut sim = Sim::new(W, H, 1);
         for _ in 0..5 {
-            sim.step(&p);
+            sim.step(&p, 0.0);
         }
         assert_eq!(sim.stats().param_field_draws, 0);
         assert_eq!(sim.stats().velocity_draws, 0);
@@ -418,7 +417,7 @@ mod tests {
         let mut still = Sim::new(W, H, 1);
         let q = SimParams { flow: Flow::ZERO, ..p };
         for _ in 0..5 {
-            still.step(&q);
+            still.step(&q, 0.0);
         }
         assert_eq!(sim.field().v(), still.field().v());
     }
@@ -430,13 +429,16 @@ mod tests {
         p.flow.evolve_rate = 0.0;
         let mut sim = Sim::new(W, H, 1);
         for _ in 0..4 {
-            sim.step(&p);
+            sim.step(&p, 0.0);
         }
         assert_eq!((sim.stats().param_field_draws, sim.stats().velocity_draws), (1, 1));
         // Evolving, they are redrawn — but only every FIELD_REFRESH_STEPS.
+        // The drift is the caller's to keep (`Driver` does it in the app).
         p.flow.evolve_rate = 0.01;
+        let mut evolve_t = 0.0;
         for _ in 0..FIELD_REFRESH_STEPS * 3 {
-            sim.step(&p);
+            evolve_t += p.flow.evolve_rate * EVOLVE_DT;
+            sim.step(&p, evolve_t);
         }
         assert_eq!((sim.stats().param_field_draws, sim.stats().velocity_draws), (4, 4));
     }
@@ -455,7 +457,7 @@ mod tests {
             p.flow.advect_amount = 1.0;
             let mut sim = Sim::new(W, H, 3);
             for _ in 0..50 {
-                sim.step(&p);
+                sim.step(&p, 0.0);
             }
             let f = sim.field();
             assert!(
@@ -475,7 +477,7 @@ mod tests {
                 let p = SimParams::from_cards(&preset.state.visual.cards);
                 let mut sim = Sim::new(W, H, 1);
                 for _ in 0..300 {
-                    sim.step(&p);
+                    sim.step(&p, 0.0);
                 }
                 let var = variance(sim.field().v());
                 (var < 1e-4).then(|| format!("{} (variance of v {var:.2e})", preset.name))

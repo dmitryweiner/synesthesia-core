@@ -12,8 +12,10 @@
 
 use std::sync::{Arc, Mutex};
 
-use syn_core::sim::driver::Driver;
+use syn_core::sim::driver::{Driver, Frame};
+use syn_core::sim::field::Seed;
 use syn_core::sim::quality::{self, ProbeOptions, QualityProbe, QualityRung, QUALITY_LADDER, TOP_RUNG};
+use syn_core::sim::Picture;
 use syn_core::sim::{Inject, Ripple};
 use syn_core::state::AppState;
 use syn_core::AudioFeatures;
@@ -211,6 +213,11 @@ struct Inner {
     /// The engine's hit counter as last heard, so a silent stretch does not
     /// read as a burst of hits when the sound comes back.
     hits: u64,
+    /// The last frame handed out, so the CPU picture can be drawn from the
+    /// very same one the GPU was.
+    last: Option<Frame>,
+    /// The CPU picture, once an app has asked for it.
+    cpu: Option<Picture>,
 }
 
 /// The picture's per-frame driver, and the quality rung this device holds.
@@ -240,6 +247,8 @@ impl PictureDriver {
                     QualityProbe::fixed(TOP_RUNG)
                 },
                 hits: 0,
+                last: None,
+                cpu: None,
             }),
         }))
     }
@@ -269,7 +278,7 @@ impl PictureDriver {
             .driver
             .frame(&syn_core::visualizer::VizInput { state: &point, features, hits, time }, aspect);
         inner.point = point;
-        PictureFrame {
+        let out = PictureFrame {
             time: frame.time,
             evolve_t: frame.evolve_t as f32,
             injects: frame.injects.iter().map(disc_of).collect(),
@@ -315,7 +324,67 @@ impl PictureDriver {
                 flash: frame.params.fx.flash,
                 tint: frame.params.fx.tint.to_vec(),
             },
+        };
+        inner.last = Some(frame);
+        out
+    }
+
+    /// Draws on the CPU from here on, at `width`×`height` pixels — the
+    /// fallback for a device that cannot render into a float texture, and the
+    /// reference the GPU path is compared against (synesthesia-android
+    /// PLAN.md, decision 4). The grid follows the pixels, as the terminal
+    /// picture's does.
+    pub fn use_cpu_picture(&self, seed: u32, width: u32, height: u32) {
+        let mut inner = self.locked();
+        match &mut inner.cpu {
+            Some(picture) => picture.resize(width as usize, height as usize),
+            None => inner.cpu = Some(Picture::new(width as usize, height as usize, seed)),
         }
+    }
+
+    /// A fresh start for the CPU picture, from the same spots
+    /// [`PictureDriver::reseed`] gave the renderer.
+    pub fn cpu_seed(&self, spots: SeedSpots) {
+        let seed = Seed {
+            spots: spots
+                .xy
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|p| (p[0], p[1]))
+                .take(spots.count as usize)
+                .collect(),
+            radius: spots.radius,
+        };
+        if let Some(picture) = &mut self.locked().cpu {
+            picture.seed_with(&seed);
+        }
+    }
+
+    /// The CPU picture of the last [`PictureDriver::frame`] — the same
+    /// injects, the same params, the same ripples — as RGBA bytes, row 0 at
+    /// the top. `None` until [`PictureDriver::use_cpu_picture`] has been
+    /// called and a frame has been asked for.
+    ///
+    /// It costs a whole simulation step on the CPU; an app draws either this
+    /// or the seven passes, never both. The test that compares them is the
+    /// exception.
+    pub fn cpu_frame(&self) -> Option<Vec<u8>> {
+        let inner = &mut *self.locked();
+        let frame = inner.last.as_ref()?;
+        let image = inner.cpu.as_mut()?.render_frame(frame);
+        let mut out = Vec::with_capacity(image.rgb.len() * 4);
+        for px in &image.rgb {
+            out.extend_from_slice(&[px[0], px[1], px[2], 255]);
+        }
+        Some(out)
+    }
+
+    /// The size of the CPU picture, if there is one.
+    pub fn cpu_size(&self) -> Option<SizeInt> {
+        let inner = self.locked();
+        let image = inner.cpu.as_ref()?.image();
+        Some(SizeInt { width: image.w as u32, height: image.h as u32 })
     }
 
     /// A finger lands on the picture (UV, Y-up as the surface is): it stamps
@@ -497,6 +566,57 @@ mod tests {
         assert!(fixed.probe_done());
         assert_eq!(fixed.rung().index, quality_ladder().len() as u32 - 1);
         assert!(!fixed.probe_frame(5000.0), "a driver that was told not to measure does not");
+    }
+
+    #[test]
+    fn the_cpu_picture_draws_the_frame_the_renderer_was_given() {
+        let d = driver();
+        assert!(d.cpu_frame().is_none(), "nothing to draw yet");
+        d.use_cpu_picture(5, 16, 8);
+        assert_eq!(d.cpu_size(), Some(SizeInt { width: 16, height: 8 }));
+        assert!(d.cpu_frame().is_none(), "and no frame has been asked for");
+
+        d.cpu_seed(d.reseed());
+        let mut last = Vec::new();
+        for i in 1..=10 {
+            d.frame(f64::from(i) / 30.0, None, 2.0);
+            last = d.cpu_frame().expect("a picture");
+        }
+        assert_eq!(last.len(), 16 * 8 * 4);
+        assert!(last.as_chunks::<4>().0.iter().all(|px| px[3] == 255), "opaque");
+        assert!(last.as_chunks::<4>().0.iter().any(|px| px[0] > 0 || px[1] > 0 || px[2] > 0), "not black");
+        // A resize keeps the pattern and the picture follows.
+        d.use_cpu_picture(5, 8, 4);
+        assert_eq!(d.cpu_size(), Some(SizeInt { width: 8, height: 4 }));
+        d.frame(1.0, None, 2.0);
+        assert_eq!(d.cpu_frame().expect("a picture").len(), 8 * 4 * 4);
+    }
+
+    #[test]
+    fn two_pictures_from_one_seed_and_one_frame_are_the_same_picture() {
+        // What the GPU-vs-CPU parity test does on a device, on the CPU twice:
+        // the same spots and the same frames must give the same picture, or
+        // the comparison the plan asks for would be meaningless.
+        let (a, b) = (driver(), driver());
+        a.use_cpu_picture(5, 24, 12);
+        b.use_cpu_picture(5, 24, 12);
+        let spots = a.reseed();
+        a.cpu_seed(spots.clone());
+        b.cpu_seed(spots);
+        let mut last = (Vec::new(), Vec::new());
+        for i in 1..=5 {
+            let t = f64::from(i) / 30.0;
+            a.frame(t, None, 2.0);
+            b.frame(t, None, 2.0);
+            last = (a.cpu_frame().unwrap(), b.cpu_frame().unwrap());
+        }
+        assert_eq!(last.0, last.1);
+        // And a different seed is a different picture, so the test can fail.
+        let c = driver();
+        c.use_cpu_picture(9, 24, 12);
+        c.cpu_seed(c.reseed());
+        c.frame(1.0 / 30.0, None, 2.0);
+        assert_ne!(c.cpu_frame().unwrap(), last.0);
     }
 
     #[test]
