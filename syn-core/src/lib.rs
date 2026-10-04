@@ -11,6 +11,7 @@ pub mod fx;
 pub mod genome;
 pub mod modmatrix;
 pub mod schema;
+pub mod settings;
 pub mod share;
 pub mod sim;
 pub mod state;

@@ -70,6 +70,9 @@ syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
                           quality (the ladder and the boot probe)
 syn-core/src/state.rs     AppState v1 and the 12 presets
 syn-core/src/schema.rs    the dumped schema
+syn-core/src/settings.rs  the Settings page, derived from it: sections, their
+                          titles, a choice's options, and the point being
+                          edited (Edit). No label is written by hand
 syn-core/src/share.rs     `#s=` tokens, and what a link opens (parse_launch)
 syn-player/src/lib.rs     Player: commands in, whole-block rendering, PCM out in
                           any chunk size, fades, frames stamped on the engine
