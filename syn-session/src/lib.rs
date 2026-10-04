@@ -511,7 +511,7 @@ impl Session {
     /// The point was kept under `name` (💾): it is the user's own named point
     /// from now on, so the title says that and not "the preset, five steps
     /// ago". The search is untouched — undo still walks back through it.
-    pub fn kept_as(&mut self, now: f64, name: &str) -> Vec<Effect> {
+    pub fn kept_as(&mut self, name: &str) -> Vec<Effect> {
         let mut fx = Vec::new();
         if name.is_empty() {
             return fx;
@@ -522,7 +522,6 @@ impl Session {
         let msg = format!("kept as “{name}”");
         self.say(&mut fx, msg);
         fx.push(Effect::SaveLastPoint(Box::new(self.point())));
-        let _ = now;
         fx
     }
 
@@ -1110,14 +1109,14 @@ mod tests {
         assert_eq!(s.view().name, format!("{preset} · 1 step"));
         assert_eq!(s.point().preset_name, None, "a stepped point is nobody's yet");
 
-        let fx = s.kept_as(2.0, "Dawn");
+        let fx = s.kept_as("Dawn");
         assert_eq!(s.view().name, "Dawn", "the title is the name it was kept under");
         assert_eq!(s.view().steps, 0, "and the steps start again from it");
         assert_eq!(s.point().preset_name.as_deref(), Some("Dawn"));
         assert!(said(&fx).expect("a status line").contains("Dawn"));
         assert_eq!(saved(&fx).and_then(|p| p.preset_name.clone()).as_deref(), Some("Dawn"));
         assert!(s.view().can_undo, "the search is untouched: ↩ still walks back");
-        assert!(s.kept_as(3.0, "").is_empty(), "a point is not kept under no name");
+        assert!(s.kept_as("").is_empty(), "a point is not kept under no name");
     }
 
     #[test]

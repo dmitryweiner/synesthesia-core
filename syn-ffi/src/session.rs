@@ -218,6 +218,14 @@ impl Session {
         self.convert(fx)
     }
 
+    /// 💾 The point was kept under this name: the title says so and the point
+    /// carries it from now on, while the search is untouched — ↩ still walks
+    /// back through the steps that led here.
+    pub fn kept_as(&self, name: String) -> Vec<SessionEffect> {
+        let fx = self.locked().kept_as(&name);
+        self.convert(fx)
+    }
+
     /// The user's volume — not a gene, so no press changes it.
     pub fn set_master_gain(&self, now: f64, gain: f64) -> Vec<SessionEffect> {
         let fx = self.locked().set_master_gain(now, gain);
@@ -390,6 +398,19 @@ mod tests {
         assert!(s.run_scout().iter().any(|e| matches!(e, SessionEffect::Status { .. })));
         assert_eq!(s.view().scouted_like, 1);
         assert!(s.run_scout().is_empty(), "no job is waiting now");
+    }
+
+    #[test]
+    fn a_kept_point_is_named_and_kept() {
+        let s = Session::on_preset(0, config()).expect("preset 0");
+        s.like(0.0);
+        s.tick(2.0);
+        let fx = s.kept_as("Dawn".into());
+        assert_eq!(effects(&fx), ["status", "save"]);
+        assert_eq!(s.view().name, "Dawn");
+        assert_eq!(s.view().steps, 0);
+        assert!(s.point_json().contains("\"presetName\":\"Dawn\""));
+        assert!(s.view().can_undo);
     }
 
     #[test]
