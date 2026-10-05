@@ -412,12 +412,21 @@ impl FormulaGenerator {
                 let n_harm = (self.get("N").floor() as i64).max(1);
                 let move_hz = self.get("move");
                 let norm = 1.0 / ((n_harm as f64) + 1.0).log2();
+                // sin(k·ph1) and sin(ph3 + k) for every k come from rotating
+                // two unit vectors: four transcendentals per sample instead
+                // of 2·N (PLAN-CORE.md C12; within 1e-5 of the TS's takes).
+                let (s_one, c_one) = 1.0f64.sin_cos();
                 for s in out.iter_mut() {
+                    let (s1, c1) = self.ph1.sin_cos();
+                    let (sm, cm) = self.ph3.sin_cos();
+                    let (mut zs, mut zc) = (s1, c1);
+                    let (mut ws, mut wc) = (sm * c_one + cm * s_one, cm * c_one - sm * s_one);
                     let mut sum = 0.0;
                     for k in 1..=n_harm {
-                        let kf = k as f64;
-                        let ak = (1.0 / kf) * (self.ph3 + kf).sin();
-                        sum += ak * (kf * self.ph1).sin();
+                        let ak = (1.0 / k as f64) * ws;
+                        sum += ak * zs;
+                        (zs, zc) = (zs * c1 + zc * s1, zc * c1 - zs * s1);
+                        (ws, wc) = (ws * c_one + wc * s_one, wc * c_one - ws * s_one);
                     }
                     *s = (sum * norm * gain) as f32;
                     self.ph1 += w * fund;
@@ -568,6 +577,13 @@ impl FormulaGenerator {
                 let center_log = 440.0_f64.log2();
                 let sigma = 1.5;
                 let norm = 1.0 / (octaves as f64).sqrt();
+                // Octave k sits at log2(base) + k + t: its frequency doubles
+                // and its Gaussian envelope is a recurrence (env·r, r·q), so
+                // one exp2 and two exp per sample replace an exp2, a log2 and
+                // an exp per octave (PLAN-CORE.md C12).
+                let log_base = base_f.log2();
+                let delta: f64 = 1.0 / sigma;
+                let q = (-delta * delta).exp();
                 for s in out.iter_mut() {
                     self.shepard_t += speed / sr;
                     if self.shepard_t > 1.0 {
@@ -576,19 +592,25 @@ impl FormulaGenerator {
                     if self.shepard_t < 0.0 {
                         self.shepard_t += 1.0;
                     }
+                    let x0 = (log_base + self.shepard_t - center_log) / sigma;
+                    let mut env = (-0.5 * x0 * x0).exp();
+                    let mut r = (-0.5 * (2.0 * x0 * delta + delta * delta)).exp();
+                    let mut freq = base_f * self.shepard_t.exp2();
                     let mut sum = 0.0;
                     for k in 0..octaves {
-                        let freq = base_f * (k as f64 + self.shepard_t).exp2();
+                        // frequencies only rise with k: the rest are above too
                         if freq > 18000.0 {
-                            continue;
+                            break;
                         }
-                        let env = (-0.5 * ((freq.log2() - center_log) / sigma).powi(2)).exp();
                         let mut ph = (f64::from(self.shepard_phases[k]) + TWO_PI * (freq / sr)) as f32;
                         if f64::from(ph) > TWO_PI {
                             ph = (f64::from(ph) - TWO_PI) as f32;
                         }
                         self.shepard_phases[k] = ph;
                         sum += env * f64::from(ph).sin();
+                        env *= r;
+                        r *= q;
+                        freq *= 2.0;
                     }
                     *s = (sum * norm * gain) as f32;
                 }
@@ -746,9 +768,13 @@ impl FormulaGenerator {
         self.mod_t += n as f64 / sr;
     }
 
+    /// Long before `sin` would take its slow path: wasm's libm (musl's)
+    /// reduces |x| > ~1.6e6 with a multi-precision routine, and an hour at a
+    /// few hundred Hz gets there — the web render grew 15 % over 20 minutes
+    /// with the old 1e9 (PLAN-CORE.md C12). The golden takes never reach it.
     #[inline]
     fn wrap_phase(&mut self) {
-        if self.phase > 1e9 {
+        if self.phase > 1e5 {
             self.phase %= TWO_PI;
         }
     }

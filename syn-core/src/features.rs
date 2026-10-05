@@ -109,7 +109,9 @@ impl Analyser {
         self.rms = (sum / FFT_SIZE as f64).sqrt();
         fft(&mut self.re, &mut self.im, false);
         for b in 0..FFT_SIZE / 2 {
-            let mag = self.re[b].hypot(self.im[b]) / FFT_SIZE as f64;
+            // not hypot(): libm's emulates an fma, which wasm lacks (C12)
+            let (r, i) = (self.re[b], self.im[b]);
+            let mag = (r * r + i * i).sqrt() / FFT_SIZE as f64;
             self.smooth[b] = SMOOTHING * self.smooth[b] + (1.0 - SMOOTHING) * mag;
             let db = if self.smooth[b] > 0.0 { 20.0 * self.smooth[b].log10() } else { f64::NEG_INFINITY };
             let scaled = 255.0 * (db - MIN_DB) / (MAX_DB - MIN_DB);

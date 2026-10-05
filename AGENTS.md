@@ -38,6 +38,13 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
   TypeScript. Never loosen the tolerance.
 - **Never write an oscillator as `sin(2π·f·t)` with absolute `t`** —
   accumulate phase.
+- **The web runs the render path as wasm, which has no fma and a slow
+  big-argument `sin`** (synesthesia PLAN-CORE.md C12): no `hypot` or
+  `mul_add` per sample or per bin (libm emulates the fma — `hypot` alone was
+  20 % of the web render), no transcendental per partial where a recurrence
+  or an identity gives it, and phases wrapped long before |x| ≈ 1.6e6.
+  Measure a change in wasm too (`node --cpu-prof` on a `--keep-debug`
+  wasm-bindgen build names the functions).
 - **Never allocate, lock or log on the render path** (`Engine::render`).
   `syn_player::Player::render_into` takes one uncontended lock (only the
   audio thread uses it) and `try_lock`s the frame ring, so a reader can

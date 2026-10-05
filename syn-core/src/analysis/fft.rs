@@ -73,7 +73,7 @@ mod tests {
             (0..n).map(|i| (std::f64::consts::TAU * bin * i as f64 / n as f64).sin()).collect();
         let mut im = vec![0.0; n];
         fft(&mut re, &mut im, false);
-        let mags: Vec<f64> = (0..n / 2).map(|i| re[i].hypot(im[i])).collect();
+        let mags: Vec<f64> = (0..n / 2).map(|i| (re[i] * re[i] + im[i] * im[i]).sqrt()).collect();
         let peak = mags.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)).unwrap().0;
         assert_eq!(peak, bin as usize);
     }

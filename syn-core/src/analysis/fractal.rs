@@ -264,7 +264,7 @@ fn stft(signal: &[f32], sr: f64) -> Stft {
         fft(&mut re, &mut im, false);
         let (mut num, mut den) = (0.0, 0.0);
         for k in 1..half {
-            let mag = re[k].hypot(im[k]);
+            let mag = (re[k] * re[k] + im[k] * im[k]).sqrt(); // not hypot(): see features.rs
             num += k as f64 * hz_per_bin * mag;
             den += mag;
         }

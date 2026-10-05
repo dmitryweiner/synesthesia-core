@@ -54,7 +54,8 @@ cargo install wasm-bindgen-cli --version 0.2.129   # the version syn-wasm pins
 ```
 
 - **The 23 generators are diffed sample by sample** against the 69 golden
-  takes; they match exactly (worst difference 0 as of 2026-10-04).
+  takes; they match to the last bit or two (worst difference 1.6e-16 as of
+  2026-10-05, after Additive and Shepard were rewritten for speed).
 - **The genome is the web app's genome**: every preset encodes to the same
   250 genes to 1.1e-16.
 - **The picture** has no reference samples (the browser seeds it with
