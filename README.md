@@ -13,6 +13,7 @@ native app:
 | [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | through `syn-ffi` (UniFFI → Kotlin), pinned by git revision |
 | [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | still its own copy of `syn-core`, where it was born; switching to this repository is planned ([TODO.md](TODO.md)) |
 | iOS (planned) | through `syn-ffi` (UniFFI → Swift) |
+| [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | moving onto the core (its PLAN-CORE.md): through `syn-wasm` (wasm-bindgen), pinned by git revision |
 
 The web app stays the specification: ranges, defaults, presets and the gene
 list are **dumped** from it (`assets/`), and the generators are checked
@@ -35,6 +36,8 @@ syn-session/ the control logic every app shares: 👍 👎 🎲 ↩, the morph, 
 syn-ffi/    the foreign interface (UniFFI): records, functions, the live
             player, the session and the picture an app calls; the Kotlin
             and Swift bindings are generated from it
+syn-wasm/   the same for JavaScript (wasm-bindgen): the web app's
+            AudioWorklet, Web Workers and points Worker load it
 assets/     presets.json, schema.json, genomes.json — dumped from the web app
 golden/     63 reference takes of the 21 generators, rendered by the web app
 scripts/    check.sh; dump-presets.mjs and dump-golden.mjs (need ../synesthesia)
@@ -45,7 +48,9 @@ TODO.md     agreed follow-ups that are not done yet
 
 ```bash
 rustup update stable    # CI uses the latest stable; an older clippy misses its lints
-./scripts/check.sh      # fmt --check, clippy -D warnings, every test
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.129   # the version syn-wasm pins
+./scripts/check.sh      # fmt --check, clippy -D warnings, every test (syn-wasm's under node)
 ```
 
 - **The 23 generators are diffed sample by sample** against the 69 golden
@@ -69,6 +74,9 @@ syn-ffi = { git = "https://github.com/dmitryweiner/synesthesia-core", rev = "…
 
 The Android app's `core/rust/` (`syn-android` + `uniffi-bindgen`) and its
 `core/build.gradle.kts` are the worked example.
+
+The web app pins a revision the same way and builds `syn-wasm` with
+`wasm-pack build syn-wasm --target web` (its `scripts/build-core.mjs`).
 
 ## History
 

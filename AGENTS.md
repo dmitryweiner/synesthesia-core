@@ -48,6 +48,12 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
   (synesthesia-android: `rev` in `core/rust/Cargo.toml`, then its
   `scripts/check.sh`; its AGENTS.md shows a local `[patch]` for trying a
   change before pushing).
+- **`syn-wasm` is thin too** — `syn-ffi`'s rules, for the web app
+  (synesthesia PLAN-CORE.md C3). Its audio side (`AudioCore`) runs in an
+  AudioWorklet: numbers and byte arrays only (no strings — some worklet
+  scopes have no `TextDecoder`), samples and frames handed back as offsets
+  into the module's memory, nothing allocated per quantum. `check.sh`
+  clippies it for `wasm32-unknown-unknown` and runs its tests under node.
 - Measure first: a performance claim comes with a number from a bench.
 
 ## Module map
@@ -88,4 +94,6 @@ syn-ffi/src/picture.rs    … the picture: a frame's uniforms, the seed spots,
                           the quality rung, the sizes
 syn-ffi/src/points.rs     … and the points: the kept list, `#s=` tokens, what
                           a link opens
+syn-wasm/src/lib.rs       the wasm-bindgen surface for the web app: presets,
+                          AudioCore (the player, for one AudioWorklet)
 ```

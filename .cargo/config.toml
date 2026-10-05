@@ -1,0 +1,4 @@
+# `cargo test --target wasm32-unknown-unknown -p syn-wasm` runs the wasm
+# tests under node (`cargo install wasm-bindgen-cli`, the version syn-wasm pins).
+[target.wasm32-unknown-unknown]
+runner = "wasm-bindgen-test-runner"

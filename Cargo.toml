@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["syn-core", "syn-player", "syn-session", "syn-ffi"]
+members = ["syn-core", "syn-player", "syn-session", "syn-ffi", "syn-wasm"]
 
 [workspace.package]
 version = "0.1.0"
