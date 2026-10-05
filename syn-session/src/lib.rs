@@ -32,6 +32,7 @@ pub mod points;
 
 use std::sync::Arc;
 
+use syn_core::analysis::fractal::SoundAnalysis;
 use syn_core::dsp::rng::{Mulberry32, Rng};
 use syn_core::genome::evolve::{diff_summary, lerp_genome, same_genome, ChangeDir};
 use syn_core::genome::explorer::{Explorer, ExplorerAction, ExplorerOptions};
@@ -309,6 +310,12 @@ impl Session {
 
     pub fn master_gain(&self) -> f64 {
         self.master_gain
+    }
+
+    /// What the scout measured of the point being listened to, while its
+    /// result is still about that point — a details screen shows it.
+    pub fn scout_parent(&self) -> Option<SoundAnalysis> {
+        self.scout_result.as_ref().filter(|r| r.version == self.explorer.version).map(|r| r.parent)
     }
 
     /// True while something is due on the clock: a morph in flight, or a

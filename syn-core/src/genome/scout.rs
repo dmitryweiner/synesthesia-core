@@ -98,12 +98,36 @@ fn state_of(g: &Genome, master_gain: f64) -> AppState {
     s
 }
 
-fn score(g: &Genome, set: &ScoutSettings) -> SoundAnalysis {
+/// Renders one genome as the scout hears it and scores it — one unit of a
+/// scout job. An app without threads for rayon (the web app's Web Workers)
+/// runs these one per worker and puts the result together with [`assemble`].
+pub fn score(g: &Genome, set: &ScoutSettings) -> SoundAnalysis {
     let samples = render_offline(&state_of(g, set.master_gain), set.seconds, set.sample_rate, set.seed);
     analyze_sound(&samples, set.sample_rate)
 }
 
-/// Renders and scores the parent and every candidate, in parallel.
+/// A job's result from its scored parts: the parent's analysis and each
+/// candidate's. `seconds` is the wall time, from the caller's clock.
+pub fn assemble(
+    version: u64,
+    parent: SoundAnalysis,
+    scored: Vec<(ScoutKind, Genome, SoundAnalysis)>,
+    seconds: f64,
+) -> ScoutResult {
+    let candidates = scored
+        .into_iter()
+        .map(|(kind, genome, analysis)| Candidate {
+            kind,
+            genome,
+            adjusted: adjusted_score(&analysis, &parent),
+            analysis,
+        })
+        .collect();
+    ScoutResult { version, parent, candidates, seconds }
+}
+
+/// Renders and scores the parent and every candidate, in parallel on the
+/// caller's rayon pool (native apps; it reads the wall clock for `seconds`).
 pub fn run(
     version: u64,
     parent: &Genome,
@@ -118,23 +142,10 @@ pub fn run(
         .chain(dislikes.iter().map(|g| (ScoutKind::Dislike, g)))
         .collect();
 
-    let (parent_analysis, scored): (SoundAnalysis, Vec<(ScoutKind, SoundAnalysis)>) = rayon::join(
-        || score(parent, &set),
-        || jobs.par_iter().map(|(kind, g)| (*kind, score(g, &set))).collect(),
-    );
-
-    let candidates = jobs
-        .iter()
-        .zip(scored)
-        .map(|((kind, g), (_, analysis))| Candidate {
-            kind: *kind,
-            genome: (*g).clone(),
-            adjusted: adjusted_score(&analysis, &parent_analysis),
-            analysis,
-        })
-        .collect();
-
-    ScoutResult { version, parent: parent_analysis, candidates, seconds: started.elapsed().as_secs_f64() }
+    let (parent_analysis, scored): (SoundAnalysis, Vec<SoundAnalysis>) =
+        rayon::join(|| score(parent, &set), || jobs.par_iter().map(|(_, g)| score(g, &set)).collect());
+    let scored = jobs.iter().zip(scored).map(|((kind, g), a)| (*kind, (*g).clone(), a)).collect();
+    assemble(version, parent_analysis, scored, started.elapsed().as_secs_f64())
 }
 
 #[cfg(test)]

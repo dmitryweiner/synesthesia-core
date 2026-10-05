@@ -14,6 +14,8 @@
 //! - Points cross as the web app's `AppState` v1 JSON; a malformed one is a
 //!   `None` / `false`, never a panic.
 
+pub mod session;
+
 use syn_core::engine::SPECTRUM_BANDS;
 use syn_core::state::AppState;
 use syn_player::{Frame, Player};

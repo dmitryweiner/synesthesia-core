@@ -802,6 +802,7 @@ dependencies = [
  "serde_json",
  "syn-core",
  "syn-player",
+ "syn-session",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]
