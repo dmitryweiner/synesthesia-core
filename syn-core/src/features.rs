@@ -42,7 +42,6 @@ pub struct Analyser {
     window: Vec<f64>,
     ring: Vec<f32>,
     write: usize,
-    filled: usize,
     since_frame: f64,
     hop: f64,
     smooth: Vec<f64>,
@@ -67,7 +66,6 @@ impl Analyser {
             window,
             ring: vec![0.0; FFT_SIZE],
             write: 0,
-            filled: 0,
             since_frame: 0.0,
             hop: sample_rate / FPS,
             smooth: vec![0.0; FFT_SIZE / 2],
@@ -87,10 +85,13 @@ impl Analyser {
         for s in block {
             self.ring[self.write] = *s;
             self.write = (self.write + 1) % FFT_SIZE;
-            self.filled = (self.filled + 1).min(FFT_SIZE);
         }
         self.since_frame += block.len() as f64;
-        if self.since_frame < self.hop || self.filled < FFT_SIZE {
+        // From the first hop on, as an AnalyserNode does: what has not been
+        // heard yet is zeros (the ring starts silent). Waiting for a full
+        // window shifted the onset detector's warm-up by 85 ms and gave it
+        // two hits the web app never had (PLAN-CORE.md phase 1).
+        if self.since_frame < self.hop {
             return false;
         }
         self.since_frame -= self.hop;

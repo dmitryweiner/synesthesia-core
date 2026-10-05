@@ -8,6 +8,7 @@ pub mod dsp;
 pub mod engine;
 pub mod features;
 pub mod fx;
+pub mod fx_presets;
 pub mod genome;
 pub mod modmatrix;
 pub mod point;

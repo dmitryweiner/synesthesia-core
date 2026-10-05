@@ -24,7 +24,10 @@ const dump = await page.evaluate(async () => {
   const filters = await import('/src/audio/filters.ts');
   const genes = await import('/src/genome/genes.ts');
   const codec = await import('/src/genome/codec.ts');
+  const fxPresets = await import('/src/fxPresets.ts');
   return {
+    // ⚙ Settings' "Effects preset" menu: one FX module's fields each.
+    fxPresets: fxPresets.FX_PRESETS,
     presets: PRESETS.map((p) => ({ name: p.name, state: p.state })),
     // The same points as genome vectors — the fixture the Rust codec is
     // checked against (tests/genome.rs).
@@ -67,6 +70,7 @@ const dump = await page.evaluate(async () => {
 writeFileSync(new URL('presets.json', OUT), JSON.stringify(dump.presets, null, 1) + '\n');
 writeFileSync(new URL('schema.json', OUT), JSON.stringify(dump.schema, null, 1) + '\n');
 writeFileSync(new URL('genomes.json', OUT), JSON.stringify(dump.genomes) + '\n');
+writeFileSync(new URL('fx-presets.json', OUT), JSON.stringify(dump.fxPresets, null, 1) + '\n');
 console.log(`presets: ${dump.presets.length}, formulas: ${dump.schema.formulas.length}, genes: ${dump.schema.genes.length}`);
 
 await browser.close();
