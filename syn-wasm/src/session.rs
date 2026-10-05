@@ -105,11 +105,26 @@ pub struct WebSession {
 impl WebSession {
     /// A session on a point (AppState JSON), named as the page knows it
     /// (empty: the point's own `presetName`). `seed` is the session's
-    /// randomness; `scout` turns the background scout on.
+    /// randomness; `scout` turns the background scout on, rendering
+    /// `scout_seconds` at `scout_sample_rate` per candidate (0: the core's
+    /// defaults).
     #[wasm_bindgen(constructor)]
-    pub fn new(name: &str, point_json: &str, seed: u32, scout: bool) -> Result<WebSession, JsError> {
+    pub fn new(
+        name: &str,
+        point_json: &str,
+        seed: u32,
+        scout: bool,
+        scout_seconds: f64,
+        scout_sample_rate: f64,
+    ) -> Result<WebSession, JsError> {
         let mut opts = SessionOptions { seed, ..SessionOptions::default() };
         opts.scout.enabled = scout;
+        if scout_seconds > 0.0 {
+            opts.scout.seconds = scout_seconds;
+        }
+        if scout_sample_rate > 0.0 {
+            opts.scout.sample_rate = scout_sample_rate;
+        }
         Ok(WebSession { inner: Session::new(name, &parse_point(point_json)?, opts) })
     }
 
@@ -241,7 +256,7 @@ mod tests {
 
     #[test]
     fn a_press_morphs_and_the_scout_round_trips_through_json() {
-        let mut s = WebSession::new("", &preset_json(0), 7, true).unwrap();
+        let mut s = WebSession::new("", &preset_json(0), 7, true, 0.0, 0.0).unwrap();
         assert!(parse(&s.set_playing(0.0, true)).is_empty());
         // settle, then the scout asks for a job
         let job = (1..40)
@@ -282,7 +297,7 @@ mod tests {
 
     #[test]
     fn a_broken_scout_result_frees_the_scout_and_is_dropped() {
-        let mut s = WebSession::new("", &preset_json(1), 3, true).unwrap();
+        let mut s = WebSession::new("", &preset_json(1), 3, true, 0.0, 0.0).unwrap();
         s.set_playing(0.0, true);
         let fx = parse(&s.scout_finished("{nope"));
         assert!(fx.is_empty());
@@ -292,7 +307,7 @@ mod tests {
 
     #[test]
     fn a_load_switches_hard_and_reseeds() {
-        let mut s = WebSession::new("", &preset_json(0), 1, false).unwrap();
+        let mut s = WebSession::new("", &preset_json(0), 1, false, 0.0, 0.0).unwrap();
         let fx = parse(&s.load(0.0, "", &preset_json(3)).unwrap());
         let kinds: Vec<&str> = fx.iter().map(|e| e["type"].as_str().unwrap()).collect();
         assert_eq!(&kinds[..2], ["switchTo", "reseed"]);
