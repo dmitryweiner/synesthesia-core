@@ -10,6 +10,7 @@ pub mod features;
 pub mod fx;
 pub mod genome;
 pub mod modmatrix;
+pub mod point;
 pub mod schema;
 pub mod settings;
 pub mod share;

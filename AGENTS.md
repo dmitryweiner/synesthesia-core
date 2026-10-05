@@ -34,6 +34,11 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
   A re-dump is also not enough on its own: if the web app has grown a
   generator, an LFO shape or an FX parameter, the model needs it **first**, or
   the new presets load and play with their instrument silently missing.
+- **`fixtures/` is the TypeScript's behaviour, frozen** (synesthesia
+  PLAN-CORE.md phase 1) by `scripts/dump-*.mjs` while the TypeScript model
+  still exists; after the swap nothing can re-dump it. A fixture failure is
+  a real change of behaviour (`points.json`: a shared link would open
+  differently or get another id). Never hand-edit it.
 - **Golden failures are real**: a generator stopped being bit-exact with the
   TypeScript. Never loosen the tolerance.
 - **Never write an oscillator as `sin(2π·f·t)` with absolute `t`** —
@@ -82,6 +87,9 @@ syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
                           owns its field — the GPU's and the CPU's alike),
                           quality (the ladder and the boot probe)
 syn-core/src/state.rs     AppState v1 and the 12 presets
+syn-core/src/point.rs     a point from outside made safe (the web's sanitizeState +
+                          stateToAppState), its canonical JSON and id — byte for
+                          byte the TypeScript's (fixtures/points.json)
 syn-core/src/schema.rs    the dumped schema
 syn-core/src/settings.rs  the Settings page, derived from it: sections, their
                           titles, a choice's options, and the point being
