@@ -53,7 +53,9 @@ pub struct Section {
 ///
 /// Editorial, not dumped — the web app has no links, so these are written
 /// here rather than taken from `assets/`, and every one of them was checked
-/// against the Wikipedia API on 2026-10-05. Where the thing has no article
+/// against the Wikipedia API on 2026-10-05. Where `../chromaflux` (the
+/// picture's origin) links the same things, it links the same articles;
+/// `../formula-synth` (the sound's) links none. Where the thing has no article
 /// (Velvet noise), or where an article would be about the word and not the
 /// method (the noise beds, the rain), there is none, and an app shows no
 /// link. If the web app ever grows links of its own, the dump wins.
