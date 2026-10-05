@@ -79,7 +79,8 @@ syn-core/src/fx/          the DSP chain (biquads, comb, chorus, phaser, delay
                           with the octave-up shimmer in its loop, FDN reverb,
                           limiter)
 syn-core/src/analysis/    fft, fractal (the scout's score), and the web app's bench
-                          metrics: character, clicks, a log spectrogram — each
+                          metrics: character, clicks, a log spectrogram, the picture's
+                          coverage/edges/change — each
                           checked against the TypeScript (fixtures/analysis.json)
 syn-core/src/fx_presets.rs ⚙ Settings' effect-module presets (assets/fx-presets.json)
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time

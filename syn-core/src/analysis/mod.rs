@@ -6,4 +6,5 @@ pub mod character;
 pub mod clicks;
 pub mod fft;
 pub mod fractal;
+pub mod picture;
 pub mod spectrogram;
