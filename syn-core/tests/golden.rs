@@ -1,6 +1,6 @@
 //! Diffs every formula against the reference output of the web app
-//! (PLAN.md decision 4). The takes are produced by `scripts/dump-golden.mjs`
-//! and live in `golden/`:
+//! (PLAN.md decision 4). The takes were rendered by the TypeScript (its
+//! `scripts/dump-golden.mjs`, retired) and are frozen in `golden/`:
 //!
 //!   a  48 kHz, 8192 samples        — exact arithmetic
 //!   b   8 kHz, 16000 samples       — long horizon, slow events forced to fire

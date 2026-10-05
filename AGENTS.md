@@ -2,8 +2,11 @@
 
 (Claude Code reads CLAUDE.md, which points here.)
 
-The shared model of Synesthesia, used by the Android app, and meant for
-the console app (which still has its own copy — TODO.md) and an iOS app. Docs, UI strings and code comments are in English;
+The shared model of Synesthesia and its **specification** (synesthesia
+PLAN-CORE.md C2, since 2026-10-05): used by the Android app, being moved
+under the web app (`syn-wasm`, branch `core` there), and meant for the
+console app (which still has its own copy — TODO.md) and an iOS app.
+A new preset, generator, LFO shape or FX parameter is made here first. Docs, UI strings and code comments are in English;
 the user talks to agents in Russian.
 
 ## Commands
@@ -29,14 +32,17 @@ rustup update stable    # first: CI uses the latest stable, and a newer clippy f
   name things for an app developer, and keep records plain.
 - **Never change the `AppState` shape or the gene order** — point files, the
   web app and every native app depend on both.
-- **Never hand-edit `assets/` or `golden/`** — re-dump them from the web app
-  (`scripts/dump-*.mjs`, needs `../synesthesia` with its `npm install` done).
-  A re-dump is also not enough on its own: if the web app has grown a
-  generator, an LFO shape or an FX parameter, the model needs it **first**, or
-  the new presets load and play with their instrument silently missing.
+- **`assets/` is the source** (presets, schema, FX presets): edit it here,
+  by hand, with its tests (`syn-core/tests/presets.rs` holds what every
+  preset must be). Nothing re-dumps it any more. A preset that uses a new
+  generator, LFO shape or FX parameter needs the model to have it first, or
+  it loads and plays with that instrument silently missing.
+- **`golden/` is frozen**: the 69 takes the TypeScript rendered are what
+  "unchanged" means for a generator. Never re-render or hand-edit them.
 - **`fixtures/` is the TypeScript's behaviour, frozen** (synesthesia
-  PLAN-CORE.md phase 1) by `scripts/dump-*.mjs` while the TypeScript model
-  still exists; after the swap nothing can re-dump it. A fixture failure is
+  PLAN-CORE.md phase 1) by `scripts/dump-points.mjs` / `dump-analysis.mjs`
+  while the TypeScript model still exists; after the swap nothing can
+  re-dump it. A fixture failure is
   a real change of behaviour (`points.json`: a shared link would open
   differently or get another id). Never hand-edit it.
 - **Golden failures are real**: a generator stopped being bit-exact with the
@@ -91,11 +97,11 @@ syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
                           driver (what each frame does, for a renderer that
                           owns its field — the GPU's and the CPU's alike),
                           quality (the ladder and the boot probe)
-syn-core/src/state.rs     AppState v1 and the 12 presets
+syn-core/src/state.rs     AppState v1 and the built-in presets (assets/presets.json)
 syn-core/src/point.rs     a point from outside made safe (the web's sanitizeState +
                           stateToAppState), its canonical JSON and id — byte for
                           byte the TypeScript's (fixtures/points.json)
-syn-core/src/schema.rs    the dumped schema
+syn-core/src/schema.rs    the schema (assets/schema.json): ranges, defaults, genes
 syn-core/src/settings.rs  the Settings page, derived from it: sections, their
                           titles, a choice's options, and the point being
                           edited (Edit). No label is written by hand

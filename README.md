@@ -15,9 +15,12 @@ native app:
 | iOS (planned) | through `syn-ffi` (UniFFI → Swift) |
 | [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | moving onto the core (its PLAN-CORE.md): through `syn-wasm` (wasm-bindgen), pinned by git revision |
 
-The web app stays the specification: ranges, defaults, presets and the gene
-list are **dumped** from it (`assets/`), and the generators are checked
-against its output sample by sample (`golden/`).
+This repository is the **specification** (since 2026-10-05; the web app's
+PLAN-CORE.md C2): ranges, defaults, presets and the gene list are written
+here (`assets/`), and a new preset or generator is made here first. What
+the web app's TypeScript did while it was the specification is frozen:
+the generators' takes (`golden/`) and its handling of points, measurements
+and status lines (`fixtures/`).
 
 ## Layout
 
@@ -38,9 +41,12 @@ syn-ffi/    the foreign interface (UniFFI): records, functions, the live
             and Swift bindings are generated from it
 syn-wasm/   the same for JavaScript (wasm-bindgen): the web app's
             AudioWorklet, Web Workers and points Worker load it
-assets/     presets.json, schema.json, genomes.json — dumped from the web app
+assets/     presets.json, schema.json, fx-presets.json — the source, edited here
 golden/     63 reference takes of the 21 generators, rendered by the web app
-scripts/    check.sh; dump-presets.mjs and dump-golden.mjs (need ../synesthesia)
+fixtures/   the TypeScript's behaviour, frozen: points (sanitize, canonical
+            JSON, ids), status lines, measurements, preset genomes
+scripts/    check.sh; dump-points.mjs and dump-analysis.mjs (need ../synesthesia,
+            and only until its TypeScript model is deleted)
 TODO.md     agreed follow-ups that are not done yet
 ```
 

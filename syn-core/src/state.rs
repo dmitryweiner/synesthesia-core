@@ -225,7 +225,8 @@ pub struct Preset {
     pub state: AppState,
 }
 
-/// The 12 built-in presets, dumped from the web app (PLAN.md decision 2).
+/// The built-in presets (`assets/presets.json`, the source since
+/// synesthesia PLAN-CORE.md C2).
 pub fn presets() -> &'static [Preset] {
     static PRESETS: std::sync::OnceLock<Vec<Preset>> = std::sync::OnceLock::new();
     PRESETS.get_or_init(|| {

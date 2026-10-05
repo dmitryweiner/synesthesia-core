@@ -1,18 +1,45 @@
 //! The codec against the web app's own output (PLAN.md decision 2).
 //!
-//! `scripts/dump-presets.mjs` writes `assets/genomes.json`: every built-in
-//! preset as the TypeScript `encodeGenome` produces it. If the Rust codec
-//! disagrees anywhere, points would stop meaning the same thing in the two
-//! apps — so this compares all 237 genes of all 12 presets.
+//! `fixtures/genomes.json` holds the built-in presets as they were when the
+//! web app was still the specification, each with the genome its TypeScript
+//! `encodeGenome` produced. If the codec disagrees anywhere, a point would
+//! stop meaning the same genome — so this compares every gene of each. The
+//! states are frozen with their genomes, so editing a preset in
+//! `assets/presets.json` does not touch this check.
 
 use syn_core::genome::codec::{decode_genome, encode_genome, is_valid_genome};
 use syn_core::genome::genes::{genes, Genome};
 use syn_core::schema::GeneKind;
-use syn_core::state::presets;
+use syn_core::state::AppState;
+
+#[derive(serde::Deserialize)]
+struct Case {
+    name: String,
+    state: AppState,
+    genome: Genome,
+}
+
+struct Frozen {
+    name: String,
+    state: AppState,
+}
+
+fn fixture() -> Vec<Case> {
+    #[derive(serde::Deserialize)]
+    struct File {
+        cases: Vec<Case>,
+    }
+    let raw = include_str!("../../fixtures/genomes.json");
+    serde_json::from_str::<File>(raw).expect("fixtures/genomes.json parses").cases
+}
+
+/// The frozen presets, in the shape the tests below read them.
+fn presets() -> Vec<Frozen> {
+    fixture().into_iter().map(|c| Frozen { name: c.name, state: c.state }).collect()
+}
 
 fn web_genomes() -> Vec<Genome> {
-    let raw = include_str!("../../assets/genomes.json");
-    serde_json::from_str(raw).expect("assets/genomes.json parses")
+    fixture().into_iter().map(|c| c.genome).collect()
 }
 
 #[test]

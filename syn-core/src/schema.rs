@@ -1,7 +1,7 @@
 //! Parameter schema: slider ranges, defaults, FX metadata — parsed once from
-//! `assets/schema.json`, which `scripts/dump-presets.mjs` dumps out of the web
-//! app. The numbers therefore have exactly one source of truth (PLAN.md
-//! decision 2); nothing here is re-typed by hand.
+//! `assets/schema.json`, the one source of truth for them (first dumped from
+//! the web app; edited here since synesthesia PLAN-CORE.md C2). Nothing in
+//! the code re-types a number from it.
 
 use std::collections::BTreeMap;
 use std::sync::OnceLock;

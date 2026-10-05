@@ -1,5 +1,5 @@
 //! Effect-module presets: ⚙ Settings' "Effects preset" menu (the web app's
-//! `fxPresets.ts`, ported from formula-synth; dumped into
+//! `fxPresets.ts`, ported from formula-synth; first dumped into
 //! `assets/fx-presets.json`). Each sets only its own module's FX fields over
 //! the current ones — formulas, modulation and the picture are untouched.
 
