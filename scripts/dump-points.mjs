@@ -11,8 +11,8 @@
 //
 // --extra: a read-only export of the points Worker's D1 (wrangler's --json
 // output of SELECT id, body FROM points): each stored body joins the corpus
-// as kind "d1", and must sanitize back to itself under its stored id — the
-// promise that old links keep working (C5).
+// as kind "d1", and must keep every value it was stored with (C5: old links
+// keep working — the Worker serves a stored body by its id).
 // Needs ../synesthesia (its dev server and Playwright are reused), and runs
 // only while its TypeScript model still exists — after the swap the
 // fixture is frozen.
@@ -198,13 +198,32 @@ try {
   // one case per line: a diff names the case that moved
   writeFileSync(new URL('../fixtures/points.json', import.meta.url),
     `{"note":${JSON.stringify(note)},"cases":[\n${cases.map((c) => JSON.stringify(c)).join(',\n')}\n]}\n`);
-  // A stored point must come back as itself, under the id it is stored as.
+  // A stored point must come back with every value it was stored with. The
+  // schema has grown since some were stored (new formulas, delayShimmer), so
+  // re-sanitizing may ADD fields at their defaults — then re-sharing it gives
+  // a new id, while the stored link keeps working (the Worker serves the
+  // stored body by its id and never recomputes it).
+  const leaves = (o, p = '', out = {}) => {
+    if (o !== null && typeof o === 'object') for (const k of Object.keys(o)) leaves(o[k], `${p}/${k}`, out);
+    else out[p] = o;
+    return out;
+  };
   const d1 = cases.filter((c) => c.kind === 'd1');
-  const moved = d1.filter((c, i) => c.id !== stored[i].id || c.canonical !== stored[i].body);
-  if (moved.length) {
-    console.error(`${moved.length} of ${d1.length} stored points do not re-sanitize to themselves:`, moved.slice(0, 5).map((c) => c.id));
+  const changed = [];
+  let grown = 0;
+  d1.forEach((c, i) => {
+    const before = leaves(JSON.parse(stored[i].body));
+    const after = leaves(JSON.parse(c.canonical ?? 'null'));
+    const lost = Object.keys(before).filter((k) => after[k] !== before[k]);
+    if (lost.length) changed.push(`${stored[i].id}: ${lost.slice(0, 3).join(', ')}`);
+    if (c.id !== stored[i].id) grown++;
+  });
+  if (changed.length) {
+    console.error(`${changed.length} of ${d1.length} stored points change a value when re-sanitized:\n  ${changed.join('\n  ')}`);
     process.exitCode = 1;
-  } else if (d1.length) console.log(`${d1.length} stored points re-sanitize to themselves`);
+  } else if (d1.length) {
+    console.log(`${d1.length} stored points keep every value; ${grown} gain fields the schema grew since (a re-share gets a new id)`);
+  }
   const kinds = {};
   for (const c of cases) kinds[c.kind] = (kinds[c.kind] ?? 0) + 1;
   console.log(`${cases.length} cases`, kinds, `${cases.filter((c) => !c.id).length} refused`);
