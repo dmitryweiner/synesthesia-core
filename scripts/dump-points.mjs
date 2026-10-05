@@ -9,8 +9,10 @@
 //
 //   node scripts/dump-points.mjs [--extra points.json]
 //
-// --extra: a JSON array of more inputs (e.g. the bodies of a read-only
-// export of the points Worker's D1), appended to the corpus as kind "d1".
+// --extra: a read-only export of the points Worker's D1 (wrangler's --json
+// output of SELECT id, body FROM points): each stored body joins the corpus
+// as kind "d1", and must sanitize back to itself under its stored id — the
+// promise that old links keep working (C5).
 // Needs ../synesthesia (its dev server and Playwright are reused), and runs
 // only while its TypeScript model still exists — after the swap the
 // fixture is frozen.
@@ -19,7 +21,10 @@ import { startServer, launchBrowser, openApp } from '../../synesthesia/scripts/l
 
 const argv = process.argv.slice(2);
 const extraAt = argv.indexOf('--extra');
-const extra = extraAt >= 0 ? JSON.parse(readFileSync(argv[extraAt + 1], 'utf8')) : [];
+// `wrangler d1 execute … --json --command "SELECT id, body FROM points"`'s
+// output as it is: [{ results: [{ id, body }] }]
+const stored = extraAt >= 0 ? JSON.parse(readFileSync(argv[extraAt + 1], 'utf8')).flatMap((r) => r.results ?? []) : [];
+const extra = stored.map((r) => JSON.parse(r.body));
 
 const server = await startServer(false);
 const browser = await launchBrowser();
@@ -193,6 +198,13 @@ try {
   // one case per line: a diff names the case that moved
   writeFileSync(new URL('../fixtures/points.json', import.meta.url),
     `{"note":${JSON.stringify(note)},"cases":[\n${cases.map((c) => JSON.stringify(c)).join(',\n')}\n]}\n`);
+  // A stored point must come back as itself, under the id it is stored as.
+  const d1 = cases.filter((c) => c.kind === 'd1');
+  const moved = d1.filter((c, i) => c.id !== stored[i].id || c.canonical !== stored[i].body);
+  if (moved.length) {
+    console.error(`${moved.length} of ${d1.length} stored points do not re-sanitize to themselves:`, moved.slice(0, 5).map((c) => c.id));
+    process.exitCode = 1;
+  } else if (d1.length) console.log(`${d1.length} stored points re-sanitize to themselves`);
   const kinds = {};
   for (const c of cases) kinds[c.kind] = (kinds[c.kind] ?? 0) + 1;
   console.log(`${cases.length} cases`, kinds, `${cases.filter((c) => !c.id).length} refused`);
