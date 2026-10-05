@@ -271,6 +271,16 @@ impl Session {
         }
     }
 
+    /// A session on a point that was left mid-search — the app was closed and
+    /// opened again. The name says where the point came from ("Fractal
+    /// garden"), and the point is nobody's, exactly as it was: a step away
+    /// from that preset and not it.
+    pub fn restored(name: &str, point: &AppState, opts: SessionOptions) -> Self {
+        let mut session = Self::new(name, point, opts);
+        session.named = false;
+        session
+    }
+
     // --- what the app reads ------------------------------------------------
 
     /// The point the search is at — what a save, a token or a scout uses.
@@ -1098,6 +1108,23 @@ mod tests {
         }
         let want = (MORPH_SECONDS / PUSH_INTERVAL) as usize;
         assert!(pushes.abs_diff(want) <= 2, "{pushes} pushes, wanted about {want}");
+    }
+
+    #[test]
+    fn a_point_left_mid_search_keeps_the_name_of_where_it_came_from() {
+        // What the app stores and reads back: the point as it was, and the
+        // name that was on screen.
+        let mut s = session();
+        let preset = presets()[0].name.clone();
+        s.like(0.0);
+        s.tick(2.0);
+        let (left_on, shown) = (s.point(), s.view().point_name);
+        assert_eq!(left_on.preset_name, None, "a stepped point is nobody's");
+
+        let back = Session::restored(&shown, &left_on, opts());
+        assert_eq!(back.view().name, preset, "the title says where it came from");
+        assert_eq!(back.point().preset_name, None, "and the point still claims nothing");
+        assert_eq!(back.view().steps, 0, "the steps start again: the history is gone");
     }
 
     #[test]

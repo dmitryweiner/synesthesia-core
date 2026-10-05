@@ -48,6 +48,47 @@ pub struct Section {
     pub controls: Vec<&'static GeneDef>,
 }
 
+/// Further reading about a formula or a card: the English Wikipedia article
+/// about the thing itself, where there is one.
+///
+/// Editorial, not dumped — the web app has no links, so these are written
+/// here rather than taken from `assets/`, and every one of them was checked
+/// against the Wikipedia API on 2026-10-05. Where the thing has no article
+/// (Velvet noise), or where an article would be about the word and not the
+/// method (the noise beds, the rain), there is none, and an app shows no
+/// link. If the web app ever grows links of its own, the dump wins.
+pub fn article(section_id: &str) -> Option<String> {
+    const WIKI: &str = "https://en.wikipedia.org/wiki/";
+    let page = match section_id {
+        "a.additive" => "Additive_synthesis",
+        "a.fm" | "a.bell" => "Frequency_modulation_synthesis",
+        "a.pm" => "Phase_modulation",
+        "a.logistic" => "Logistic_map",
+        "a.lorenz" => "Lorenz_system",
+        "a.rossler" => "R%C3%B6ssler_attractor",
+        "a.gliss" => "Glissando",
+        "a.shepard" => "Shepard_tone",
+        "a.risset" => "Jean-Claude_Risset",
+        "a.karplus" => "Karplus%E2%80%93Strong_string_synthesis",
+        "a.beats" => "Beat_(acoustics)",
+        "a.dist" => "Distortion_(music)",
+        "a.quasi" => "Quasiperiodicity",
+        "a.noiselp" => "White_noise",
+        "a.pinknoise" => "Pink_noise",
+        "a.brownnoise" => "Brownian_noise",
+        "a.bytebeat" => "Bytebeat",
+        "a.tanpura" => "Tanpura",
+        "a.bowl" => "Standing_bell",
+        "v.reaction" => "Reaction%E2%80%93diffusion_system",
+        "v.fieldVariation" => "Fractional_Brownian_motion",
+        "v.flow" => "Advection",
+        // Velvet noise has no article; the ocean and the rain are noise beds,
+        // and an article about either word would be about the weather.
+        _ => return None,
+    };
+    Some(format!("{WIKI}{page}"))
+}
+
 /// What a choice control offers, in value order: the names the web app shows.
 pub fn options(gene: &GeneDef) -> Vec<String> {
     if gene.kind != GeneKind::Choice {
@@ -342,6 +383,30 @@ mod tests {
         assert!(tanpura.controls.iter().any(|g| g.id == "a.tanpura.tanJawari"));
         let delay = page.iter().find(|s| s.id == "delayOn").expect("the delay");
         assert!(delay.controls.iter().any(|g| g.id == "fx.delayShimmer"), "the shimmer is editable");
+    }
+
+    #[test]
+    fn further_reading_is_offered_only_where_there_is_some() {
+        // Every id with an article is a section on the page: a typo here
+        // would be a link nobody could reach.
+        let ids: BTreeSet<String> = sections().iter().map(|s| s.id.clone()).collect();
+        let mut linked = 0;
+        for id in &ids {
+            if let Some(url) = article(id) {
+                assert!(url.starts_with("https://en.wikipedia.org/wiki/"), "{id}: {url}");
+                assert!(!url.ends_with('/'), "{id} links to nothing");
+                linked += 1;
+            }
+        }
+        assert!(linked > 15, "most of the formulas have an article: {linked}");
+        assert!(article("a.additive").is_some_and(|u| u.ends_with("Additive_synthesis")));
+        assert!(article("a.tanpura").is_some_and(|u| u.ends_with("Tanpura")));
+        assert!(article("v.reaction").is_some());
+        // Nothing to point at, so nothing is offered.
+        assert!(article("a.velvetnoise").is_none());
+        assert!(article("filterOn").is_none());
+        assert!(article("lfo.0").is_none());
+        assert!(article("nonsense").is_none());
     }
 
     #[test]

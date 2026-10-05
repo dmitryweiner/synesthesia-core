@@ -63,6 +63,9 @@ pub struct Section {
     /// What this thing is, in the schema's own words — a formula's or a
     /// card's one-line description. Empty where the schema has none.
     pub description: String,
+    /// Further reading: the English Wikipedia article about the thing itself,
+    /// where there is one.
+    pub article: Option<String>,
     pub tab: SettingsTab,
     /// The switch that turns the whole section on, when it has one.
     pub toggle: Option<Control>,
@@ -97,6 +100,7 @@ pub fn settings_page() -> Vec<Section> {
             id: s.id.clone(),
             title: s.title.clone(),
             description: s.description.clone(),
+            article: settings::article(&s.id),
             tab: match s.tab {
                 settings::Tab::Sound => SettingsTab::Sound,
                 settings::Tab::Picture => SettingsTab::Picture,
@@ -193,6 +197,11 @@ mod tests {
         let tanpura = page.iter().find(|s| s.id == "a.tanpura").expect("the tanpura");
         assert_eq!(tanpura.title, "Tanpura");
         assert!(!tanpura.description.is_empty(), "and it says what it is");
+        assert!(
+            tanpura.article.as_ref().is_some_and(|a| a.contains("wikipedia.org")),
+            "and where to read more",
+        );
+        assert!(filter.article.is_none(), "there is nothing to read about an on-switch");
         assert!(
             tanpura.controls.iter().any(|c| c.short_label == "Jawari"),
             "{:?}",

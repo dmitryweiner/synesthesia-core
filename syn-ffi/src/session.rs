@@ -159,6 +159,15 @@ impl Session {
         Ok(Session::around(syn_session::Session::new(&name, &point, config.into()), config))
     }
 
+    /// A session on a point that was left mid-search and is being opened
+    /// again: `name` says where the point came from and the point stays
+    /// nobody's, as it was.
+    #[uniffi::constructor]
+    pub fn restored(name: String, point_json: String, config: SessionConfig) -> Result<Arc<Self>, CoreError> {
+        let point = parse_point(&point_json)?;
+        Ok(Session::around(syn_session::Session::restored(&name, &point, config.into()), config))
+    }
+
     /// A session on a built-in point, under the name the core holds for it.
     #[uniffi::constructor]
     pub fn on_preset(index: u32, config: SessionConfig) -> Result<Arc<Self>, CoreError> {
@@ -399,6 +408,19 @@ mod tests {
         assert!(s.run_scout().iter().any(|e| matches!(e, SessionEffect::Status { .. })));
         assert_eq!(s.view().scouted_like, 1);
         assert!(s.run_scout().is_empty(), "no job is waiting now");
+    }
+
+    #[test]
+    fn a_restored_point_shows_where_it_came_from() {
+        let session = Session::on_preset(0, config()).expect("preset 0");
+        session.like(0.0);
+        session.tick(2.0);
+        let left_on = session.point_json();
+        let shown = session.view().point_name;
+
+        let back = Session::restored(shown.clone(), left_on, config()).expect("the point");
+        assert_eq!(back.view().name, shown);
+        assert!(!back.point_json().contains("presetName"), "it claims no name of its own");
     }
 
     #[test]
