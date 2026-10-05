@@ -23,9 +23,11 @@ fn render(g: &mut FormulaGenerator, seconds: f64) -> Vec<f32> {
     out
 }
 
-/// Formula → its frequency-like params (what LFOs and morphs bend), and
+/// A formula, its frequency-like params (what LFOs and morphs bend), and
 /// params that make a struck one strike often enough to hear.
-fn tonal() -> Vec<(&'static str, Vec<&'static str>, Vec<(&'static str, f64)>)> {
+type Tonal = (&'static str, Vec<&'static str>, Vec<(&'static str, f64)>);
+
+fn tonal() -> Vec<Tonal> {
     vec![
         ("fm", vec!["fc", "fm"], vec![]),
         ("additive", vec!["fund", "move", "N"], vec![]),
