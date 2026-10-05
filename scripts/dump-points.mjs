@@ -1,4 +1,5 @@
-// Freezes the web app's point handling into fixtures/points.json
+// Freezes the web app's point handling into fixtures/points.json (and the
+// status line's "what changed" into fixtures/changes.json)
 // (synesthesia PLAN-CORE.md phase 1, C5): for a corpus of inputs — the
 // presets, random genomes, mutated and broken JSON, old point shapes — what
 // the TypeScript's sanitizeState + stateToAppState make of each, its
@@ -150,7 +151,44 @@ try {
     return out;
   }, extra);
 
+  // What the status line says changed between two points: pairs of genomes
+  // (random ones, presets, and mutations of both, as 👍/👎/🎲 make them),
+  // the TypeScript's diffSummary, and main.ts's describeChange line.
+  const changes = await page.evaluate(async () => {
+    const { PRESETS } = await import('/src/presets.ts');
+    const { encodeGenome } = await import('/src/genome/codec.ts');
+    const { mutate, randomGenome, diffSummary } = await import('/src/genome/evolve.ts');
+    const { mulberry32 } = await import('/src/dsp/rng.ts');
+    const rng = mulberry32(77);
+    // main.ts describeChange(), verbatim
+    const describe = (from, to) => {
+      const changes = diffSummary(from, to);
+      if (changes.length === 0) return 'nothing changed';
+      const arrow = { up: '↑', down: '↓', on: 'on', off: 'off', switch: '⇄' };
+      const top = changes.slice(0, 5).map((c) => `${c.label} ${arrow[c.dir]}`);
+      const more = changes.length > 5 ? ` +${changes.length - 5} more` : '';
+      return top.join(' · ') + more;
+    };
+    const starts = [...PRESETS.map((p) => encodeGenome(p.state)), ...Array.from({ length: 15 }, () => randomGenome(rng))];
+    const out = [];
+    for (const a of starts) {
+      const pairs = [
+        a,
+        mutate(a, rng, { k: 3, sigma: 0.08, structuralProb: 0 }),
+        mutate(a, rng, { k: 8, sigma: 0.25, structuralProb: 1 }),
+        randomGenome(rng),
+      ];
+      for (const b of pairs) {
+        out.push({ a, b, changes: diffSummary(a, b).map((c) => ({ id: c.id, dir: c.dir })), line: describe(a, b) });
+      }
+    }
+    return out;
+  });
+
   mkdirSync(new URL('../fixtures/', import.meta.url), { recursive: true });
+  writeFileSync(new URL('../fixtures/changes.json', import.meta.url),
+    `{"note":"Frozen from the web app (scripts/dump-points.mjs): genome pairs → diffSummary → main.ts's describeChange. Never hand-edit.","cases":[\n${changes.map((c) => JSON.stringify(c)).join(',\n')}\n]}\n`);
+  console.log(`${changes.length} change lines`);
   const note = 'Frozen from the web app (scripts/dump-points.mjs): input → sanitizeState + stateToAppState → canonical JSON → id. Never hand-edit.';
   // one case per line: a diff names the case that moved
   writeFileSync(new URL('../fixtures/points.json', import.meta.url),
