@@ -16,6 +16,7 @@
 
 pub mod picture;
 pub mod session;
+pub mod settings;
 
 use syn_core::engine::SPECTRUM_BANDS;
 use syn_core::state::AppState;

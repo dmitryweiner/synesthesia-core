@@ -89,6 +89,10 @@ syn-core/src/analysis/    fft, fractal (the scout's score), and the web app's be
                           coverage/edges/change — each
                           checked against the TypeScript (fixtures/analysis.json)
 syn-core/src/fx_presets.rs ⚙ Settings' effect-module presets (assets/fx-presets.json)
+syn-core/src/settings_page.rs the web app's ⚙ Settings as a model (assets/settings-page.json
+                          + the rules: formula limit, filter rows per type, route
+                          targets and new routes, same_point); settings.rs is the
+                          generated, gene-by-gene view of the same point
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout

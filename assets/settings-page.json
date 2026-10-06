@@ -1,0 +1,1328 @@
+{
+ "fxModules": [
+  {
+   "on": "filterOn",
+   "title": "Filter",
+   "tag": "biquad · formant · comb",
+   "choices": [
+    {
+     "k": "filterType",
+     "name": "Type",
+     "options": [
+      {
+       "value": "lowpass",
+       "label": "Low-pass",
+       "group": "Biquad"
+      },
+      {
+       "value": "highpass",
+       "label": "High-pass",
+       "group": "Biquad"
+      },
+      {
+       "value": "bandpass",
+       "label": "Band-pass",
+       "group": "Biquad"
+      },
+      {
+       "value": "notch",
+       "label": "Notch",
+       "group": "Biquad"
+      },
+      {
+       "value": "peaking",
+       "label": "Peaking",
+       "group": "Biquad"
+      },
+      {
+       "value": "lowshelf",
+       "label": "Low-shelf",
+       "group": "Biquad"
+      },
+      {
+       "value": "highshelf",
+       "label": "High-shelf",
+       "group": "Biquad"
+      },
+      {
+       "value": "allpass",
+       "label": "All-pass",
+       "group": "Biquad"
+      },
+      {
+       "value": "formant",
+       "label": "Formant (vowel)",
+       "group": "Character"
+      },
+      {
+       "value": "comb",
+       "label": "Comb",
+       "group": "Character"
+      }
+     ]
+    }
+   ],
+   "sliders": [
+    {
+     "k": "filterFreq",
+     "name": "Cutoff (Hz)",
+     "min": 20,
+     "max": 2000,
+     "step": 1,
+     "exp": true
+    },
+    {
+     "k": "filterQ",
+     "name": "Q",
+     "min": 0.1,
+     "max": 30,
+     "step": 0.1
+    },
+    {
+     "k": "filterGain",
+     "name": "Gain (dB)",
+     "min": -24,
+     "max": 24,
+     "step": 0.1
+    },
+    {
+     "k": "filterVowel",
+     "name": "Vowel (A–U)",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    },
+    {
+     "k": "filterCombFb",
+     "name": "Feedback",
+     "min": 0,
+     "max": 0.95,
+     "step": 0.01
+    }
+   ]
+  },
+  {
+   "on": "chorusOn",
+   "title": "Chorus / Flanger",
+   "tag": "modulated delay",
+   "choices": [
+    {
+     "k": "chorusMode",
+     "name": "Mode",
+     "options": [
+      {
+       "value": "chorus",
+       "label": "Chorus"
+      },
+      {
+       "value": "flanger",
+       "label": "Flanger"
+      }
+     ]
+    }
+   ],
+   "sliders": [
+    {
+     "k": "chorusRate",
+     "name": "Rate (Hz)",
+     "min": 0.01,
+     "max": 8,
+     "step": 0.01,
+     "exp": true
+    },
+    {
+     "k": "chorusDepth",
+     "name": "Depth (ms)",
+     "min": 0,
+     "max": 20,
+     "step": 0.1
+    },
+    {
+     "k": "chorusMix",
+     "name": "Mix (dry↔wet)",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    },
+    {
+     "k": "chorusFb",
+     "name": "Feedback",
+     "min": 0,
+     "max": 0.95,
+     "step": 0.01
+    }
+   ]
+  },
+  {
+   "on": "phaserOn",
+   "title": "Phaser",
+   "tag": "all-pass stages",
+   "choices": [
+    {
+     "k": "phaserStages",
+     "name": "Stages",
+     "options": [
+      {
+       "value": "2",
+       "label": "2"
+      },
+      {
+       "value": "4",
+       "label": "4"
+      },
+      {
+       "value": "6",
+       "label": "6"
+      },
+      {
+       "value": "8",
+       "label": "8"
+      }
+     ]
+    }
+   ],
+   "sliders": [
+    {
+     "k": "phaserRate",
+     "name": "Rate (Hz)",
+     "min": 0.1,
+     "max": 10,
+     "step": 0.01,
+     "exp": true
+    },
+    {
+     "k": "phaserDepth",
+     "name": "Depth",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    },
+    {
+     "k": "phaserFb",
+     "name": "Feedback",
+     "min": 0,
+     "max": 0.9,
+     "step": 0.01
+    },
+    {
+     "k": "phaserMix",
+     "name": "Mix (dry↔wet)",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    }
+   ]
+  },
+  {
+   "on": "delayOn",
+   "title": "Delay / Echo",
+   "tag": "feedback loop",
+   "choices": [],
+   "sliders": [
+    {
+     "k": "delayTime",
+     "name": "Time (s)",
+     "min": 0.05,
+     "max": 2,
+     "step": 0.01,
+     "exp": true
+    },
+    {
+     "k": "delayFb",
+     "name": "Feedback",
+     "min": 0,
+     "max": 0.9,
+     "step": 0.01
+    },
+    {
+     "k": "delayMix",
+     "name": "Mix (dry↔wet)",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    },
+    {
+     "k": "delayShimmer",
+     "name": "Shimmer (octave up)",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    }
+   ]
+  },
+  {
+   "on": "reverbOn",
+   "title": "Reverb",
+   "tag": "feedback delay network",
+   "choices": [],
+   "sliders": [
+    {
+     "k": "reverbDecay",
+     "name": "Decay (s)",
+     "min": 0.1,
+     "max": 8,
+     "step": 0.1
+    },
+    {
+     "k": "reverbMix",
+     "name": "Mix (dry↔wet)",
+     "min": 0,
+     "max": 1,
+     "step": 0.01
+    }
+   ]
+  },
+  {
+   "on": "limiterOn",
+   "title": "Limiter",
+   "tag": "anti-clip",
+   "choices": [],
+   "sliders": [
+    {
+     "k": "limiterThr",
+     "name": "Threshold (dB)",
+     "min": -40,
+     "max": 0,
+     "step": 0.5
+    },
+    {
+     "k": "limiterRel",
+     "name": "Release (s)",
+     "min": 0.02,
+     "max": 1,
+     "step": 0.01
+    }
+   ]
+  }
+ ],
+ "filterControls": {
+  "lowpass": {
+   "q": true,
+   "gain": false,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Cutoff (Hz)",
+   "qLabel": "Q"
+  },
+  "highpass": {
+   "q": true,
+   "gain": false,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Cutoff (Hz)",
+   "qLabel": "Q"
+  },
+  "bandpass": {
+   "q": true,
+   "gain": false,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Frequency (Hz)",
+   "qLabel": "Q"
+  },
+  "notch": {
+   "q": true,
+   "gain": false,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Frequency (Hz)",
+   "qLabel": "Q"
+  },
+  "peaking": {
+   "q": true,
+   "gain": true,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Frequency (Hz)",
+   "qLabel": "Q"
+  },
+  "lowshelf": {
+   "q": true,
+   "gain": true,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Cutoff (Hz)",
+   "qLabel": "Q"
+  },
+  "highshelf": {
+   "q": true,
+   "gain": true,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Cutoff (Hz)",
+   "qLabel": "Q"
+  },
+  "allpass": {
+   "q": true,
+   "gain": false,
+   "vowel": false,
+   "comb": false,
+   "freqLabel": "Frequency (Hz)",
+   "qLabel": "Q"
+  },
+  "formant": {
+   "q": true,
+   "gain": false,
+   "vowel": true,
+   "comb": false,
+   "freqLabel": "Formant shift (Hz)",
+   "qLabel": "Resonance"
+  },
+  "comb": {
+   "q": false,
+   "gain": false,
+   "vowel": false,
+   "comb": true,
+   "freqLabel": "Pitch (Hz)",
+   "qLabel": "Q"
+  }
+ },
+ "vowels": [
+  "A",
+  "E",
+  "I",
+  "O",
+  "U"
+ ],
+ "couplingControls": [
+  {
+   "k": "loudToFlow",
+   "name": "Loudness → advection",
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "kind": "offset"
+  },
+  {
+   "k": "loudToCurl",
+   "name": "Loudness → curl",
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "kind": "offset"
+  },
+  {
+   "k": "loudToGloss",
+   "name": "Loudness → gloss",
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "kind": "offset"
+  },
+  {
+   "k": "brightToShift",
+   "name": "Brightness → hue",
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "kind": "offset"
+  },
+  {
+   "k": "onsetToLight",
+   "name": "Onsets → light angle",
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "kind": "offset"
+  },
+  {
+   "k": "loudToPulse",
+   "name": "Loudness swell → exposure pulse",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "kind": "effect"
+  },
+  {
+   "k": "onsetToFlash",
+   "name": "Onsets → highlight flash",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "kind": "effect"
+  },
+  {
+   "k": "onsetToSeed",
+   "name": "Onsets → new growth + ripple",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "kind": "effect"
+  },
+  {
+   "k": "spectrumToTint",
+   "name": "Bass / mid / treble → tint",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "kind": "effect"
+  }
+ ],
+ "lfoShapeLabels": {
+  "sine": "Sine",
+  "triangle": "Triangle",
+  "saw": "Saw",
+  "square": "Square",
+  "random": "Random (S&H)",
+  "pink": "Pink (1/f)"
+ },
+ "lfoRate": {
+  "min": 0.003,
+  "max": 2,
+  "exp": true
+ },
+ "lfoPhase": {
+  "k": "phase",
+  "name": "Phase",
+  "min": 0,
+  "max": 1,
+  "step": 0.01
+ },
+ "routeDepth": {
+  "k": "depth",
+  "name": "Depth",
+  "min": -1,
+  "max": 1,
+  "step": 0.01
+ },
+ "newRouteDepth": 0.2,
+ "targetGroups": {
+  "sound": [
+   {
+    "id": "additive",
+    "title": "Harmonic Sum",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "fund",
+      "name": "Fund (Hz)",
+      "exp": true
+     },
+     {
+      "k": "N",
+      "name": "Harmonics N",
+      "exp": false
+     },
+     {
+      "k": "move",
+      "name": "Move (Hz)",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "lorenz",
+    "title": "Lorenz Attractor",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "sigma",
+      "name": "σ",
+      "exp": false
+     },
+     {
+      "k": "rho",
+      "name": "ρ",
+      "exp": false
+     },
+     {
+      "k": "beta",
+      "name": "β",
+      "exp": false
+     },
+     {
+      "k": "lBase",
+      "name": "Base f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "lFreqScale",
+      "name": "Freq scale",
+      "exp": false
+     },
+     {
+      "k": "lAmp",
+      "name": "Amp scale",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "rossler",
+    "title": "Rossler Attractor",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "rossA",
+      "name": "a",
+      "exp": false
+     },
+     {
+      "k": "rossB",
+      "name": "b",
+      "exp": false
+     },
+     {
+      "k": "rossC",
+      "name": "c",
+      "exp": false
+     },
+     {
+      "k": "rossBase",
+      "name": "Base f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "rossFreqScale",
+      "name": "Freq scale",
+      "exp": false
+     },
+     {
+      "k": "rossAmp",
+      "name": "Amp scale",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "gliss",
+    "title": "Exponential Glissando",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "f0",
+      "name": "f0 (Hz)",
+      "exp": true
+     },
+     {
+      "k": "k",
+      "name": "k",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "shepard",
+    "title": "Shepard Tone",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "shepBase",
+      "name": "Base f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "shepSpeed",
+      "name": "Speed",
+      "exp": false
+     },
+     {
+      "k": "shepOctaves",
+      "name": "Octaves",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "bell",
+    "title": "FM Bell",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "bellF0",
+      "name": "f0 (Hz)",
+      "exp": true
+     },
+     {
+      "k": "bellRatio",
+      "name": "Inharmonicity",
+      "exp": false
+     },
+     {
+      "k": "bellIndex",
+      "name": "FM index",
+      "exp": false
+     },
+     {
+      "k": "bellDecay",
+      "name": "Decay (s)",
+      "exp": false
+     },
+     {
+      "k": "bellPeriod",
+      "name": "Strike every (s)",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "risset",
+    "title": "Risset Bell",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "rissF0",
+      "name": "f0 (Hz)",
+      "exp": true
+     },
+     {
+      "k": "rissDecay",
+      "name": "Decay (s)",
+      "exp": false
+     },
+     {
+      "k": "rissPeriod",
+      "name": "Strike every (s)",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "fm",
+    "title": "FM Sine",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "fc",
+      "name": "f_c (Hz)",
+      "exp": true
+     },
+     {
+      "k": "fm",
+      "name": "f_m (Hz)",
+      "exp": true
+     },
+     {
+      "k": "I",
+      "name": "Index I",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "beats",
+    "title": "Two Sines (Beats)",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "fbeat",
+      "name": "f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "df",
+      "name": "Δf (Hz)",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "pm",
+    "title": "Phase Modulation",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "f",
+      "name": "f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "f2pm",
+      "name": "f2 (Hz)",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "quasi",
+    "title": "Quasi-random LFO",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "fq",
+      "name": "Base f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "Aq",
+      "name": "Depth (Hz)",
+      "exp": false
+     },
+     {
+      "k": "wq",
+      "name": "w",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "logistic",
+    "title": "Logistic Map",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "base",
+      "name": "Base f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "depth",
+      "name": "Depth (Hz)",
+      "exp": false
+     },
+     {
+      "k": "r",
+      "name": "r",
+      "exp": false
+     },
+     {
+      "k": "lfoHz",
+      "name": "Update rate (Hz)",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "dist",
+    "title": "Nonlinear Saturation",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "fd",
+      "name": "f (Hz)",
+      "exp": true
+     },
+     {
+      "k": "alpha",
+      "name": "α",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "karplus",
+    "title": "Karplus–Strong (String)",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "ksFreq",
+      "name": "Freq (Hz)",
+      "exp": true
+     },
+     {
+      "k": "ksDamp",
+      "name": "Damping",
+      "exp": false
+     },
+     {
+      "k": "ksBright",
+      "name": "Brightness",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "bytebeat",
+    "title": "Bytebeat",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "bbRecipe",
+      "name": "Recipe #",
+      "exp": false
+     },
+     {
+      "k": "bbRate",
+      "name": "Rate (Hz)",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "ocean",
+    "title": "Ocean / Wind",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "oceanRate",
+      "name": "Wave rate (Hz)",
+      "exp": true
+     },
+     {
+      "k": "oceanCut",
+      "name": "Cutoff (Hz)",
+      "exp": true
+     },
+     {
+      "k": "oceanDepth",
+      "name": "Swell depth",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "rain",
+    "title": "Rain / Drops",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "rainDensity",
+      "name": "Drops/s",
+      "exp": true
+     },
+     {
+      "k": "rainPitch",
+      "name": "Drop pitch (Hz)",
+      "exp": true
+     },
+     {
+      "k": "rainBed",
+      "name": "Bed level",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "noiselp",
+    "title": "Noise → Low-pass",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "nCut",
+      "name": "Cutoff (Hz)",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "pinknoise",
+    "title": "Pink Noise (1/f)",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "pinkBright",
+      "name": "Brightness",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "brownnoise",
+    "title": "Brown Noise (Brownian)",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "brownStep",
+      "name": "Step size",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "velvetnoise",
+    "title": "Velvet Noise",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "velvetDensity",
+      "name": "Density (imp/s)",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "tanpura",
+    "title": "Tanpura",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "tanSa",
+      "name": "Low Sa (Hz)",
+      "exp": true
+     },
+     {
+      "k": "tanCycle",
+      "name": "Cycle (s)",
+      "exp": true
+     },
+     {
+      "k": "tanJawari",
+      "name": "Jawari",
+      "exp": false
+     },
+     {
+      "k": "tanSustain",
+      "name": "Sustain (s)",
+      "exp": true
+     },
+     {
+      "k": "tanBright",
+      "name": "Pluck brightness",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "bowl",
+    "title": "Singing bowl",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "bowlF",
+      "name": "Pitch (Hz)",
+      "exp": true
+     },
+     {
+      "k": "bowlBeat",
+      "name": "Breathing (Hz)",
+      "exp": true
+     },
+     {
+      "k": "bowlBright",
+      "name": "Upper modes",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "fx",
+    "title": "Effects",
+    "params": [
+     {
+      "k": "filterFreq",
+      "name": "Filter cutoff",
+      "exp": true
+     },
+     {
+      "k": "filterQ",
+      "name": "Filter Q",
+      "exp": false
+     },
+     {
+      "k": "filterGain",
+      "name": "Filter gain",
+      "exp": false
+     },
+     {
+      "k": "filterVowel",
+      "name": "Filter vowel",
+      "exp": false
+     },
+     {
+      "k": "filterCombFb",
+      "name": "Comb feedback",
+      "exp": false
+     },
+     {
+      "k": "chorusRate",
+      "name": "Chorus rate",
+      "exp": true
+     },
+     {
+      "k": "chorusDepth",
+      "name": "Chorus depth",
+      "exp": false
+     },
+     {
+      "k": "chorusMix",
+      "name": "Chorus mix",
+      "exp": false
+     },
+     {
+      "k": "chorusFb",
+      "name": "Chorus feedback",
+      "exp": false
+     },
+     {
+      "k": "delayTime",
+      "name": "Delay time",
+      "exp": true
+     },
+     {
+      "k": "delayFb",
+      "name": "Delay feedback",
+      "exp": false
+     },
+     {
+      "k": "delayMix",
+      "name": "Delay mix",
+      "exp": false
+     },
+     {
+      "k": "phaserRate",
+      "name": "Phaser rate",
+      "exp": true
+     },
+     {
+      "k": "phaserDepth",
+      "name": "Phaser depth",
+      "exp": false
+     },
+     {
+      "k": "phaserFb",
+      "name": "Phaser feedback",
+      "exp": false
+     },
+     {
+      "k": "phaserMix",
+      "name": "Phaser mix",
+      "exp": false
+     },
+     {
+      "k": "reverbMix",
+      "name": "Reverb mix",
+      "exp": false
+     },
+     {
+      "k": "limiterThr",
+      "name": "Limiter threshold",
+      "exp": false
+     },
+     {
+      "k": "limiterRel",
+      "name": "Limiter release",
+      "exp": false
+     },
+     {
+      "k": "delayShimmer",
+      "name": "Delay shimmer",
+      "exp": false
+     }
+    ]
+   }
+  ],
+  "picture": [
+   {
+    "id": "reaction",
+    "title": "Reaction",
+    "params": [
+     {
+      "k": "feed",
+      "name": "Feed",
+      "exp": false
+     },
+     {
+      "k": "kill",
+      "name": "Kill",
+      "exp": false
+     },
+     {
+      "k": "diffU",
+      "name": "Diff U",
+      "exp": false
+     },
+     {
+      "k": "diffV",
+      "name": "Diff V",
+      "exp": false
+     },
+     {
+      "k": "speed",
+      "name": "Speed",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "fieldVariation",
+    "title": "Field variation",
+    "params": [
+     {
+      "k": "feedVarAmount",
+      "name": "Feed amount",
+      "exp": false
+     },
+     {
+      "k": "feedVarScale",
+      "name": "Feed scale",
+      "exp": true
+     },
+     {
+      "k": "feedVarWarp",
+      "name": "Feed warp",
+      "exp": false
+     },
+     {
+      "k": "killVarAmount",
+      "name": "Kill amount",
+      "exp": false
+     },
+     {
+      "k": "killVarScale",
+      "name": "Kill scale",
+      "exp": true
+     },
+     {
+      "k": "killVarWarp",
+      "name": "Kill warp",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "flow",
+    "title": "Flow",
+    "params": [
+     {
+      "k": "curlStrength",
+      "name": "Curl strength",
+      "exp": false
+     },
+     {
+      "k": "curlScale",
+      "name": "Curl scale",
+      "exp": true
+     },
+     {
+      "k": "driftX",
+      "name": "Drift X",
+      "exp": false
+     },
+     {
+      "k": "driftY",
+      "name": "Drift Y (+down)",
+      "exp": false
+     },
+     {
+      "k": "advectAmount",
+      "name": "Advect amount",
+      "exp": false
+     },
+     {
+      "k": "evolveRate",
+      "name": "Evolve rate",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "palette",
+    "title": "Palette",
+    "params": [
+     {
+      "k": "shift",
+      "name": "Shift",
+      "exp": false
+     },
+     {
+      "k": "contrast",
+      "name": "Contrast",
+      "exp": false
+     },
+     {
+      "k": "bands",
+      "name": "Bands",
+      "exp": false
+     },
+     {
+      "k": "relief",
+      "name": "Relief",
+      "exp": false
+     },
+     {
+      "k": "lightAngle",
+      "name": "Light angle",
+      "exp": false
+     },
+     {
+      "k": "gloss",
+      "name": "Gloss",
+      "exp": false
+     }
+    ]
+   }
+  ]
+ }
+}

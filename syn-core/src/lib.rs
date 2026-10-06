@@ -14,6 +14,7 @@ pub mod modmatrix;
 pub mod point;
 pub mod schema;
 pub mod settings;
+pub mod settings_page;
 pub mod share;
 pub mod sim;
 pub mod state;
