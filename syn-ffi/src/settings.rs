@@ -155,6 +155,17 @@ impl PointEdit {
         self.locked().set_master_gain(value);
     }
 
+    /// Everything on one tab back to where a new point starts — ⚙'s "begin
+    /// again from nothing", for the sound and the picture apart. The other
+    /// tab keeps what it had, and the page is one undoable step either way,
+    /// so a reset is taken back by ↩ like any edit.
+    pub fn reset(&self, tab: SettingsTab) {
+        self.locked().reset(match tab {
+            SettingsTab::Sound => settings::Tab::Sound,
+            SettingsTab::Picture => settings::Tab::Picture,
+        });
+    }
+
     /// The point as edited — for the sound now, and for the session on close.
     pub fn point_json(&self) -> String {
         serde_json::to_string(&self.locked().point()).unwrap_or_default()
@@ -229,6 +240,38 @@ mod tests {
         let fx = session.close_settings(0.1, json).expect("the edited point");
         assert!(!fx.is_empty());
         assert!(session.view().can_undo, "one step, and it can be taken back");
+    }
+
+    #[test]
+    fn a_reset_clears_one_tab_and_the_point_still_plays() {
+        let edit = PointEdit::new(preset_state_json(0).unwrap()).expect("preset 0");
+        let page = settings_page();
+        let a_sound = page
+            .iter()
+            .find(|s| s.tab == SettingsTab::Sound && s.toggle.is_some())
+            .and_then(|s| s.toggle.clone())
+            .expect("a sound section with a switch");
+        let a_picture = page
+            .iter()
+            .find(|s| s.tab == SettingsTab::Picture && s.toggle.is_some())
+            .and_then(|s| s.toggle.clone())
+            .expect("a picture section with a switch");
+        edit.set_value(a_sound.id.clone(), 1.0);
+        edit.set_value(a_picture.id.clone(), 1.0);
+        edit.set_master_gain(0.42);
+
+        edit.reset(SettingsTab::Picture);
+        assert_eq!(edit.value(a_sound.id.clone()), 1.0, "the sound is left alone");
+        assert_eq!(edit.value(a_picture.id.clone()), 0.0, "the picture starts again");
+        assert_eq!(edit.master_gain(), 0.42, "the volume is the sound's");
+
+        edit.reset(SettingsTab::Sound);
+        assert_eq!(edit.value(a_sound.id.clone()), 0.0);
+        assert_ne!(edit.master_gain(), 0.42);
+        assert!(
+            crate::SoundPlayer::new(22050, edit.point_json()).is_ok(),
+            "a point with nothing switched on is still a point the sound can take",
+        );
     }
 
     #[test]

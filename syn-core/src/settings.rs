@@ -316,6 +316,31 @@ impl Edit {
         gene_index_of(id).is_some_and(|i| is_gene_active(&self.genome, i))
     }
 
+    /// Everything on one tab back to where a new point starts — ⚙'s "begin
+    /// again from nothing", asked for the sound and the picture apart
+    /// (2026-10-06). The other tab is left exactly as it was.
+    ///
+    /// The values are a fresh [`AppState`]'s, not a second table written
+    /// here: every formula and card off at its slider defaults, the default
+    /// FX, four resting LFOs, no routes. So a reset leaves the point the
+    /// sound of silence on that half — which is what a clean sheet is — and
+    /// the app's own undo takes it back, because closing the page is one step.
+    pub fn reset(&mut self, tab: Tab) {
+        let fresh = AppState::new();
+        let genome = encode_genome(&fresh);
+        for section in sections().iter().filter(|s| s.tab == tab) {
+            for gene in section.toggle.iter().copied().chain(section.controls.iter().copied()) {
+                if let Some(i) = gene_index_of(&gene.id) {
+                    self.genome[i] = genome[i];
+                }
+            }
+        }
+        // Not a gene, and the sound's: the picture's reset must not move it.
+        if tab == Tab::Sound {
+            self.master_gain = fresh.audio.master_gain;
+        }
+    }
+
     pub fn master_gain(&self) -> f64 {
         self.master_gain
     }
@@ -340,7 +365,61 @@ pub fn lfo_shape(index: f64) -> LfoShape {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::state::presets;
     use std::collections::BTreeSet;
+
+    /// A tab's reset is that tab's: the other half of the point is the same
+    /// point afterwards, down to the gene.
+    #[test]
+    fn a_reset_touches_one_tab_and_leaves_the_other_alone() {
+        for tab in [Tab::Sound, Tab::Picture] {
+            let point = &presets()[0].state;
+            let mut edit = Edit::new(point);
+            edit.set_master_gain(0.42);
+            let before = Edit::new(point);
+            edit.reset(tab);
+
+            let fresh = Edit::new(&AppState::new());
+            for section in sections() {
+                for gene in section.toggle.iter().copied().chain(section.controls.iter().copied()) {
+                    let (got, want) = (
+                        edit.value(&gene.id),
+                        if section.tab == tab { fresh.value(&gene.id) } else { before.value(&gene.id) },
+                    );
+                    assert!((got - want).abs() < 1e-9, "{tab:?}: {} is {got}, wanted {want}", gene.id,);
+                }
+            }
+        }
+    }
+
+    /// The volume is not a gene and belongs to the sound.
+    #[test]
+    fn only_the_sounds_reset_moves_the_volume() {
+        let point = &presets()[0].state;
+        let mut edit = Edit::new(point);
+        edit.set_master_gain(0.42);
+        edit.reset(Tab::Picture);
+        assert_eq!(edit.master_gain(), 0.42);
+        edit.reset(Tab::Sound);
+        assert_eq!(edit.master_gain(), AppState::new().audio.master_gain);
+    }
+
+    /// Both resets together are a new point: that is what "from nothing"
+    /// means, and it is the same nothing `AppState::new()` starts from.
+    ///
+    /// Compared as genomes, not as points: a point that has been through the
+    /// genome comes back with the last bits moved (0.35 as
+    /// 0.35000000000000003), which is what `same_genome` is for.
+    #[test]
+    fn resetting_both_tabs_is_a_fresh_point() {
+        let mut edit = Edit::new(&presets()[3].state);
+        edit.reset(Tab::Sound);
+        edit.reset(Tab::Picture);
+        let fresh = AppState::new();
+        assert!(crate::genome::evolve::same_genome(&encode_genome(&edit.point()), &encode_genome(&fresh),));
+        assert_eq!(edit.point().audio.master_gain, fresh.audio.master_gain);
+        assert!(edit.point().enabled_formulas().is_empty(), "a clean sheet makes no sound yet");
+    }
 
     #[test]
     fn every_gene_is_on_the_page_exactly_once() {
