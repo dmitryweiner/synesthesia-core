@@ -253,6 +253,17 @@ pub fn field_grid(width: u32, height: u32) -> Vec<u32> {
     vec![w as u32, h as u32]
 }
 
+/// The picture's numbers (syn_core::analysis::picture) for a renderer's V
+/// field, `width`×`height`, against the previous sample (`prev`, empty for
+/// none): `{coverage, edges, change, alive}` as JSON — the web app's
+/// `analyze.mjs --picture` reads its GPU field and measures it here.
+#[wasm_bindgen(js_name = pictureMetrics)]
+pub fn picture_metrics_json(v: &[f32], width: u32, height: u32, prev: &[f32]) -> String {
+    let prev = (prev.len() == v.len()).then_some(prev);
+    let m = syn_core::analysis::picture::picture_metrics(v, width as usize, height as usize, prev);
+    json!({ "coverage": m.coverage, "edges": m.edges, "change": m.change, "alive": m.alive }).to_string()
+}
+
 #[wasm_bindgen(js_name = maxSeedSpots)]
 pub fn max_seed_spots() -> u32 {
     syn_core::sim::MAX_SPOTS as u32
