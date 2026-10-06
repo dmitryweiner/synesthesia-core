@@ -66,15 +66,18 @@ pub struct ScoutConfig {
 }
 
 impl Default for ScoutConfig {
-    /// The web app's surrogate, which is what a phone can afford: 24 s at
-    /// 8 kHz ranks candidates close to a full 30 s / 22 kHz render
-    /// (Spearman ρ 0.73, against 0.23 for 8 s at 16 kHz) because the slow
-    /// LFOs need the long window and the fractal metrics do not need the high
-    /// frequencies. The console renders at full quality instead, on a machine
-    /// that is plugged in; the length and the rate are settings either way
-    /// (synesthesia-android PLAN.md, open question 1).
+    /// What a phone can afford, measured on this chain (synesthesia
+    /// PLAN-CORE.md phase 4, 2026-10-06): Spearman ρ of a render's ranking
+    /// against a full 30 s / 22 kHz one, over 15 presets with three 👍 and
+    /// three 👎 proposals each — 24 s @ 8 kHz 0.60 (the browser chain's
+    /// surrogate; 0.73 there), 24 s @ 11 kHz 0.79, 30 s @ 16 kHz 0.80,
+    /// 16 s @ 11 kHz 0.58. A job of seven at 24 s @ 11 kHz costs ~17 % more
+    /// than at 8 kHz — about 2 s on six workers of an Android phone, where
+    /// 30 s @ 22 kHz takes 4. The slow LFOs need the long window. The console
+    /// renders at full quality instead, on a machine that is plugged in; the
+    /// length and the rate are settings either way.
     fn default() -> Self {
-        Self { enabled: true, candidates: 3, seconds: 24.0, sample_rate: 8000.0, settle: SCOUT_SETTLE }
+        Self { enabled: true, candidates: 3, seconds: 24.0, sample_rate: 11025.0, settle: SCOUT_SETTLE }
     }
 }
 
