@@ -15,6 +15,7 @@
 //!   `None` / `false`, never a panic.
 
 pub mod picture;
+pub mod point;
 pub mod session;
 pub mod settings;
 pub mod share;
