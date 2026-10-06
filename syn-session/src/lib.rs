@@ -219,7 +219,7 @@ pub struct Session {
     base_name: String,
     /// True while the point is still the one that was loaded under that name;
     /// a press makes it the user's own, and the name only says where it came
-    /// from (the web app clears `presetName` on every step).
+    /// from (the web app clears `preset_name` on every step).
     named: bool,
     steps: u32,
     /// Not a gene, and not the search's business: the user's volume.

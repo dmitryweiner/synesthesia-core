@@ -171,9 +171,11 @@ pub struct AppState {
     #[serde(rename = "mod")]
     pub modulation: ModState,
     pub coupling: BTreeMap<String, f64>,
-    /// The web app's `presetName`. Points written by synesthesia-rust before
-    /// this was fixed spelled it `preset_name`; they still load.
-    #[serde(rename = "presetName", alias = "preset_name", default, skip_serializing_if = "Option::is_none")]
+    /// The point's name, spelled `preset_name` in every app (decided with
+    /// the user 2026-10-03; the only snake_case key of the point). Points the
+    /// web app wrote before 2026-10-06 — old `#s=` links, the points
+    /// Worker's rows, localStorage — spell it `presetName`; they still load.
+    #[serde(alias = "presetName", default, skip_serializing_if = "Option::is_none")]
     pub preset_name: Option<String>,
 }
 
@@ -239,13 +241,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_preset_name_is_spelled_as_the_web_app_spells_it() {
+    fn the_preset_name_is_written_preset_name_and_the_old_spelling_still_loads() {
         let p = &presets()[0];
         assert_eq!(p.state.preset_name.as_deref(), Some(p.name.as_str()));
         let json = serde_json::to_string(&p.state).unwrap();
-        assert!(json.contains("\"presetName\":\"Fractal garden\""), "{json}");
-        assert!(!json.contains("preset_name"));
-        let old = json.replace("\"presetName\"", "\"preset_name\"");
+        assert!(json.contains("\"preset_name\":\"Fractal garden\""), "{json}");
+        assert!(!json.contains("presetName"));
+        let old = json.replace("\"preset_name\"", "\"presetName\"");
         let back: AppState = serde_json::from_str(&old).unwrap();
         assert_eq!(back.preset_name.as_deref(), Some("Fractal garden"));
     }

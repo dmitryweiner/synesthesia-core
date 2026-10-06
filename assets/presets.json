@@ -405,7 +405,7 @@
     "onsetToSeed": 0.5,
     "spectrumToTint": 0.6
    },
-   "presetName": "Fractal garden"
+   "preset_name": "Fractal garden"
   }
  },
  {
@@ -751,7 +751,7 @@
     "onsetToSeed": 0.3,
     "spectrumToTint": 0.7
    },
-   "presetName": "Stillness ink"
+   "preset_name": "Stillness ink"
   }
  },
  {
@@ -1110,7 +1110,7 @@
     "onsetToSeed": 0.4,
     "spectrumToTint": 0.8
    },
-   "presetName": "Whale coral"
+   "preset_name": "Whale coral"
   }
  },
  {
@@ -1518,7 +1518,7 @@
     "onsetToSeed": 0.3,
     "spectrumToTint": 0.9
    },
-   "presetName": "Molten Polivoks"
+   "preset_name": "Molten Polivoks"
   }
  },
  {
@@ -1895,7 +1895,7 @@
     "onsetToSeed": 0.3,
     "spectrumToTint": 0.8
    },
-   "presetName": "Aurora"
+   "preset_name": "Aurora"
   }
  },
  {
@@ -2291,7 +2291,7 @@
     "onsetToSeed": 0.4,
     "spectrumToTint": 0.6
    },
-   "presetName": "Silver maze"
+   "preset_name": "Silver maze"
   }
  },
  {
@@ -2682,7 +2682,7 @@
     "onsetToSeed": 0.3,
     "spectrumToTint": 0.7
    },
-   "presetName": "Space breccia"
+   "preset_name": "Space breccia"
   }
  },
  {
@@ -3035,7 +3035,7 @@
     "onsetToSeed": 1,
     "spectrumToTint": 0.5
    },
-   "presetName": "Cave coral"
+   "preset_name": "Cave coral"
   }
  },
  {
@@ -3431,7 +3431,7 @@
     "onsetToSeed": 0.4,
     "spectrumToTint": 0.7
    },
-   "presetName": "Loom & copper"
+   "preset_name": "Loom & copper"
   }
  },
  {
@@ -3777,7 +3777,7 @@
     "onsetToSeed": 0.2,
     "spectrumToTint": 0.6
    },
-   "presetName": "Wind ash"
+   "preset_name": "Wind ash"
   }
  },
  {
@@ -4136,7 +4136,7 @@
     "onsetToSeed": 1,
     "spectrumToTint": 0.6
    },
-   "presetName": "Bell spots"
+   "preset_name": "Bell spots"
   }
  },
  {
@@ -4476,7 +4476,7 @@
     "onsetToSeed": 0.5,
     "spectrumToTint": 0.7
    },
-   "presetName": "Subway basalt"
+   "preset_name": "Subway basalt"
   }
  },
  {
@@ -4865,7 +4865,7 @@
     "onsetToSeed": 0.4,
     "spectrumToTint": 0.8
    },
-   "presetName": "Overtone steppe"
+   "preset_name": "Overtone steppe"
   }
  },
  {
@@ -5274,7 +5274,7 @@
     "onsetToSeed": 0.4,
     "spectrumToTint": 0.6
    },
-   "presetName": "Candle glaze"
+   "preset_name": "Candle glaze"
   }
  },
  {
@@ -5656,7 +5656,7 @@
     "onsetToSeed": 0.6,
     "spectrumToTint": 0.5
    },
-   "presetName": "Tanpura halo"
+   "preset_name": "Tanpura halo"
   }
  }
 ]

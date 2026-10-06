@@ -152,7 +152,7 @@ pub struct Session {
 #[uniffi::export]
 impl Session {
     /// A session on a point, named as the app knows it (empty: the point's
-    /// own `presetName`, if it has one).
+    /// own `preset_name`, if it has one).
     #[uniffi::constructor]
     pub fn new(name: String, point_json: String, config: SessionConfig) -> Result<Arc<Self>, CoreError> {
         let point = parse_point(&point_json)?;
@@ -420,7 +420,7 @@ mod tests {
 
         let back = Session::restored(shown.clone(), left_on, config()).expect("the point");
         assert_eq!(back.view().name, shown);
-        assert!(!back.point_json().contains("presetName"), "it claims no name of its own");
+        assert!(!back.point_json().contains("preset_name"), "it claims no name of its own");
     }
 
     #[test]
@@ -432,7 +432,7 @@ mod tests {
         assert_eq!(effects(&fx), ["status", "save"]);
         assert_eq!(s.view().name, "Dawn");
         assert_eq!(s.view().steps, 0);
-        assert!(s.point_json().contains("\"presetName\":\"Dawn\""));
+        assert!(s.point_json().contains("\"preset_name\":\"Dawn\""));
         assert!(s.view().can_undo);
     }
 

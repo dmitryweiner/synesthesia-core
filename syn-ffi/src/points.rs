@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(back.name_at(1).as_deref(), Some("Dusk"));
         // What comes back is a point a session can load and a player can play.
         let point = back.point_json(0).expect("the first point");
-        assert!(point.contains("\"presetName\":\"Dawn\""));
+        assert!(point.contains("\"preset_name\":\"Dawn\""));
         assert!(crate::SoundPlayer::new(22050, point).is_ok());
 
         assert!(back.forget(0));

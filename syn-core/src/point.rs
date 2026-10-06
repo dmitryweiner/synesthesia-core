@@ -242,9 +242,11 @@ pub fn sanitize(u: &Value) -> Option<AppState> {
         }
     }
 
-    // `if (partial.presetName)`: an empty name is no name.
-    if let Some(name) = u.get("presetName").and_then(Value::as_str).filter(|n| !n.is_empty()) {
-        state["presetName"] = name.into();
+    // `if (partial.presetName)`: an empty name is no name. The new spelling
+    // wins when a point carries both.
+    let name = |k: &str| u.get(k).and_then(Value::as_str).filter(|n| !n.is_empty());
+    if let Some(name) = name("preset_name").or_else(|| name("presetName")) {
+        state["preset_name"] = name.into();
     }
 
     serde_json::from_value(state).ok()
@@ -356,8 +358,16 @@ const BASE62: &[u8; 62] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 
 /// The points Worker's id of a canonical JSON string: the first 8 bytes of
 /// its SHA-256 as a big-endian integer, its lowest 10 base62 digits.
+///
+/// The hash is taken over the name's old spelling (`presetName`, as the
+/// TypeScript wrote it until 2026-10-06), so a point keeps the id it always
+/// had (decided with the user: ids stay). Exact on canonical JSON: both
+/// spellings sort to the same place among the top-level keys (after `mod`,
+/// before `v`), and `"preset_name":` cannot occur inside a string, where
+/// every quote is escaped — so this renames the key and nothing else.
 pub fn point_id(canonical: &str) -> String {
-    let digest = Sha256::digest(canonical.as_bytes());
+    let hashed = canonical.replacen("\"preset_name\":", "\"presetName\":", 1);
+    let digest = Sha256::digest(hashed.as_bytes());
     let mut n = u64::from_be_bytes(digest[..8].try_into().expect("8 bytes"));
     let mut out = [0u8; 10];
     for slot in out.iter_mut().rev() {
@@ -397,6 +407,31 @@ mod tests {
         let mut s = String::new();
         write_js_string("q\"b\\\n\t\u{1}\u{2028}é😀/", &mut s);
         assert_eq!(s, "\"q\\\"b\\\\\\n\\t\\u0001\u{2028}é😀/\"");
+    }
+
+    #[test]
+    fn the_name_is_written_preset_name_and_the_id_does_not_move() {
+        let name = r#"x"preset_name":"y"#;
+        let old = sanitize(&serde_json::json!({ "presetName": name })).expect("a point");
+        let new = sanitize(&serde_json::json!({ "preset_name": name })).expect("a point");
+        assert_eq!(old, new, "either spelling reads");
+        let c = canonical_json(&new);
+        assert!(c.contains(r#""mod":"#) && c.contains(r#""preset_name":"x\"preset_name\":\"y""#), "{c}");
+        assert!(!c.contains("presetName"));
+        // the id of the TypeScript's canonical JSON, which spelled it presetName
+        let ts = c.replace(r#""preset_name":"x"#, r#""presetName":"x"#);
+        let mut sha = String::new();
+        let digest = Sha256::digest(ts.as_bytes());
+        let mut n = u64::from_be_bytes(digest[..8].try_into().unwrap());
+        for _ in 0..10 {
+            sha.insert(0, BASE62[(n % 62) as usize] as char);
+            n /= 62;
+        }
+        assert_eq!(point_id(&c), sha);
+        assert_eq!(point_id(&ts), sha, "an old body keeps its id too");
+        // the new spelling wins over the old one
+        let both = sanitize(&serde_json::json!({ "presetName": "old", "preset_name": "new" })).unwrap();
+        assert_eq!(both.preset_name.as_deref(), Some("new"));
     }
 
     #[test]

@@ -3,6 +3,8 @@
 //! input must sanitize to the same point, with the same canonical JSON —
 //! byte for byte — and so the same id. A failure here means a shared link
 //! would open differently, or get another id, than it did in the TypeScript.
+//! The one change since: the name's key is `preset_name` (it was
+//! `presetName`), and the id is still the one the TypeScript gave.
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -32,8 +34,16 @@ fn every_point_sanitizes_to_the_same_canonical_json_and_id() {
     let mut failures = Vec::new();
     for (i, c) in f.cases.iter().enumerate() {
         let got = sanitize(&c.input).map(|s| canonical_json(&s));
-        if got != c.canonical {
-            let (g, w) = (got.unwrap_or_default(), c.canonical.clone().unwrap_or_default());
+        let mut want = c.canonical.as_ref().map(|w| w.replacen("\"presetName\":", "\"preset_name\":", 1));
+        // The console's points spelled it preset_name, and the TypeScript
+        // dropped their names: kept now (they get new ids — the name is in it).
+        let console_name = c.input.get("preset_name").and_then(Value::as_str).filter(|n| !n.is_empty());
+        if let (Some(name), Some(w)) = (console_name, want.as_mut()) {
+            let at = w.rfind(",\"v\":1,\"visual\":").expect("the top-level v");
+            w.insert_str(at, &format!(",\"preset_name\":{}", serde_json::to_string(name).unwrap()));
+        }
+        if got != want {
+            let (g, w) = (got.unwrap_or_default(), want.unwrap_or_default());
             let at = g.bytes().zip(w.bytes()).position(|(a, b)| a != b).unwrap_or(g.len().min(w.len()));
             let lo = at.saturating_sub(60);
             failures.push(format!(
@@ -44,7 +54,7 @@ fn every_point_sanitizes_to_the_same_canonical_json_and_id() {
             ));
             continue;
         }
-        if let (Some(canonical), Some(id)) = (&c.canonical, &c.id) {
+        if let (Some(canonical), Some(id), None) = (&want, &c.id, console_name) {
             if &point_id(canonical) != id {
                 failures.push(format!("case {i} ({}): id {} vs {id}", c.kind, point_id(canonical)));
             }
@@ -80,6 +90,7 @@ fn a_stored_point_keeps_every_value() {
         let mut before = Vec::new();
         leaves(&c.input, String::new(), &mut before);
         for (path, v) in before {
+            let path = if path == "/presetName" { "/preset_name".to_string() } else { path };
             let got = after.pointer(&path).unwrap_or(&Value::Null);
             let same = match (got.as_f64(), v.as_f64()) {
                 (Some(a), Some(b)) => a == b,

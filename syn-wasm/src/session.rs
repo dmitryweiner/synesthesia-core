@@ -104,7 +104,7 @@ pub struct WebSession {
 #[wasm_bindgen]
 impl WebSession {
     /// A session on a point (AppState JSON), named as the page knows it
-    /// (empty: the point's own `presetName`). `seed` is the session's
+    /// (empty: the point's own `preset_name`). `seed` is the session's
     /// randomness; `scout` turns the background scout on, rendering
     /// `scout_seconds` at `scout_sample_rate` per candidate (0: the core's
     /// defaults).
