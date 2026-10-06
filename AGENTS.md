@@ -3,9 +3,9 @@
 (Claude Code reads CLAUDE.md, which points here.)
 
 The shared model of Synesthesia and its **specification** (synesthesia
-PLAN-CORE.md C2, since 2026-10-05): used by the Android app, being moved
-under the web app (`syn-wasm`, branch `core` there), and meant for the
-console app (which still has its own copy — TODO.md) and an iOS app.
+PLAN-CORE.md C2, since 2026-10-05): used by the Android app (`syn-ffi`),
+the web app (`syn-wasm`) and the console app (synesthesia-rust, `syn-core`),
+each pinned by revision; meant for an iOS app too.
 A new preset, generator, LFO shape or FX parameter is made here first. Docs, UI strings and code comments are in English;
 the user talks to agents in Russian.
 

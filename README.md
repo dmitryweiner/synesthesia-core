@@ -11,7 +11,7 @@ native app:
 | app | how it uses the core |
 |---|---|
 | [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | through `syn-ffi` (UniFFI → Kotlin), pinned by git revision |
-| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | still its own copy of `syn-core`, where it was born; switching to this repository is planned ([TODO.md](TODO.md)) |
+| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core`, pinned by `rev` in its workspace `Cargo.toml` (the crate was born there) |
 | iOS (planned) | through `syn-ffi` (UniFFI → Swift) |
 | [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | moving onto the core (its PLAN-CORE.md): through `syn-wasm` (wasm-bindgen), pinned by git revision |
 
