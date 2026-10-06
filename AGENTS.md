@@ -14,7 +14,16 @@ the user talks to agents in Russian.
 ```bash
 rustup update stable    # first: CI uses the latest stable, and a newer clippy finds more
 ./scripts/check.sh      # after every change: fmt, clippy -D warnings, tests
+cargo run --release -p syn-bench -- …   # the sound bench (below)
 ```
+
+**The sound bench** (`syn-bench`, synesthesia PLAN-CORE.md C6) measures
+the actual sound, as the web app's `analyze.mjs` did: `cargo run --release
+-p syn-bench -- [--preset 0,3] [--secs 30 --sr 22050] [--mutants N]
+[--random N] [--repeat N] [--character --ref 0,3,5,6,8] [--wav DIR]
+[--png DIR] [--json FILE]`, or one of `--onsets`, `--switch 0,3,10 --at 20`,
+`--configs 30@22050,24@11025`. The header of `syn-bench/src/main.rs` says
+what each prints. An agent cannot hear: read the `--png` waterfall.
 
 ## Rules
 
@@ -124,6 +133,9 @@ syn-ffi/src/picture.rs    … the picture: a frame's uniforms, the seed spots,
                           the quality rung, the sizes
 syn-ffi/src/points.rs     … and the points: the kept list, `#s=` tokens, what
                           a link opens
-syn-wasm/src/lib.rs       the wasm-bindgen surface for the web app: presets,
-                          AudioCore (the player, for one AudioWorklet)
+syn-wasm/src/             the wasm-bindgen surface for the web app: AudioCore (the
+                          player, for one AudioWorklet), session, picture, settings,
+                          point (sanitize, id — the points Worker), share (links)
+syn-bench/src/main.rs     the sound bench: fractality, character, onsets, clicks
+                          at switches, render configs, WAVs and waterfalls
 ```

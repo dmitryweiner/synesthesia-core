@@ -41,6 +41,8 @@ syn-ffi/    the foreign interface (UniFFI): records, functions, the live
             and Swift bindings are generated from it
 syn-wasm/   the same for JavaScript (wasm-bindgen): the web app's
             AudioWorklet, Web Workers and points Worker load it
+syn-bench/  the sound bench: render points and measure them (fractality,
+            character, onsets, clicks at switches, render configs, PNGs)
 assets/     presets.json, schema.json, fx-presets.json — the source, edited here
 golden/     63 reference takes of the 21 generators, rendered by the web app
 fixtures/   the TypeScript's behaviour, frozen: points (sanitize, canonical
