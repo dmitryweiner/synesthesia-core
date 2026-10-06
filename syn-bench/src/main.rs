@@ -7,6 +7,7 @@
 //! syn-bench                                   every built-in preset, 30 s @ 22050 Hz
 //! syn-bench --preset 0,3 --secs 40 --sr 22050
 //! syn-bench --token <#s= link or token>       a shared point
+//! syn-bench --points drafts.json --preset 12   drafts ([{name, state}]) beside a built-in
 //! syn-bench --mutants 6 --random 12 --seed 1  + 👍/👎 proposals per preset, + random points
 //! syn-bench --repeat 4                        render k uses seed k for every point: mean ± sd
 //! syn-bench --character --ref 0,3,5,6,8       + character columns, distance to a reference group
@@ -94,7 +95,7 @@ fn candidates(a: &Args) -> Vec<Point> {
         }
     }
     let all: Vec<usize> = (0..presets().len()).collect();
-    let idx = a.list("preset").unwrap_or(if a.has("token") { Vec::new() } else { all });
+    let idx = a.list("preset").unwrap_or(if a.has("token") || a.has("points") { Vec::new() } else { all });
     let mutants = a.num("mutants", 0.0) as usize;
     for i in idx {
         let Some(p) = presets().get(i) else { continue };
@@ -109,6 +110,23 @@ fn candidates(a: &Args) -> Vec<Point> {
             };
             let thumb = if m % 2 == 0 { "👍" } else { "👎" };
             out.push(Point { group: "mutant", label: format!("  {thumb} of {i}"), state: decode_genome(&g) });
+        }
+    }
+    // --points FILE: drafts of a preset being designed (`[{name, state}]`),
+    // rendered after the built-ins without touching assets/ — the new-preset
+    // skill's loop. Each state is sanitized as a link's would be.
+    if let Some(path) = a.get("points") {
+        let drafts: Vec<serde_json::Value> =
+            fs::read_to_string(path).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_else(|| {
+                eprintln!("--points {path}: not a JSON array of {{name, state}}");
+                Vec::new()
+            });
+        for d in drafts {
+            let name = d.get("name").and_then(|n| n.as_str()).unwrap_or("draft").to_string();
+            match d.get("state").and_then(syn_core::point::sanitize) {
+                Some(state) => out.push(Point { group: "draft", label: name, state }),
+                None => eprintln!("--points: {name} is not a point"),
+            }
         }
     }
     for r in 0..a.num("random", 0.0) as usize {
