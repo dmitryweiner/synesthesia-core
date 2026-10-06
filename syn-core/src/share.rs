@@ -22,8 +22,13 @@ pub fn decode_token(token: &str) -> Option<AppState> {
         None => raw.strip_prefix("s=").unwrap_or(raw),
     };
     let payload = payload.split(['&', ' ']).next()?;
-    let bytes = URL_SAFE_NO_PAD.decode(payload).ok()?;
-    serde_json::from_slice(&bytes).ok()
+    // Padded or not: a token copied with its `=` still opens.
+    let bytes = URL_SAFE_NO_PAD.decode(payload.trim_end_matches('=')).ok()?;
+    // As tolerant as the web app was (sanitizeState + stateToAppState): an
+    // old link carries an old, partial point, and opens as one with the
+    // defaults filled in (synesthesia PLAN-CORE.md phase 6).
+    let value: serde_json::Value = serde_json::from_slice(&bytes).ok()?;
+    crate::point::sanitize(&value)
 }
 
 /// What a link asks to open — the web app's `parseLaunch`, in its order:
@@ -87,6 +92,16 @@ mod tests {
             let back = decode_token(&token).expect("decodes");
             assert_eq!(back, p.state, "{}", p.name);
         }
+    }
+
+    #[test]
+    fn an_old_partial_point_opens_with_the_defaults_filled_in() {
+        let token = URL_SAFE_NO_PAD
+            .encode(r#"{"presetName":"Old long link","audio":{"formulas":{"fm":{"enabled":true}}}}"#);
+        let state = decode_token(&token).expect("an old link still opens");
+        assert_eq!(state.preset_name.as_deref(), Some("Old long link"));
+        assert!(state.audio.formulas["fm"].enabled);
+        assert!(decode_token(&URL_SAFE_NO_PAD.encode("42")).is_none(), "a number is no point");
     }
 
     #[test]
