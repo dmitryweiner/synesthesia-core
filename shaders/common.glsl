@@ -1,5 +1,13 @@
 // Hash / value-noise / fbm helpers shared by the simulation passes. No
 // #version/precision pragma here — composeFragmentShader() prepends those.
+//
+// `valueNoise2` is not called `noise2`, which is what it was and what its
+// Rust port still is (syn-core/src/sim/noise.rs): `noise1`..`noise4` are
+// reserved in GLSL — desktop GLSL has a built-in `vec2 noise2(...)` — and a
+// driver that knows them refuses the redeclaration with another return type.
+// SwiftShader and the phones tried did not; an Android tablet on ANGLE/Metal
+// did, and the app died on its GL thread at the first frame (2026-10-06).
+// `shaders.rs` keeps the reserved names out from now on.
 
 float hash21(vec2 p) {
   p = fract(p * vec2(123.34, 456.21));
@@ -7,7 +15,7 @@ float hash21(vec2 p) {
   return fract(p.x * p.y);
 }
 
-float noise2(vec2 p) {
+float valueNoise2(vec2 p) {
   vec2 i = floor(p);
   vec2 f = fract(p);
   float a = hash21(i);
@@ -24,7 +32,7 @@ float fbm(vec2 p, int octaves) {
   float freq = 1.0;
   for (int i = 0; i < 8; i++) {
     if (i >= octaves) break;
-    sum += amp * noise2(p * freq);
+    sum += amp * valueNoise2(p * freq);
     freq *= 2.0;
     amp *= 0.5;
   }
