@@ -5,15 +5,56 @@ one point in a ~500-gene space makes sound (23 formula generators, an FX
 chain, 4 shared LFOs) and a picture (Gray–Scott reaction-diffusion driven by
 the sound), and 👍/👎 steer the search through it.
 
-It is Rust with no I/O and no threads of its own, and it is shared by every
-native app:
+It is Rust with no I/O and no threads of its own. Three apps run on it
+today, each one *device + screen + storage* around the same model, each
+pinning a git revision of this repository:
 
-| app | how it uses the core |
-|---|---|
-| [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | through `syn-ffi` (UniFFI → Kotlin), pinned by git revision |
-| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core`, pinned by `rev` in its workspace `Cargo.toml` (the crate was born there) |
-| iOS (planned) | through `syn-ffi` (UniFFI → Swift) |
-| [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | moving onto the core (its PLAN-CORE.md): through `syn-wasm` (wasm-bindgen), pinned by git revision |
+| app | how it uses the core | where the revision is pinned |
+|---|---|---|
+| [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | `syn-wasm` (wasm-bindgen) in its AudioWorklet, picture and points Worker; on the core since 2026-10-06 (its PLAN-CORE.md) | `synesthesiaCore.rev` in `package.json` |
+| [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | `syn-ffi` (UniFFI → Kotlin), linked into its own `syn-android` cdylib | `core/rust/Cargo.toml` |
+| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core` directly, with its own audio and TUI (the crate was born there) | workspace `Cargo.toml` |
+| iOS (planned) | `syn-ffi` (UniFFI → Swift) | — |
+
+```mermaid
+flowchart TB
+    subgraph core["synesthesia-core (this repository)"]
+        assets[("assets/<br/>presets, schema, FX presets")]
+        syncore["syn-core<br/>generators · FX · engine · features<br/>genome · search · scout · picture"]
+        player["syn-player<br/>engine behind a command queue,<br/>PCM out, fades, feature frames"]
+        session["syn-session<br/>👍 👎 🎲 ↩ · morph · scout timing<br/>point name · status line"]
+        ffi["syn-ffi<br/>UniFFI"]
+        wasm["syn-wasm<br/>wasm-bindgen"]
+        bench["syn-bench<br/>the sound bench"]
+        tests[("golden/ · fixtures/<br/>frozen reference")]
+
+        assets --> syncore
+        syncore --> player
+        syncore --> session
+        player --> ffi
+        session --> ffi
+        player --> wasm
+        session --> wasm
+        player --> bench
+        tests -. checked against .-> syncore
+    end
+
+    subgraph web["synesthesia (web)"]
+        webapp["TypeScript: Web Audio, WebGL2,<br/>DOM, localStorage, Workers"]
+    end
+    subgraph android["synesthesia-android"]
+        synandroid["syn-android cdylib"] --> kotlin["Kotlin: AudioTrack, GL, UI, storage"]
+    end
+    subgraph console["synesthesia-rust (console)"]
+        consoleapp["syn-audio · syn-tui · syn-app"]
+    end
+    ios["iOS (planned)<br/>Swift"]
+
+    wasm -- "JS + .wasm" --> webapp
+    ffi -- "Kotlin bindings" --> synandroid
+    syncore -- "Rust crate" --> consoleapp
+    ffi -. "Swift bindings" .-> ios
+```
 
 This repository is the **specification** (since 2026-10-05; the web app's
 PLAN-CORE.md C2): ranges, defaults, presets and the gene list are written
@@ -84,8 +125,10 @@ syn-ffi = { git = "https://github.com/dmitryweiner/synesthesia-core", rev = "…
 The Android app's `core/rust/` (`syn-android` + `uniffi-bindgen`) and its
 `core/build.gradle.kts` are the worked example.
 
-The web app pins a revision the same way and builds `syn-wasm` with
-`wasm-pack build syn-wasm --target web` (its `scripts/build-core.mjs`).
+The web app pins a revision in its `package.json` (`synesthesiaCore.rev`)
+and builds `syn-wasm` with `wasm-pack build syn-wasm --target web` (its
+`scripts/build-core.mjs`). The console depends on `syn-core` directly, with
+`rev` in its workspace `Cargo.toml`.
 
 ## History
 
