@@ -13,7 +13,7 @@ pinning a git revision of this repository:
 |---|---|---|
 | [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | `syn-wasm` (wasm-bindgen) in its AudioWorklet, picture and points Worker; on the core since 2026-10-06 (its PLAN-CORE.md) | `synesthesiaCore.rev` in `package.json` |
 | [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | `syn-ffi` (UniFFI → Kotlin), linked into its own `syn-android` cdylib | `core/rust/Cargo.toml` |
-| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core`, `syn-player` and `syn-session` as Rust crates, with its own device (a `pw-cat` pipe) and TUI (`syn-core` was born there) | workspace `Cargo.toml` |
+| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core`, `syn-player` and `syn-session` as Rust crates, with its own device (a `pw-cat` or `aplay` pipe; a null sink for soak runs without sound) and TUI (`syn-core` was born there) | workspace `Cargo.toml` |
 | iOS (planned) | `syn-ffi` (UniFFI → Swift) | — |
 
 ```mermaid
@@ -46,15 +46,19 @@ flowchart TB
         synandroid["syn-android cdylib"] --> kotlin["Kotlin: AudioTrack, GL, UI, storage"]
     end
     subgraph console["synesthesia-rust (console)"]
-        consoleapp["syn-audio (device) · syn-tui · syn-app"]
+        synapp["syn-app<br/>runs the session, stores points"]
+        synaudio["syn-audio<br/>pw-cat / aplay pipe, null sink"]
+        syntui["syn-tui<br/>the picture in the terminal"]
+        synapp --> synaudio
+        synapp --> syntui
     end
     ios["iOS (planned)<br/>Swift"]
 
     wasm -- "JS + .wasm" --> webapp
     ffi -- "Kotlin bindings" --> synandroid
-    syncore -- "Rust crates" --> consoleapp
-    player -- "Rust crate" --> consoleapp
-    session -- "Rust crate" --> consoleapp
+    session -- "Rust crate" --> synapp
+    player -- "Rust crate" --> synaudio
+    syncore -- "Rust crate" --> syntui
     ffi -. "Swift bindings" .-> ios
 ```
 
