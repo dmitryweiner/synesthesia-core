@@ -4,7 +4,7 @@
 
 The shared model of Synesthesia and its **specification** (synesthesia
 PLAN-CORE.md C2, since 2026-10-05): used by the Android app (`syn-ffi`),
-the web app (`syn-wasm`) and the console app (synesthesia-rust, `syn-core`),
+the web app (`syn-wasm`) and the console app (synesthesia-rust: `syn-core`, `syn-player`, `syn-session`),
 each pinned by revision; meant for an iOS app too.
 A new preset, generator, LFO shape or FX parameter is made here first.
 Decisions for work in progress live in a plan file next to this one:

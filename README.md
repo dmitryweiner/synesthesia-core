@@ -13,7 +13,7 @@ pinning a git revision of this repository:
 |---|---|---|
 | [synesthesia](https://github.com/dmitryweiner/synesthesia) (web) | `syn-wasm` (wasm-bindgen) in its AudioWorklet, picture and points Worker; on the core since 2026-10-06 (its PLAN-CORE.md) | `synesthesiaCore.rev` in `package.json` |
 | [synesthesia-android](https://github.com/dmitryweiner/synesthesia-android) | `syn-ffi` (UniFFI → Kotlin), linked into its own `syn-android` cdylib | `core/rust/Cargo.toml` |
-| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core` directly, with its own audio and TUI (the crate was born there) | workspace `Cargo.toml` |
+| [synesthesia-rust](https://github.com/dmitryweiner/synesthesia-rust) (console) | `syn-core`, `syn-player` and `syn-session` as Rust crates, with its own device (a `pw-cat` pipe) and TUI (`syn-core` was born there) | workspace `Cargo.toml` |
 | iOS (planned) | `syn-ffi` (UniFFI → Swift) | — |
 
 ```mermaid
@@ -46,13 +46,15 @@ flowchart TB
         synandroid["syn-android cdylib"] --> kotlin["Kotlin: AudioTrack, GL, UI, storage"]
     end
     subgraph console["synesthesia-rust (console)"]
-        consoleapp["syn-audio · syn-tui · syn-app"]
+        consoleapp["syn-audio (device) · syn-tui · syn-app"]
     end
     ios["iOS (planned)<br/>Swift"]
 
     wasm -- "JS + .wasm" --> webapp
     ffi -- "Kotlin bindings" --> synandroid
-    syncore -- "Rust crate" --> consoleapp
+    syncore -- "Rust crates" --> consoleapp
+    player -- "Rust crate" --> consoleapp
+    session -- "Rust crate" --> consoleapp
     ffi -. "Swift bindings" .-> ios
 ```
 
@@ -127,8 +129,9 @@ The Android app's `core/rust/` (`syn-android` + `uniffi-bindgen`) and its
 
 The web app pins a revision in its `package.json` (`synesthesiaCore.rev`)
 and builds `syn-wasm` with `wasm-pack build syn-wasm --target web` (its
-`scripts/build-core.mjs`). The console depends on `syn-core` directly, with
-`rev` in its workspace `Cargo.toml`.
+`scripts/build-core.mjs`). The console depends on `syn-core`, `syn-player`
+and `syn-session` directly, all three at one `rev` in its workspace
+`Cargo.toml` (its PLAN.md decisions 11 and 12).
 
 ## History
 
