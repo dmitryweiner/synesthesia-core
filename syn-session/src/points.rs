@@ -11,6 +11,8 @@
 //! typed, and travels between apps as a file or as a `#s=` token.
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use syn_core::point::sanitize;
 use syn_core::state::AppState;
 
 /// A point the user kept, under the name they gave it.
@@ -32,13 +34,29 @@ impl Points {
     }
 
     /// Reads the points file. An error names what is wrong with it, so an app
-    /// can say so instead of quietly starting with none.
+    /// can say so instead of quietly starting with none — and must not write
+    /// over it.
+    ///
+    /// Each point is read the way every app reads one ([`sanitize`]): fields a
+    /// newer model added get their defaults, values are clamped, either
+    /// spelling of the name is taken. Strict serde would refuse a file from an
+    /// older build (no tanpura, no bowl) as a whole. An entry that is not a
+    /// point at all is skipped, not the file.
     pub fn parse(json: &str) -> Result<Self, String> {
         let text = json.trim();
         if text.is_empty() {
             return Ok(Self::new());
         }
-        serde_json::from_str(text).map(|list| Points { list }).map_err(|e| e.to_string())
+        let entries: Vec<Value> =
+            serde_json::from_str(text).map_err(|e| format!("not a list of points ({e})"))?;
+        let list = entries
+            .iter()
+            .filter_map(|e| {
+                let name = e.get("name")?.as_str()?.to_string();
+                Some(NamedPoint { name, state: sanitize(e.get("state")?)? })
+            })
+            .collect();
+        Ok(Points { list })
     }
 
     /// The file to write, formatted as the console writes it (a person may
@@ -182,6 +200,33 @@ mod tests {
         assert_eq!(points.suggest_name(Some("Dawn")), "Dawn");
     }
 
+    /// Files the console wrote before it ran on this repository: no
+    /// `delayShimmer`, no tanpura or bowl, the name spelled either way. They
+    /// load with every value they had, and a broken entry costs only itself.
+    #[test]
+    fn a_file_from_an_older_build_still_loads() {
+        let mut old = serde_json::to_value(&presets()[0].state).unwrap();
+        old["audio"]["fx"].as_object_mut().unwrap().remove("delayShimmer");
+        let formulas = old["audio"]["formulas"].as_object_mut().unwrap();
+        formulas.remove("tanpura");
+        formulas.remove("bowl");
+        for key in ["preset_name", "presetName"] {
+            let mut state = old.clone();
+            let name = state.as_object_mut().unwrap().remove("preset_name").unwrap();
+            state[key] = name;
+            let file = serde_json::json!([
+                { "name": "kept", "state": state },
+                { "name": "junk", "state": 5 },
+                { "state": {} },
+            ]);
+            let back = Points::parse(&file.to_string()).expect("parses");
+            assert_eq!(back.names(), ["kept"], "only the entries that are not points are skipped");
+            let kept = &back.get(0).unwrap().state;
+            assert_eq!(kept.preset_name.as_deref(), Some(presets()[0].name.as_str()), "{key}");
+            assert_eq!(kept, &presets()[0].state, "{key}");
+        }
+    }
+
     #[test]
     fn an_empty_or_broken_file_is_told_apart() {
         assert!(Points::parse("").expect("nothing is no points").is_empty());
@@ -189,5 +234,6 @@ mod tests {
         assert!(Points::parse("[]").expect("an empty list").is_empty());
         let broken = Points::parse("{oh dear");
         assert!(broken.is_err(), "a broken file is not silently empty");
+        assert!(Points::parse("{}").is_err(), "nor is an object that is not a list");
     }
 }

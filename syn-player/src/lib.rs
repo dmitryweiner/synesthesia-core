@@ -52,6 +52,21 @@ pub struct Frame {
     pub hits: u64,
 }
 
+/// Silence at time zero — what a screen shows before the first frame.
+impl Default for Frame {
+    fn default() -> Self {
+        Frame {
+            time: 0.0,
+            peak: 0.0,
+            rms: 0.0,
+            limiter_db: 0.0,
+            features: AudioFeatures::default(),
+            spectrum: [0; SPECTRUM_BANDS],
+            hits: 0,
+        }
+    }
+}
+
 enum Command {
     /// Glide to a new point (a morph sends these continuously).
     SetState(Box<AppState>),
