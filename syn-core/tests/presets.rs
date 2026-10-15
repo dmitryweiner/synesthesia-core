@@ -122,3 +122,27 @@ fn every_preset_sounds_finite_audible_and_bounded() {
         assert!(peak <= 8.0, "{}: peak {peak}", p.name);
     }
 }
+
+/// A preset with sample and drum layers (PLAN-SAMPLES-SCRIPTS.md S5): every
+/// layer that is on plays a sound from the catalogue and a pattern that
+/// parses, and the layers come back whole through the genome (the
+/// session's search starts from them).
+#[test]
+fn a_preset_with_layers_plays_known_sounds_and_survives_the_genome() {
+    use syn_core::genome::codec::decode_genome_over;
+    use syn_core::schema::seq_sound_index;
+    use syn_core::seq::{parse, split_sound, Mode};
+    use syn_core::settings_page::same_point;
+    let layered: Vec<_> = presets().iter().filter(|p| !p.state.seq.is_silent()).collect();
+    assert!(layered.len() >= 3, "S5's presets");
+    for p in layered {
+        assert_eq!(p.state.seq.layers.len(), schema().seq_layers, "{}", p.name);
+        for l in p.state.seq.layers.iter().filter(|l| l.on) {
+            assert!(seq_sound_index(split_sound(&l.sound).0).is_some(), "{}: {}", p.name, l.sound);
+            let pat = parse(&l.pattern).unwrap_or_else(|e| panic!("{}: {}: {e}", p.name, l.pattern));
+            assert!(l.mode == Mode::Bed || !pat.is_silent(), "{}: {} plays nothing", p.name, l.sound);
+        }
+        let back = decode_genome_over(&encode_genome(&p.state), &p.state.seq);
+        assert!(same_point(&back, &p.state), "{}: the layers changed through the genome", p.name);
+    }
+}

@@ -453,6 +453,20 @@ into this file.
   woodblock over a drone), a drum one over *Molten Polivoks* — each passing
   `tests/presets.rs` and the sanitize fixed point; `dry` defaults and gains
   set by ear on the console; this file gets the numbers.
+- **S5 — presets and the listening pass**: ✅ round 1–2 on 2026-10-15
+  (`syn-bench --listen` + `.claude/skills/new-preset/listen.py`, the
+  user's verdicts on 29 + 27 drafts): five presets over the liked ones —
+  **Night meadow** (Fractal garden; owls in several voices 0.45, crickets
+  bed 0.08, a far nightingale 0.2), **Workshop** (Overtone steppe;
+  woodblock (3,8), slit-drum, clinks), **Glass loom** (Loom & copper;
+  mark-trees, chimes, clinks), **Molten groove** (Molten Polivoks; bd, sd,
+  hh, conga — levels taken from the round's "ok"s, confirmed in round 3),
+  **Bell walk** (Bell spots; bd (3,8) 0.4, hats 0.12). By ear: layers want
+  to be quieter than a sample's −1 dBFS suggests (beds ~0.1, bd ~0.4),
+  always wet (every `dry` draft was rejected — the point's echo is the
+  point), rhythms neither fast nor slow. Their pictures are their bases'
+  for now. They reach the apps with S7 (until a host loads the bank, only
+  the synth drums play).
 - **S6 — the second round, by need**: polymeter `{}`, `cut` groups,
   `begin/end`, `rhai` if someone wants functions. Each is a decision when a
   preset asks for it, not before.

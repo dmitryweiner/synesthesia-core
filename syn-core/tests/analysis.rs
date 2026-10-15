@@ -93,7 +93,9 @@ fn every_measurement_agrees_with_the_web_app() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../fixtures/analysis.json");
     let f: Fixture =
         serde_json::from_str(&std::fs::read_to_string(path).expect("fixtures/analysis.json")).unwrap();
-    assert_eq!(f.cases.len(), presets().len());
+    // The fixture is frozen with the presets of its day; presets added since
+    // (the ones with sample and drum layers) are not in it.
+    assert!(f.cases.len() >= 15 && f.cases.len() <= presets().len());
     for c in &f.cases {
         let p = &presets()[c.index];
         assert_eq!(p.name, c.name);

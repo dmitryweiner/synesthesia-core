@@ -16,6 +16,9 @@
 //! syn-bench --switch 0,3,10,7 [--at 20]       clicks at preset switches (the apps' fade-out → switch → fade-in)
 //! syn-bench --configs 30@22050,24@11025       does a cheap render rank like an expensive one? (Spearman ρ)
 //! syn-bench --patterns [--sr 48000]           ns for one pattern query per block (PLAN-SAMPLES-SCRIPTS.md S1)
+//! syn-bench --listen DIR --points drafts.json [--bank FILE] [--secs 40]
+//!                                             drafts with their layers → DIR/NN.wav + DIR/list.json, for a
+//!                                             listening page (.claude/skills/new-preset/listen.py)
 //! syn-bench --seq [--bank FILE] [--preset 0,10] [--wav DIR]
 //!                                             what layers cost (ns a sample) and do to the score (S0, S2);
 //!                                             --wav: the drums, a groove, and every probe render
@@ -258,6 +261,9 @@ fn main() {
     if a.has("seq") {
         return seq(&a);
     }
+    if a.has("listen") {
+        return listen(&a);
+    }
     let points = candidates(&a);
     if points.is_empty() {
         eprintln!("no points to measure");
@@ -310,6 +316,55 @@ fn patterns(a: &Args) {
             println!("{} {cps:<4}  {ns:>8.1}  {:>8.2}  {overflow:>8}", pad(src, 52), events as f64 / 3600.0);
         }
     }
+}
+
+/// Renders drafts as the user will hear them — with their sample and drum
+/// layers, from the bank — at 44.1 kHz, for a listening page. A draft is
+/// `{name, state, group?, desc?}`; its state goes through `sanitize`, as a
+/// point from outside does.
+fn listen(a: &Args) {
+    use syn_core::render_offline_with;
+    use syn_core::seq::SampleBank;
+    let Some(dir) = a.get("listen") else {
+        eprintln!("--listen DIR");
+        std::process::exit(1);
+    };
+    let Some(path) = a.get("points") else {
+        eprintln!("--listen needs --points drafts.json");
+        std::process::exit(1);
+    };
+    let drafts: Vec<serde_json::Value> =
+        serde_json::from_str(&fs::read_to_string(path).expect("--points: a file")).expect("a JSON array");
+    let bank_path = a.get("bank").unwrap_or("../synesthesia-samples/bank.bin");
+    let bank = fs::read(bank_path).ok().and_then(|b| SampleBank::from_bytes(b).ok());
+    if bank.is_none() {
+        eprintln!("no bank at {bank_path}: only the synth drums will play");
+    }
+    let (secs, sr) = (a.num("secs", 40.0), a.num("sr", 44100.0));
+    let _ = fs::create_dir_all(dir);
+    let list: Vec<serde_json::Value> = drafts
+        .par_iter()
+        .enumerate()
+        .filter_map(|(i, d)| {
+            let state = syn_core::point::sanitize(d.get("state")?)?;
+            let x = render_offline_with(&state, bank.as_ref(), secs, sr, 1);
+            let file = format!("{i:02}.wav");
+            fs::write(Path::new(dir).join(&file), syn_core::wav::encode_mono(&x, sr as u32)).ok()?;
+            let rms = (x.iter().map(|v| f64::from(*v).powi(2)).sum::<f64>() / x.len().max(1) as f64).sqrt();
+            let peak = x.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+            Some(serde_json::json!({
+                "file": file,
+                "name": d.get("name").cloned().unwrap_or_default(),
+                "group": d.get("group").cloned().unwrap_or_default(),
+                "desc": d.get("desc").cloned().unwrap_or_default(),
+                "db": (20.0 * (rms + 1e-12).log10() * 10.0).round() / 10.0,
+                "peak": (f64::from(peak) * 100.0).round() / 100.0,
+            }))
+        })
+        .collect();
+    fs::write(Path::new(dir).join("list.json"), serde_json::to_string_pretty(&list).unwrap())
+        .expect("list.json");
+    println!("{} drafts → {dir}", list.len());
 }
 
 /// PLAN-SAMPLES-SCRIPTS.md's open probes. First the cost: the sequencer

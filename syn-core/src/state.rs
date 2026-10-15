@@ -273,7 +273,11 @@ mod tests {
     #[test]
     fn every_preset_parses_and_round_trips() {
         let ps = presets();
-        assert_eq!(ps.len(), 15, "the web app's built-in points, as dumped");
+        assert_eq!(
+            ps.len(),
+            20,
+            "the web app's 15 built-in points, then the five with sample and drum layers"
+        );
         for p in ps {
             assert!(!p.state.enabled_formulas().is_empty(), "{} has no sound", p.name);
             let json = serde_json::to_string(&p.state).unwrap();

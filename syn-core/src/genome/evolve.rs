@@ -527,7 +527,7 @@ mod tests {
     #[test]
     fn a_point_without_layers_never_grows_one() {
         let mut rng = Mulberry32::new(5);
-        for p in presets() {
+        for p in presets().iter().filter(|p| p.state.seq.is_silent()) {
             let mut g = encode_genome(&p.state);
             for _ in 0..200 {
                 g = mutate(&g, &mut rng, &opts());
