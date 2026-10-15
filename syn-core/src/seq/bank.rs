@@ -161,6 +161,29 @@ impl SampleBank {
         SampleBank { streams: Vec::new(), sounds: entries, decoded: Mutex::new(decoded) }
     }
 
+    /// A bank of sounds already decoded and shared: what a host that decodes
+    /// on another thread hands the player, a sound at a time (the web app's
+    /// worklet). The samples are not copied.
+    pub fn from_variants(sounds: Vec<(String, Variants)>) -> SampleBank {
+        let mut entries = BTreeMap::new();
+        let mut decoded = BTreeMap::new();
+        for (name, v) in sounds {
+            let e = v
+                .iter()
+                .map(|s| Entry { sr: s.sr, frames: s.data.len() as u32, mode: s.mode, ..Entry::default() })
+                .collect();
+            entries.insert(name.clone(), e);
+            decoded.insert(name, v);
+        }
+        SampleBank { streams: Vec::new(), sounds: entries, decoded: Mutex::new(decoded) }
+    }
+
+    /// The sounds decoded so far, shared (not copied).
+    pub fn decoded_sounds(&self) -> Vec<(String, Variants)> {
+        let cache = self.decoded.lock().unwrap_or_else(|e| e.into_inner());
+        cache.iter().map(|(n, v)| (n.clone(), v.clone())).collect()
+    }
+
     /// The sound names, sorted.
     pub fn names(&self) -> impl Iterator<Item = &str> {
         self.sounds.keys().map(String::as_str)
@@ -211,6 +234,44 @@ impl SampleBank {
         }
         decode_flac(bytes, e.sr, e.frames)
     }
+}
+
+/// A decoded sound as bytes, to cross from one thread to another where only
+/// bytes may (a Web Worker or the main thread → the AudioWorklet):
+/// `u32 count`, then per variant `u32 sr | u32 mode (0 hits, 1 bed) | u32
+/// frames | frames × i16`, little-endian.
+pub fn pack(v: &[Sample]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(4 + v.iter().map(|s| 12 + 2 * s.data.len()).sum::<usize>());
+    out.extend_from_slice(&(v.len() as u32).to_le_bytes());
+    for s in v {
+        out.extend_from_slice(&s.sr.to_le_bytes());
+        out.extend_from_slice(&u32::from(s.mode == Mode::Bed).to_le_bytes());
+        out.extend_from_slice(&(s.data.len() as u32).to_le_bytes());
+        for x in &s.data {
+            out.extend_from_slice(&x.to_le_bytes());
+        }
+    }
+    out
+}
+
+/// [`pack`] undone; `None` for bytes that are not one.
+pub fn unpack(b: &[u8]) -> Option<Vec<Sample>> {
+    fn word(b: &[u8], at: &mut usize) -> Option<u32> {
+        let w = u32::from_le_bytes(b.get(*at..*at + 4)?.try_into().ok()?);
+        *at += 4;
+        Some(w)
+    }
+    let mut at = 0usize;
+    let n = word(b, &mut at)?;
+    let mut out = Vec::new();
+    for _ in 0..n {
+        let (sr, mode, frames) = (word(b, &mut at)?, word(b, &mut at)?, word(b, &mut at)? as usize);
+        let bytes = b.get(at..at.checked_add(frames.checked_mul(2)?)?)?;
+        at += frames * 2;
+        let data = bytes.as_chunks::<2>().0.iter().map(|c| i16::from_le_bytes(*c)).collect();
+        out.push(Sample { sr, data, mode: if mode == 1 { Mode::Bed } else { Mode::Hits } });
+    }
+    (at == b.len()).then_some(out)
 }
 
 /// A mono 16-bit FLAC stream at `sr` into exactly `frames` samples.
@@ -316,6 +377,20 @@ pub(crate) mod tests {
         assert_eq!(SampleBank::from_bytes(b[..40].to_vec()).unwrap_err(), BankError::Truncated);
         let b = fixture_bank();
         assert!(matches!(SampleBank::from_bytes(b[..b.len() - 1].to_vec()), Err(BankError::Manifest(_))));
+    }
+
+    #[test]
+    fn a_sound_packs_and_unpacks_and_a_bank_is_built_from_shared_sounds() {
+        let bank = SampleBank::from_bytes(fixture_bank()).unwrap();
+        let v = bank.sound("blip").unwrap();
+        let bytes = pack(&v);
+        assert_eq!(bytes.len(), 4 + 2 * 12 + 2 * (1200 + 8000));
+        assert_eq!(unpack(&bytes).unwrap(), v.to_vec());
+        assert!(unpack(&bytes[..bytes.len() - 1]).is_none());
+        assert!(unpack(&[bytes.clone(), vec![0]].concat()).is_none());
+        let shared = SampleBank::from_variants(bank.decoded_sounds());
+        assert!(Arc::ptr_eq(&shared.sound("blip").unwrap(), &v), "shared, not copied");
+        assert!(!shared.contains("hum"), "only what was decoded");
     }
 
     #[test]

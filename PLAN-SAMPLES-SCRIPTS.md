@@ -487,7 +487,17 @@ into this file.
   preset asks for it, not before.
 - **S7 — hosts**: `loadBank` in `syn-wasm` (bytes in, like a point) and
   `syn-ffi`; the web and Android apps bump their revision and fetch or
-  bundle `bank.bin`.
+  bundle `bank.bin`. *As built (2026-10-15):* the bank is the release
+  asset `bank-v1` of synesthesia-samples (sha256 `c6ec462a…bd335`, every
+  stream checked against `samples/*.flac`); the apps download it at build
+  time by tag and check the hash. **The web worklet never decodes** (a
+  sound is tens of ms, a quantum 2.7): the page holds a `SoundBank`
+  (syn-wasm) on the main thread, decodes the sounds a point needs before
+  sending the point (`soundsFor`, `packed`), and the worklet's
+  `AudioCore.addSound` takes them as bytes (`seq::bank::pack`) into a bank
+  of shared sounds (`Player::add_sound`). Android: `SoundBank` (syn-ffi),
+  parsed once and shared by players, `prepare(pointJson)` decodes a point's
+  sounds on a background thread, `SoundPlayer.setBank`.
 - **S8 — a metric for the layers, by ear** (proposed by the user
   2026-10-15, who offered to be the listener): the fractality score is
   for the sound under the layers; how good a layer is over it gets a

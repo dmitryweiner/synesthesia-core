@@ -24,7 +24,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 
 use syn_core::engine::SPECTRUM_BANDS;
-use syn_core::seq::{SampleBank, SeqProgram, SeqState};
+use syn_core::seq::{SampleBank, SeqProgram, SeqState, Variants};
 use syn_core::state::AppState;
 use syn_core::{AudioFeatures, Engine, BLOCK};
 
@@ -198,6 +198,26 @@ impl Player {
     pub fn set_bank(&self, bank: Arc<SampleBank>) {
         let program = {
             let mut l = self.layers.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(old) = l.bank.replace(bank) {
+                l.old_banks.push(old);
+            }
+            SeqProgram::new(&l.seq, l.bank.as_deref())
+        };
+        self.send(Command::SetSeq(Box::new(program)));
+    }
+
+    /// One decoded sound, for a host that decodes on another thread and can
+    /// only hand bytes over (the web app's worklet: `syn_core::seq::bank::
+    /// unpack`). The sounds added so far are the player's bank; the point's
+    /// layers are rebuilt on it, so a sound that arrives after its point
+    /// starts playing from then. Use this or [`Player::set_bank`], not both.
+    pub fn add_sound(&self, name: &str, sound: Variants) {
+        let program = {
+            let mut l = self.layers.lock().unwrap_or_else(|e| e.into_inner());
+            let mut sounds = l.bank.as_ref().map(|b| b.decoded_sounds()).unwrap_or_default();
+            sounds.retain(|(n, _)| n != name);
+            sounds.push((name.to_string(), sound));
+            let bank = Arc::new(SampleBank::from_variants(sounds));
             if let Some(old) = l.bank.replace(bank) {
                 l.old_banks.push(old);
             }
@@ -538,6 +558,19 @@ mod tests {
         p.set_state(with(SeqState::default()));
         let x = render(&p, SR as usize);
         assert!(rms(&x[x.len() / 2..]) == 0.0);
+    }
+
+    #[test]
+    fn a_sound_added_later_plays_from_then() {
+        use syn_core::seq::{Layer, Mode, Sample};
+        let layer = Layer { on: true, sound: "tick".into(), pattern: "0*4".into(), ..Layer::default() };
+        let state = AppState { seq: SeqState { cps: 1.0, layers: vec![layer] }, ..AppState::new() };
+        let p = Player::new(SR, &state);
+        p.fade_in();
+        assert!(rms(&render(&p, SR as usize)) == 0.0, "no bank yet: silent, not an error");
+        let tick = vec![Sample { sr: 22050, data: vec![9000; 300], mode: Mode::Hits }];
+        p.add_sound("tick", tick.into());
+        assert!(rms(&render(&p, SR as usize)) > 1e-3);
     }
 
     #[test]

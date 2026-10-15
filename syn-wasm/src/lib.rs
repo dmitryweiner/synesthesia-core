@@ -14,6 +14,7 @@
 //! - Points cross as the web app's `AppState` v1 JSON; a malformed one is a
 //!   `None` / `false`, never a panic.
 
+pub mod bank;
 pub mod picture;
 pub mod point;
 pub mod session;
@@ -105,6 +106,19 @@ impl AudioCore {
     #[wasm_bindgen(js_name = switchTo)]
     pub fn switch_to(&self, point_utf8: &[u8]) -> bool {
         parse_point(point_utf8).map(|s| self.player.switch_to(s)).is_some()
+    }
+
+    /// One sound of the sample bank, decoded on the main thread and packed
+    /// (`SoundBank.packed`); its name as UTF-8. The point's layers that play
+    /// it sound from then on. `false` when the bytes are not a packed sound.
+    #[wasm_bindgen(js_name = addSound)]
+    pub fn add_sound(&self, name_utf8: &[u8], packed: &[u8]) -> bool {
+        let (Ok(name), Some(sound)) = (std::str::from_utf8(name_utf8), syn_core::seq::bank::unpack(packed))
+        else {
+            return false;
+        };
+        self.player.add_sound(name, sound.into());
+        true
     }
 
     #[wasm_bindgen(js_name = fadeIn)]
@@ -223,6 +237,33 @@ mod tests {
         assert!(f[0] <= 0.5 && f[0] > 0.47, "time {}", f[0]);
         assert!(f[1] >= f[2] && f[2] > 0.0, "peak ≥ rms > 0");
         assert!(f[12..].iter().all(|b| (0.0..=255.0).contains(b)));
+    }
+
+    #[test]
+    fn a_layered_preset_sounds_once_its_sounds_arrive() {
+        use syn_core::seq::bank::pack;
+        use syn_core::seq::{Mode, Sample};
+        // Night meadow: owls, crickets, a nightingale — silent without them.
+        let i = preset_names().iter().position(|n| n == "Night meadow").expect("the preset") as u32;
+        let night = preset(i);
+        let quiet = preset_state_json(0).unwrap(); // its base, Fractal garden
+        let rms = |core: &mut AudioCore| {
+            let mut sum = 0.0f64;
+            for _ in 0..1500 {
+                core.render(128);
+                sum += core.output().iter().map(|v| f64::from(*v).powi(2)).sum::<f64>();
+            }
+            sum
+        };
+        let mut base = AudioCore::create(48000.0, quiet.as_bytes(), 128).unwrap();
+        let mut layered = AudioCore::create(48000.0, &night, 128).unwrap();
+        base.fade_in();
+        layered.fade_in();
+        assert_eq!(rms(&mut base), rms(&mut layered), "no sounds yet: the base alone");
+        let owl = vec![Sample { sr: 24000, data: vec![12000; 2000], mode: Mode::Hits }];
+        assert!(layered.add_sound(b"owl", &pack(&owl)));
+        assert!(!layered.add_sound(b"owl", b"junk"));
+        assert!(rms(&mut layered) != rms(&mut base), "the owl is heard");
     }
 
     #[test]

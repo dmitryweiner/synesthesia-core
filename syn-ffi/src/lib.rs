@@ -30,6 +30,8 @@ pub enum CoreError {
     NoSuchPreset { index: u32 },
     #[error("not a points file: {reason}")]
     BadPointsFile { reason: String },
+    #[error("not a sample bank: {reason}")]
+    BadBank { reason: String },
 }
 
 pub(crate) fn parse_point(json: &str) -> Result<syn_core::AppState, CoreError> {
@@ -124,6 +126,44 @@ impl From<syn_player::Frame> for AudioFrame {
     }
 }
 
+/// The recorded samples the layers play (`bank.bin`, synesthesia-samples):
+/// parsed once and shared by every player. A sound is decoded the first
+/// time a point needs it and kept — tens of milliseconds for a sound with
+/// many long variants, so an app calls [`SoundBank::prepare`] for a point on
+/// a background thread before it plays it.
+#[derive(uniffi::Object)]
+pub struct SoundBank {
+    inner: Arc<syn_core::seq::SampleBank>,
+}
+
+#[uniffi::export]
+impl SoundBank {
+    /// The bytes of `bank.bin` (the app's asset). Nothing is decoded yet.
+    #[uniffi::constructor]
+    pub fn new(bytes: Vec<u8>) -> Result<Arc<Self>, CoreError> {
+        let bank = syn_core::seq::SampleBank::from_bytes(bytes)
+            .map_err(|e| CoreError::BadBank { reason: e.to_string() })?;
+        Ok(Arc::new(SoundBank { inner: Arc::new(bank) }))
+    }
+
+    /// The bank's sound names, sorted.
+    pub fn names(&self) -> Vec<String> {
+        self.inner.names().map(String::from).collect()
+    }
+
+    /// Decodes every sound `point_json`'s layers play, so a player that gets
+    /// the point next has nothing left to decode. Returns their names.
+    pub fn prepare(&self, point_json: String) -> Result<Vec<String>, CoreError> {
+        let state = parse_point(&point_json)?;
+        let names: Vec<String> =
+            syn_core::seq::sounds_of(&state.seq).into_iter().filter(|n| self.inner.contains(n)).collect();
+        for n in &names {
+            self.inner.sound(n);
+        }
+        Ok(names)
+    }
+}
+
 /// The live sound of one session. One audio thread calls [`SoundPlayer::render`];
 /// any other thread may change the point or read frames at the same time.
 #[derive(uniffi::Object)]
@@ -167,6 +207,13 @@ impl SoundPlayer {
     pub fn switch_to(&self, point_json: String) -> Result<(), CoreError> {
         self.inner.switch_to(parse_point(&point_json)?);
         Ok(())
+    }
+
+    /// The samples the point's layers play. Until a bank is set, only the
+    /// synth drums sound. The point's sounds are decoded on the calling
+    /// thread (see [`SoundBank::prepare`]), never on the audio thread.
+    pub fn set_bank(&self, bank: Arc<SoundBank>) {
+        self.inner.set_bank(bank.inner.clone());
     }
 
     pub fn fade_in(&self) {
@@ -271,6 +318,7 @@ mod tests {
     #[test]
     fn a_malformed_point_is_an_error_not_a_panic() {
         assert!(matches!(SoundPlayer::new(48000, "{}".into()), Err(CoreError::InvalidPoint { .. })));
+        assert!(matches!(SoundBank::new(b"nope".to_vec()), Err(CoreError::BadBank { .. })));
         assert!(render_stats("nope".into(), 1.0, 8000).is_err());
         let p = SoundPlayer::new(48000, preset_state_json(0).unwrap()).unwrap();
         assert!(p.set_point("[]".into()).is_err());

@@ -118,6 +118,27 @@ impl Default for Layer {
     }
 }
 
+/// The sound names a section plays: each layer that is on — its own sound
+/// (without the variant) and every name in its pattern — once each, in
+/// order. What a host decodes before it hands the point to the player.
+pub fn sounds_of(seq: &SeqState) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    let mut add = |n: &str| {
+        if !n.is_empty() && !out.iter().any(|x| x == n) {
+            out.push(n.to_string());
+        }
+    };
+    for l in seq.layers.iter().filter(|l| l.on) {
+        add(split_sound(&l.sound).0);
+        if l.mode == Mode::Hits {
+            if let Ok(p) = parse(&l.pattern) {
+                p.names().iter().for_each(|n| add(n));
+            }
+        }
+    }
+    out
+}
+
 /// `"owl:2"` → `("owl", 2)`; `"owl"` → `("owl", 0)`.
 pub fn split_sound(s: &str) -> (&str, u16) {
     match s.rsplit_once(':') {
