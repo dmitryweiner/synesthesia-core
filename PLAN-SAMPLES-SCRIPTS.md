@@ -102,10 +102,11 @@ Freesound CC0 pages found while looking, a starting list for the curator
    sample of that name (then the sample wins).
 
 5. **Made here, heard on the console first.** All of 1–4 lands in this
-   repository with its tests and `syn-bench`; synesthesia-rust moves onto
-   the core (it still carries its own `syn-core` copy at 237 genes — its
-   C0), embeds the bank, shows the layers and does the listening pass.
-   `syn-wasm` and `syn-ffi` get a `loadBank(bytes)` when their apps bump.
+   repository with its tests and `syn-bench`; synesthesia-rust — on the
+   core since 2026-10-15 (`syn-core`, `syn-player`, `syn-session` at one
+   `rev`; its PLAN.md decisions 11 and 12) — bumps, embeds the bank, shows
+   the layers and does the listening pass. `syn-wasm` and `syn-ffi` get a
+   `loadBank(bytes)` when their apps bump.
 
 6. **The core takes samples as bytes, never as files.** *No I/O in
    `syn-core`* holds. The host hands over one blob — `bank.bin`: header +
@@ -315,8 +316,8 @@ assets/presets.json         + presets that use layers (S5)
 
 synesthesia-samples (new)   samples/<name>/<nn>.wav · manifest.json ·
                             scripts/build-bank.py · provenance.md
-synesthesia-rust (console)  C0: onto the core; then include_bytes!(bank.bin),
-                            the TUI `seq` line, config, the listening pass
+synesthesia-rust (console)  bump the rev; include_bytes!(bank.bin), the TUI
+                            `seq` line, config, the listening pass
 ```
 
 ## Phases
@@ -374,14 +375,12 @@ into this file.
   `syn-ffi`; the web and Android apps bump their revision and fetch or
   bundle `bank.bin`.
 
-On the console side (synesthesia-rust), in parallel with S1–S3: **C0**,
-onto the core — drop its local `syn-core`, `assets/`, `golden/`; depend by
-revision; `syn-audio` wraps or yields to `syn-player`; its `check.sh`,
-`bench`, `bench --sim` and one `soak.py` run green with PLAN.md's table
-re-taken. Then **C1**: bump to S3's revision, embed the bank (or load it
-from `$XDG_DATA_HOME` if S0 says the binary gets too fat), `--no-samples`,
-the TUI `seq` line, `samples = true` in config, the `verify` ladder with the
-heaviest layered preset — 0 xruns in 30 min is the bar.
+On the console side (synesthesia-rust, on the core since 2026-10-15 with
+`syn-audio` left as the device): **C1** — bump to S3's revision, embed the
+bank (or load it from `$XDG_DATA_HOME` if S0 says the binary gets too
+fat), `--no-samples`, the TUI `seq` line, `samples = true` in config, the
+`verify` ladder with the heaviest layered preset — 0 xruns in 30 min is the
+bar (`soak.py`, or `soak.py --null` on a machine without PipeWire).
 
 ## Budget (thresholds; checked by the bench, filled in as measured)
 
@@ -416,9 +415,6 @@ heaviest layered preset — 0 xruns in 30 min is the bar.
   module's memory once at load; the worklet remakes its view then (it
   already handles growth). The web app may want the 22 kHz bed variants
   from S0.
-- **The console is behind the core.** C0 is real work (`Player` moved into
-  `syn-player`, `preset_name`, two generators, the session), and it is the
-  prerequisite for hearing any of this on the machine with the speakers.
 - **Pretty samples are a taste, not a test.** The listening pass is a phase
   with a deliverable (the presets and their gains), so it does not become
   folklore.
