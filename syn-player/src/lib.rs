@@ -21,9 +21,10 @@
 
 use std::collections::VecDeque;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use syn_core::engine::SPECTRUM_BANDS;
+use syn_core::seq::{SampleBank, SeqProgram, SeqState};
 use syn_core::state::AppState;
 use syn_core::{AudioFeatures, Engine, BLOCK};
 
@@ -74,12 +75,23 @@ enum Command {
     SwitchTo(Box<AppState>),
     /// Ramp the output level to `to` over `seconds`.
     Fade { to: f32, seconds: f64 },
+    /// Play these layers (built, and their samples decoded, by the caller).
+    SetSeq(Box<SeqProgram>),
+}
+
+/// What the render side replaced, dropped back on the control side.
+enum Retired {
+    // Held only to be dropped on the right thread.
+    #[allow(dead_code)]
+    State(Box<AppState>),
+    #[allow(dead_code)]
+    Program(Box<SeqProgram>),
 }
 
 struct RenderSide {
     engine: Engine,
     commands: Receiver<Command>,
-    retired: Sender<Box<AppState>>,
+    retired: Sender<Retired>,
     /// The engine always renders whole blocks (its FX chain runs on a
     /// 128-sample quantum, as Web Audio's does); what a caller did not take
     /// of the last block waits here for the next call.
@@ -102,8 +114,11 @@ struct RenderSide {
 pub struct Player {
     sample_rate: f64,
     commands: Sender<Command>,
-    retired: Mutex<Receiver<Box<AppState>>>,
+    retired: Mutex<Receiver<Retired>>,
     render: Mutex<RenderSide>,
+    /// The control side's half of the layers: the bank they play from and
+    /// the section last set, so a new bank can rebuild the program.
+    layers: Mutex<Layers>,
     frames: Mutex<VecDeque<Frame>>,
 }
 
@@ -133,6 +148,7 @@ impl Player {
                 level_step: 0.0,
             }),
             frames: Mutex::new(VecDeque::with_capacity(FRAME_RING)),
+            layers: Mutex::new(Layers::default()),
         }
     }
 
@@ -148,6 +164,34 @@ impl Player {
     /// Switch to `state` hard: the old point's tails are dropped.
     pub fn switch_to(&self, state: AppState) {
         self.send(Command::SwitchTo(Box::new(state)));
+    }
+
+    /// Play `seq`'s layers. Their patterns are parsed and their samples
+    /// decoded here, on the caller's thread — the first time a sound is
+    /// used this takes a few milliseconds — never on the audio thread.
+    pub fn set_seq(&self, seq: SeqState) {
+        let program = {
+            let mut l = self.layers.lock().unwrap_or_else(|e| e.into_inner());
+            let program = SeqProgram::new(&seq, l.bank.as_deref());
+            l.seq = seq;
+            program
+        };
+        self.send(Command::SetSeq(Box::new(program)));
+    }
+
+    /// The samples the layers play (`bank.bin`, parsed by the caller). The
+    /// layers last set are rebuilt on it. A bank replaced here is kept until
+    /// the player is dropped: a voice still playing one of its samples must
+    /// never be the last to let go of it on the audio thread.
+    pub fn set_bank(&self, bank: Arc<SampleBank>) {
+        let program = {
+            let mut l = self.layers.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(old) = l.bank.replace(bank) {
+                l.old_banks.push(old);
+            }
+            SeqProgram::new(&l.seq, l.bank.as_deref())
+        };
+        self.send(Command::SetSeq(Box::new(program)));
     }
 
     /// Fade the output in from wherever it is, over [`FADE_SECONDS`].
@@ -243,11 +287,15 @@ impl RenderSide {
             match cmd {
                 Command::SetState(s) => {
                     self.engine.set_state(&s);
-                    let _ = self.retired.send(s);
+                    let _ = self.retired.send(Retired::State(s));
                 }
                 Command::SwitchTo(s) => {
                     self.engine.switch_to(&s);
-                    let _ = self.retired.send(s);
+                    let _ = self.retired.send(Retired::State(s));
+                }
+                Command::SetSeq(p) => {
+                    let old = self.engine.set_seq(p);
+                    let _ = self.retired.send(Retired::Program(old));
                 }
                 Command::Fade { to, seconds } => {
                     self.level_target = to;
@@ -295,6 +343,13 @@ impl RenderSide {
         self.frame_n = 0;
         frame
     }
+}
+
+#[derive(Default)]
+struct Layers {
+    bank: Option<Arc<SampleBank>>,
+    old_banks: Vec<Arc<SampleBank>>,
+    seq: SeqState,
 }
 
 /// A point always sounds the same on the noisy generators, from run to run
@@ -450,6 +505,27 @@ mod tests {
         let offline = syn_core::render_offline(state, 8192.0 / SR, SR, state_seed(state));
         let fade = (FADE_SECONDS * SR) as usize + BLOCK;
         assert_eq!(&live[fade..], &offline[fade..8192]);
+    }
+
+    #[test]
+    fn layers_are_set_from_the_control_side_and_a_bank_rebuilds_them() {
+        use syn_core::seq::{Layer, Mode, Sample};
+        let p = Player::new(SR, &AppState::new());
+        p.fade_in();
+        let layer =
+            |sound: &str| Layer { on: true, sound: sound.into(), pattern: "0*2".into(), ..Layer::default() };
+        // "tick" is not a synth drum and there is no bank yet: silence.
+        p.set_seq(SeqState { cps: 1.0, layers: vec![layer("tick")] });
+        assert!(rms(&render(&p, SR as usize)) == 0.0);
+        let bank = SampleBank::from_pcm(vec![(
+            "tick".into(),
+            vec![Sample { sr: 22050, data: vec![8000; 500], mode: Mode::Hits }],
+        )]);
+        p.set_bank(Arc::new(bank));
+        assert!(rms(&render(&p, SR as usize)) > 1e-3);
+        p.set_seq(SeqState::default());
+        let x = render(&p, SR as usize);
+        assert!(rms(&x[x.len() / 2..]) == 0.0);
     }
 
     #[test]

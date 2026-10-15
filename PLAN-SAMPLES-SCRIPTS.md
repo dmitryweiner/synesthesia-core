@@ -148,6 +148,12 @@ Freesound CC0 pages found while looking, a starting list for the curator
 9. **One clock.** The cycle position is `t · cps`, where `t` is the engine's
    second (the LFO clock). No tempo clock of its own, nothing to drift. The
    LFO matrix may route onto `cps`, a layer's `gain`, `speed` and `density`.
+   *Amended in S2:* the position is **integrated**, `cycle += cps · dt` per
+   engine block, not computed as `t · cps` — with a gliding or modulated
+   `cps`, `t · cps` jumps (an hour in, an LFO at depth 0.1 would run it
+   backwards). It is still a pure function of the engine's blocks, so the
+   offline and live renders agree; with a constant `cps` from the start it
+   is `t · cps`, and a hard switch sets it back to `t · cps`.
 
 10. **Layers go into the mix before the FX chain**, like a formula does: the
     chain is the point's sound, and an owl through the point's reverb is the
@@ -256,7 +262,10 @@ Pattern (tree)  --query(span, &mut Events)-->  events {onset, dur, sound, n, gai
   22 050 Hz scout render and the 48 000 Hz live render play the same pitch, linear interpolation, 2 ms attack, 2 ms release when stolen or
   cut, per-event gain. `cut` groups (an open hat silenced by the closed one)
   in S6.
-- **Bed voice**: two sampler voices crossfading over the loop point.
+- **Bed voice**: one reader going round the sample — the bank's beds have
+  their 1 s equal-power crossfade baked in (`cut.py`), so the loop point is
+  seamless already. A bed whose sample changes fades out (0.3 s) under the
+  new one.
 - **Synth drums** (`bd sd hh oh cp`): closed-form envelopes and one
   oscillator or noise source each, driven by the same `speed` and `gain`;
   deterministic, with a golden take of each committed once so the sound
@@ -340,7 +349,8 @@ syn-core/src/point.rs       sanitize for seq (fixtures unchanged)
 syn-core/src/schema.rs      seqSounds, seqRhythms, the genes, the mod targets
 syn-core/src/genome/        codec (encode/decode seq), evolve (3 moves)
 syn-core/src/settings_page.rs  the Layers section
-syn-player/src/lib.rs       Command::SetBank(Arc<SampleBank>), retired like states
+syn-player/src/lib.rs       set_seq / set_bank on the control side; Command::SetSeq,
+                            the replaced program retired like a state
 syn-wasm, syn-ffi           loadBank(bytes) — S7, when the apps bump
 syn-bench                   --seq: events/s, voices, overflow count, score with/without
 golden/                     + one take per synth drum
@@ -365,9 +375,9 @@ into this file.
   - ✅ bank parse cost against the apps' startup budgets (the console's is
     300 ms to first sound; the worklet compiles the module first, then
     would parse the bank) → decode per sound, on demand;
-  - open: one sampler voice and 16 voices in a tight loop: **ns per sample** next
-    to the generators' worst (2.4 µs for Fractal garden), native and wasm;
-  - **the score probe**: `syn-bench` on *Fractal garden* and *Bell spots*
+  - ✅ one sampler voice and 16 voices: **ns per sample**, native and
+    wasm (*S2, measured* below);
+  - ✅ **the score probe** (*S2, measured* below; the decision is open): `syn-bench` on *Fractal garden* and *Bell spots*
     alone, with crickets under them, and with `bd(3,8)` — the fractality
     band is what the scout steers by, and a steady beat may push every
     candidate with a rhythm out of it (or into it). The number decides
@@ -382,11 +392,24 @@ into this file.
   and a query cut into random grid-aligned pieces equals the whole, every
   event inside its span. `syn-bench --patterns` (*S1, measured* below).
 - **S2 — voices and the bank** (`bank.rs`, `voice.rs`, `sequencer.rs`,
-  `engine.rs`, `syn-player`): the in-memory test bank, the sampler and bed
-  voices, the five synth drums with their golden takes, the sequencer in the
-  engine, `SetBank`, no allocation in `render` (a counting allocator in the
-  test build), `render_offline` bit-identical for a point without `seq`
-  (the golden and fixture tests say so).
+  `engine.rs`, `syn-player`): ✅ 2026-10-15. `SampleBank::from_bytes`
+  (`bank.bin` v2, sha256-checked, a sound decoded on first ask and kept)
+  and `from_pcm` (the in-memory test bank); two tiny FLAC fixtures in
+  `syn-core/tests/data` test the real decode path. `SeqProgram` is built on
+  the control side (patterns parsed, sounds decoded) and swapped into the
+  engine's `Sequencer` by `Engine::set_seq` / `syn_player::Player::set_seq`;
+  the replaced one is retired like a state. `SetBank` became
+  `Player::set_bank` on the control side (it rebuilds the program); the
+  engine never sees a bank, and a replaced bank is kept until the player
+  drops, so no voice frees a sample on the audio thread. The pool: 16
+  voices + 4 slots for releases. `render_offline_with(state, program, …)`.
+  The five synth drums have golden takes (`golden/drums/`, the first 16384
+  samples of a hit, and the length of the whole hit). The counting
+  allocator lives in its own test crate, `syn-noalloc` (a `GlobalAlloc`
+  is unsafe; the workspace forbids it); it found that `Engine::render`
+  already allocated 12–36 times a block (FxState's strings cloned, a
+  modulated param re-inserted) — fixed, bit-identical (`625f6d9`). A point
+  without layers skips the sequencer: its render is bit-identical.
 - **S3 — the point**: `SeqState` in `AppState`, `sanitize`, the genes and
   mod targets appended, codec, the three structural moves, the Layers
   section of the Settings page, the count assertions updated (`250 → 279`,
@@ -425,14 +448,14 @@ heaviest layered preset — 0 xruns in 30 min is the bar (`soak.py`, or
 |---|---|---|
 | bank | ≤ 20 MB in the samples repository, ≤ 12 MB embedded in the console binary | 165 samples picked (468 s): **17.6 MB** as FLAC at a measured rate per sample — fits the repository, not the console embed (S0 below) |
 | bank parse | ≤ 50 ms native; the worklet's load gate unchanged | **148 ms** to decode all of it with `claxon` on an M1 Max — 3× over; decode lazily (S0 below) |
-| one sampler voice | ≤ 50 ns a sample native (a `sin` is 24.6 ns on the console's A76) | S0 (open; needs S2's voice) |
-| 16 voices + a 4-layer pattern query | ≤ 3 % of one core on top of the point, native; inside PLAN-CORE's 35 % quantum gate on the phones | S2 |
-| allocations in `render` | 0 | S2 (test) |
+| one sampler voice | ≤ 50 ns a sample native (a `sin` is 24.6 ns on the console's A76) | **9.4 ns** native, 7.1 ns wasm (M1 Max; S2 below) |
+| 16 voices + a 4-layer pattern query | ≤ 3 % of one core on top of the point, native; inside PLAN-CORE's 35 % quantum gate on the phones | 16 voices + drums + a bed: **0.40 %** native, 0.46 % wasm (M1 Max); the phones not measured |
+| allocations in `render` | 0 | **0** — `syn-noalloc`, every preset, and 3000 blocks of four busy layers with the pool stealing |
 | event array overflow | 0 on every preset at 48 kHz and 22.05 kHz | S2 (bench counter) |
 | offline render of a layered preset | ≥ 8× realtime on the console | C1 |
 | xruns, drum preset, 48 kHz / 1024 frames | 0 in 30 min | C1 (`soak.py`) |
 | genes | 279; the first 250 unchanged for a point without `seq`; `fixtures/points.json` unchanged | S3 (tests) |
-| fractality of the presets with layers | inside the presets' band like the others, or the scout's rule is amended by S0's number | S0 / S5 |
+| fractality of the presets with layers | inside the presets' band like the others, or the scout's rule is amended by S0's number | inside the band (0.37–0.96 against the presets' 0.21–0.97), but a layer moves a point's score by up to ±0.35 — the scout's rule is a decision for S3 (S2 below) |
 
 ### S0, measured (2026-10-15)
 
@@ -471,8 +494,8 @@ the format numbers decided the format:
   decode a sound when a point that uses it is set (on the control side,
   never in `render`), keep it as `i16`, and let the scout's render share
   the decoded sounds. That is S2's design input.
-- Not measured yet: one sampler voice and 16 voices (S0 item 3), the
-  score probe (item 4). Both need the core's sampler, which is S1–S2 work.
+- One sampler voice and 16 voices (S0 item 3) and the score probe (item
+  4) were measured with S2's sampler: *S2, measured* below.
 
 ### S1, measured (2026-10-15)
 
@@ -490,6 +513,50 @@ The heaviest is ~1 µs of a 2.67 ms block: four such layers are 0.15 % of
 one core at 48 kHz (at 22.05 kHz, 1.2 µs of 5.8 ms). No overflow at either
 rate. Not measured: wasm, where the `i128` products are libcalls — S2's
 voice probe measures both on the worklet build.
+
+### S2, measured (2026-10-15)
+
+`syn-bench --seq` (native) and `syn-wasm/tests/seq_cost.rs` (wasm under
+node 20), M1 Max, the sequencer alone at 48 kHz:
+
+| case | ns / sample native · wasm | % of a core native · wasm |
+|---|---|---|
+| 1 sampler voice | 9.4 · 7.1 | 0.05 · 0.03 |
+| 16 sampler voices (the pool full, stealing) | 44.3 · 40.1 | 0.21 · 0.19 |
+| synth drums, 4 layers | 63.2 · 70.5 | 0.30 · 0.34 |
+| 1 bed | 4.0 · 4.1 | 0.02 · 0.02 |
+| 16 voices + drums + a bed | 84.3 · 95.0 | 0.40 · 0.46 |
+
+The pattern query in wasm: 478 ns (`bd sd [hh hh] ~`) and 1653 ns (the
+heaviest) a block — 1.6× native, the `i128` products being libcalls; still
+0.06 % of a 2.67 ms block. The real bank parses in 2.2 ms; *crickets*
+(8 beds of 10 s) decodes in 39 ms — a sound is decoded whole, every
+variant, so a bed costs its siblings' decode too (on the control side,
+once). Decoding per variant is the fix if the A76 makes it felt.
+
+**The score probe** (30 s at 22.05 kHz, layers at cps 0.5 from the real
+bank; the presets alone span 0.21–0.97):
+
+| point | alone | + crickets bed 0.3 | + `bd(3,8)` 0.6 | + owl now and then 0.5 | + woodblock `(5,8)` 0.4 | + crickets + bd |
+|---|---|---|---|---|---|---|
+| Fractal garden | 0.86 | 0.56 | 0.86 | 0.96 | 0.74 | 0.52 |
+| Bell spots | 0.72 | 0.76 | 0.52 | 0.64 | 0.69 | 0.37 |
+
+- Nothing leaves the presets' band, so the score does not need a term of
+  its own for rhythm.
+- But a layer moves a point by −0.35 to +0.10, and the direction depends
+  on the point: a steady beat flattens the loudness envelope's β (Bell
+  spots + bd: envβ 1.03 → −1.35), a noise bed flattens the centroid's.
+  If layers are part of the scored candidate, the scout will learn to
+  turn beats and beds off — the opposite of what a user who put them there
+  wants. The choice between scoring candidates **without** their layers
+  (the layers are the user's, the search is for the sound under them) and
+  scoring them whole is the user's, made before S3 wires the genes.
+- Levels: the probes' layers are loud for the presets — `bd` at gain 0.6
+  raises Fractal garden from −28 to −19 dB RMS, Bell spots from −36 to
+  −18. The samples are cut to −1 dBFS peak and the formulas mix far
+  lower; the listening pass (S5) sets the presets' gains, and may want the
+  gain gene's 0–1 mapped lower (e.g. 1 = −12 dB).
 
 ## Risks and open questions
 

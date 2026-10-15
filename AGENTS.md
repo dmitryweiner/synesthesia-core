@@ -54,6 +54,9 @@ what each prints. An agent cannot hear: read the `--png` waterfall.
   it loads and plays with that instrument silently missing.
 - **`golden/` is frozen**: the 69 takes the TypeScript rendered are what
   "unchanged" means for a generator. Never re-render or hand-edit them.
+  `golden/drums/` holds the synth drums' takes (`tests/drums.rs`), under
+  the same rule — re-taken only when the user, having listened, asks for a
+  drum to sound different.
 - **`fixtures/` is the TypeScript's behaviour, frozen** (synesthesia
   PLAN-CORE.md phase 1) by `scripts/dump-points.mjs` / `dump-analysis.mjs`
   while the TypeScript model still exists; after the swap nothing can
@@ -110,7 +113,10 @@ syn-core/src/settings_page.rs the web app's ⚙ Settings as a model (assets/sett
                           generated, gene-by-gene view of the same point
 syn-core/src/seq/         the sequencer layers (PLAN-SAMPLES-SCRIPTS.md): mini (the
                           mini-notation parser), pattern (exact fractions, the tree,
-                          the allocation-free span → events query)
+                          the allocation-free span → events query), bank (bank.bin →
+                          samples, decoded per sound), voice (sampler, synth drums),
+                          sequencer (SeqProgram built on the control side, played by
+                          the engine's Sequencer)
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout

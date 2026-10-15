@@ -11,6 +11,9 @@ serde_json = { version = "1", features = ["float_roundtrip"] }
 base64 = "0.22"
 rayon = "1"
 sha2 = "0.10"
+# FLAC decoding for the sample bank (PLAN-SAMPLES-SCRIPTS.md S0): pure Rust,
+# Apache-2.0; used on the control side only, never in `render`.
+claxon = "0.4"
 
 [lints]
 workspace = true

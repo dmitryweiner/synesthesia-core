@@ -16,6 +16,9 @@
 //! syn-bench --switch 0,3,10,7 [--at 20]       clicks at preset switches (the apps' fade-out → switch → fade-in)
 //! syn-bench --configs 30@22050,24@11025       does a cheap render rank like an expensive one? (Spearman ρ)
 //! syn-bench --patterns [--sr 48000]           ns for one pattern query per block (PLAN-SAMPLES-SCRIPTS.md S1)
+//! syn-bench --seq [--bank FILE] [--preset 0,10] [--wav DIR]
+//!                                             what layers cost (ns a sample) and do to the score (S0, S2);
+//!                                             --wav: the drums, a groove, and every probe render
 //! ```
 //!
 //! Points render in parallel on every core; each render is deterministic,
@@ -252,6 +255,9 @@ fn main() {
     if a.has("patterns") {
         return patterns(&a);
     }
+    if a.has("seq") {
+        return seq(&a);
+    }
     let points = candidates(&a);
     if points.is_empty() {
         eprintln!("no points to measure");
@@ -303,6 +309,181 @@ fn patterns(a: &Args) {
             let ns = t0.elapsed().as_nanos() as f64 / blocks as f64;
             println!("{} {cps:<4}  {ns:>8.1}  {:>8.2}  {overflow:>8}", pad(src, 52), events as f64 / 3600.0);
         }
+    }
+}
+
+/// PLAN-SAMPLES-SCRIPTS.md's open probes. First the cost: the sequencer
+/// alone, 60 s at 48 kHz, ns per output sample, with one sampler voice, a
+/// full pool, the synth drums, a bed. Then the score: a few presets alone
+/// and with layers from the real bank — does a beat push a point out of
+/// the fractality band the scout steers by?
+fn seq(a: &Args) {
+    use std::sync::Arc;
+    use syn_core::render_offline_with;
+    use syn_core::seq::{Layer, Mode, Sample, SampleBank, SeqProgram, SeqState, Sequencer};
+
+    let layer = |sound: &str, pattern: &str, mode: Mode, gain: f64| Layer {
+        on: true,
+        sound: sound.into(),
+        pattern: pattern.into(),
+        gain,
+        mode,
+        ..Layer::default()
+    };
+    // A minute of noise at 32 kHz: long enough that no hit ends in the run.
+    let mut x = 1u32;
+    let noise: Vec<i16> = (0..32000 * 60)
+        .map(|_| {
+            x ^= x << 13;
+            x ^= x >> 17;
+            x ^= x << 5;
+            (x >> 20) as i16 - 2048
+        })
+        .collect();
+    let bank = SampleBank::from_pcm(vec![
+        ("long".into(), vec![Sample { sr: 32000, data: noise.clone(), mode: Mode::Hits }]),
+        ("loop".into(), vec![Sample { sr: 32000, data: noise, mode: Mode::Bed }]),
+    ]);
+    let sr = 48000.0;
+    let secs = 60.0;
+    let cases: [(&str, SeqState); 5] = [
+        ("1 sampler voice", SeqState { cps: 1.0 / 120.0, layers: vec![layer("long", "0", Mode::Hits, 0.5)] }),
+        (
+            "16 sampler voices (pool full)",
+            SeqState { cps: 1.0, layers: vec![layer("long", "0*16", Mode::Hits, 0.5)] },
+        ),
+        (
+            "synth drums, 4 layers",
+            SeqState {
+                cps: 0.5,
+                layers: vec![
+                    layer("bd", "0(3,8)", Mode::Hits, 0.6),
+                    layer("sd", "~ 0 ~ 0", Mode::Hits, 0.5),
+                    layer("hh", "0*16?0.3", Mode::Hits, 0.4),
+                    layer("oh", "<~ 0> ~ cp ~", Mode::Hits, 0.4),
+                ],
+            },
+        ),
+        ("1 bed", SeqState { cps: 0.5, layers: vec![layer("loop", "", Mode::Bed, 0.5)] }),
+        (
+            "heaviest: 16 voices + drums + bed",
+            SeqState {
+                cps: 1.0,
+                layers: vec![
+                    layer("long", "0*16", Mode::Hits, 0.3),
+                    layer("bd", "0(3,8) , hh*16?0.3", Mode::Hits, 0.6),
+                    layer("sd", "~ 0 , <oh cp>*4", Mode::Hits, 0.5),
+                    layer("loop", "", Mode::Bed, 0.3),
+                ],
+            },
+        ),
+    ];
+    println!("{} ns/sample  % of a core   ({sr} Hz, {secs} s, native)", pad("sequencer alone", 36));
+    for (name, s) in &cases {
+        let mut q = Sequencer::new(sr, 1);
+        q.set_program(Box::new(SeqProgram::new(s, Some(&bank))));
+        let (mut wet, mut dry) = (vec![0.0f32; BLOCK], vec![0.0f32; BLOCK]);
+        let blocks = (secs * sr) as usize / BLOCK;
+        let t0 = Instant::now();
+        for _ in 0..blocks {
+            q.render(&mut wet, &mut dry);
+        }
+        let ns = t0.elapsed().as_nanos() as f64 / (blocks * BLOCK) as f64;
+        println!("{} {ns:>9.1}  {:>9.2} %   stolen {}", pad(name, 36), ns * sr / 1e7, q.stolen);
+    }
+    if let Some(dir) = a.get("wav") {
+        use syn_core::seq::voice::render_drum;
+        use syn_core::seq::Drum;
+        // Each drum at speed 0.7, 1 and 1.4, half a second apart.
+        for d in Drum::ALL {
+            let mut x = vec![0.0f32; (1.5 * 48000.0) as usize + 48000 * 3];
+            for (k, speed) in [0.7, 1.0, 1.4].into_iter().enumerate() {
+                for (o, v) in x[k * 24000..].iter_mut().zip(render_drum(d, 48000.0, speed, 1)) {
+                    *o += v * 0.8;
+                }
+            }
+            write_wav(dir, &format!("drum_{}", d.name()), &x, 48000.0);
+        }
+        let groove = SeqState {
+            cps: 0.5,
+            layers: vec![
+                layer("bd", "0 ~ ~ 0 ~ ~ 0 ~", Mode::Hits, 0.8),
+                layer("sd", "~ 0 ~ 0", Mode::Hits, 0.6),
+                layer("hh", "0*8 , ~ ~ ~ <~ oh>", Mode::Hits, 0.4),
+                layer("cp", "~ ~ ~ <~ 0>", Mode::Hits, 0.5),
+            ],
+        };
+        let quiet = syn_core::state::AppState::new();
+        let x = render_offline_with(&quiet, Box::new(SeqProgram::new(&groove, None)), 8.0, 48000.0, 1);
+        write_wav(dir, "drum_groove", &x, 48000.0);
+    }
+
+    let path = a.get("bank").unwrap_or("../synesthesia-samples/bank.bin");
+    let Ok(bytes) = fs::read(path) else {
+        println!("\nno bank at {path} (--bank FILE): the score probe needs the real samples");
+        return;
+    };
+    let t0 = Instant::now();
+    let bank = Arc::new(SampleBank::from_bytes(bytes).expect("a bank"));
+    let parse_ms = t0.elapsed().as_secs_f64() * 1e3;
+    let t0 = Instant::now();
+    bank.sound("crickets");
+    let crickets_ms = t0.elapsed().as_secs_f64() * 1e3;
+    println!(
+        "\nbank {path}: parsed in {parse_ms:.1} ms; crickets ({} variants) decoded in {crickets_ms:.1} ms",
+        bank.entries("crickets").len()
+    );
+
+    let secs = a.num("secs", 30.0);
+    let sr = a.num("sr", 22050.0);
+    let idx = a.list("preset").unwrap_or(vec![0, 10]);
+    let crickets = layer("crickets", "", Mode::Bed, 0.3);
+    let bd = layer("bd", "0(3,8)", Mode::Hits, 0.6);
+    let owl = layer("owl", "<0 ~ ~ 1> ~ ~ ~", Mode::Hits, 0.5);
+    let wood = layer("woodblock", "0(5,8) , ~ 1", Mode::Hits, 0.4);
+    let variants: [(&str, Vec<Layer>); 6] = [
+        ("alone", vec![]),
+        ("+ crickets bed", vec![crickets.clone()]),
+        ("+ bd(3,8)", vec![bd.clone()]),
+        ("+ owl now and then", vec![owl]),
+        ("+ woodblock (5,8)", vec![wood]),
+        ("+ crickets + bd(3,8)", vec![crickets, bd]),
+    ];
+    let jobs: Vec<(usize, usize)> =
+        idx.iter().flat_map(|&p| (0..variants.len()).map(move |v| (p, v))).collect();
+    let results: Vec<SoundAnalysis> = jobs
+        .par_iter()
+        .map(|&(p, v)| {
+            let s = SeqState { cps: 0.5, layers: variants[v].1.clone() };
+            let x = render_offline_with(
+                &presets()[p].state,
+                Box::new(SeqProgram::new(&s, Some(&bank))),
+                secs,
+                sr,
+                1,
+            );
+            if let Some(dir) = a.get("wav") {
+                let name = format!(
+                    "probe_{p}_{}",
+                    variants[v].0.trim_start_matches("+ ").replace(['(', ')', ',', ' '], "_")
+                );
+                write_wav(dir, &name, &x, sr);
+            }
+            analyze_sound(&x, sr)
+        })
+        .collect();
+    println!("{} score  envβ   cenβ   HFD    box    dB     ({secs}s @ {sr} Hz)", pad("point", 44));
+    for ((p, v), an) in jobs.iter().zip(&results) {
+        println!(
+            "{} {:>5.2}  {:>5.2}  {:>5.2}  {:>5.2}  {:>5.2}  {:>5.1}",
+            pad(&format!("{p}: {} {}", presets()[*p].name, variants[*v].0), 44),
+            an.score,
+            an.env_beta,
+            an.centroid_beta,
+            an.env_higuchi,
+            an.box_dim,
+            an.loudness
+        );
     }
 }
 

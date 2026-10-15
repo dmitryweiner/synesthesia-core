@@ -1,4 +1,5 @@
-//! The sound engine: generators → gate → mix → FX → master.
+//! The sound engine: generators → gate → mix (+ the sequencer's layers) →
+//! FX → (+ its dry layers) → master.
 //!
 //! Pure and blocking-free — it owns no device and no thread. `syn-audio` calls
 //! [`Engine::render`] from the audio callback; the scout calls
@@ -11,6 +12,7 @@ use crate::features::{Analyser, AudioFeatures, FeatureTracker, OnsetDetector, FP
 use crate::fx::FxChain;
 use crate::modmatrix::{effective_param, lfo_value, LfoDef, ModRoute};
 use crate::schema::{formula_ranges, schema};
+use crate::seq::{SeqProgram, Sequencer};
 use crate::state::{AppState, FxState};
 use crate::{FormulaId, BLOCK};
 
@@ -44,6 +46,10 @@ pub struct Engine {
     scratch: Vec<f32>,
     /// The FX state with the LFOs laid over it, rewritten every block.
     fx_eff: FxState,
+    /// The sample and drum layers (PLAN-SAMPLES-SCRIPTS.md), and the bus of
+    /// the ones that skip the FX chain.
+    seq: Sequencer,
+    dry: Vec<f32>,
 
     // The feature bus (PLAN.md decision 5): the same numbers the browser's
     // analyser produced, published for whatever draws them.
@@ -66,6 +72,8 @@ impl Engine {
             t: 0.0,
             scratch: vec![0.0; BLOCK],
             fx_eff: state.audio.fx.clone(),
+            seq: Sequencer::new(sr, seed),
+            dry: vec![0.0; BLOCK],
             analyser: Analyser::new(sr),
             tracker: FeatureTracker::new(sr),
             onsets: OnsetDetector::default(),
@@ -127,10 +135,23 @@ impl Engine {
         }
     }
 
+    /// Plays `program`'s layers from the next block (built on the control
+    /// side: patterns parsed, samples decoded). Returns the program it
+    /// replaces, for the caller to drop off the audio thread.
+    pub fn set_seq(&mut self, program: Box<SeqProgram>) -> Box<SeqProgram> {
+        self.seq.set_program(program)
+    }
+
+    /// The sequencer: its program, cycle and counters.
+    pub fn sequencer(&self) -> &Sequencer {
+        &self.seq
+    }
+
     /// Hard switch to another point: drops every tail so the old reverb and
     /// delay cannot bleed into the new sound. The caller ducks around it.
     pub fn switch_to(&mut self, state: &AppState) {
         self.set_state(state);
+        self.seq.reset(self.t);
         self.fx.reset(&state.audio.fx);
         self.master = state.audio.master_gain;
         for slot in &mut self.slots {
@@ -146,6 +167,7 @@ impl Engine {
         let n = out.len();
         if self.scratch.len() < n {
             self.scratch.resize(n, 0.0);
+            self.dry.resize(n, 0.0);
         }
         out.fill(0.0);
 
@@ -170,6 +192,17 @@ impl Engine {
             }
         }
 
+        // A point with no layers skips the sequencer, so its sound is bit for
+        // bit what it was before there was one.
+        let seq_live = !self.seq.is_idle();
+        if seq_live {
+            let dry = &mut self.dry[..n];
+            dry.fill(0.0);
+            self.seq.render(out, dry);
+        } else {
+            self.seq.advance(n);
+        }
+
         // FX parameters follow the LFOs at block rate, as they do in the
         // browser (there at ~40 Hz from a timer; here exactly per block).
         modulate_fx_into(
@@ -181,6 +214,11 @@ impl Engine {
         );
         self.fx.set(&self.fx_eff);
         self.fx.process(out);
+        if seq_live {
+            for (o, d) in out.iter_mut().zip(&self.dry[..n]) {
+                *o += *d;
+            }
+        }
 
         let master_target = self.state.audio.master_gain;
         self.master += master_coef * (master_target - self.master);
@@ -268,8 +306,20 @@ pub fn modulate_fx_into(base: &FxState, routes: &[ModRoute], lfos: &[LfoDef], t:
 /// Renders `seconds` of a point offline, faster than realtime. Used by the
 /// scout and by `synesthesia render`.
 pub fn render_offline(state: &AppState, seconds: f64, sr: f64, seed: u32) -> Vec<f32> {
+    render_offline_with(state, Box::default(), seconds, sr, seed)
+}
+
+/// [`render_offline`] with the sequencer playing `program`.
+pub fn render_offline_with(
+    state: &AppState,
+    program: Box<SeqProgram>,
+    seconds: f64,
+    sr: f64,
+    seed: u32,
+) -> Vec<f32> {
     let n = (seconds * sr) as usize;
     let mut engine = Engine::new(sr, state, seed);
+    engine.set_seq(program);
     let mut out = vec![0.0f32; n.div_ceil(BLOCK) * BLOCK];
     for block in out.chunks_mut(BLOCK) {
         engine.render(block);
@@ -339,6 +389,35 @@ mod tests {
         assert!(f.brightness > 0.0, "brightness {}", f.brightness);
         assert!(engine.spectrum().iter().any(|b| *b > 0), "empty spectrum");
         assert!(engine.hits() > 0, "Bell spots struck no onset in 4 s");
+    }
+
+    #[test]
+    fn layers_play_through_the_engine_and_dry_ones_skip_the_chain() {
+        use crate::seq::{Layer, SeqState};
+        let quiet = AppState::new();
+        let seq = |dry| SeqState {
+            cps: 0.5,
+            layers: vec![Layer {
+                on: true,
+                sound: "bd".into(),
+                pattern: "0*4".into(),
+                gain: 0.8,
+                dry,
+                ..Layer::default()
+            }],
+        };
+        let wet = render_offline_with(&quiet, Box::new(SeqProgram::new(&seq(false), None)), 2.0, 22050.0, 1);
+        let dry = render_offline_with(&quiet, Box::new(SeqProgram::new(&seq(true), None)), 2.0, 22050.0, 1);
+        assert!(rms(&wet) > 0.01 && rms(&dry) > 0.01);
+        assert_ne!(wet, dry, "the chain (its reverb, its limiter) colours only the wet one");
+        // No program, or one with every layer off: the formulas' sound alone,
+        // bit for bit.
+        let p = &presets()[3].state;
+        let mut off = seq(false);
+        off.layers[0].on = false;
+        let a = render_offline(p, 2.0, 22050.0, 1);
+        let b = render_offline_with(p, Box::new(SeqProgram::new(&off, None)), 2.0, 22050.0, 1);
+        assert_eq!(a, b);
     }
 
     #[test]
