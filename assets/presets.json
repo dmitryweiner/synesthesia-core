@@ -7373,12 +7373,6 @@
       "target": "seq.2",
       "param": "density",
       "depth": -0.7
-     },
-     {
-      "src": 0,
-      "target": "seq.3",
-      "param": "gain",
-      "depth": 0.8
      }
     ]
    },
@@ -7401,18 +7395,7 @@
       "on": true,
       "sound": "bd",
       "pattern": "0 ~ ~ 0 ~ ~ 0 ~",
-      "gain": 0.28,
-      "speed": 1.0,
-      "density": 1.0,
-      "dry": false,
-      "mode": "hits",
-      "humanize": 0.5
-     },
-     {
-      "on": true,
-      "sound": "sd",
-      "pattern": "~ 0 ~ 0",
-      "gain": 0.18,
+      "gain": 0.2,
       "speed": 1.0,
       "density": 1.0,
       "dry": false,
@@ -7423,8 +7406,8 @@
       "on": true,
       "sound": "hh",
       "pattern": "0*8?0.3",
-      "gain": 0.12,
-      "speed": 1.0,
+      "gain": 0.08,
+      "speed": 0.75,
       "density": 1.0,
       "dry": false,
       "mode": "hits",
@@ -7434,12 +7417,22 @@
       "on": true,
       "sound": "conga",
       "pattern": "<0 1>(5,8)",
-      "gain": 0.12,
+      "gain": 0.09,
       "speed": 1.0,
       "density": 1.0,
       "dry": false,
       "mode": "hits",
       "humanize": 0.5
+     },
+     {
+      "on": false,
+      "sound": "bell",
+      "pattern": "",
+      "gain": 0.5,
+      "speed": 1.0,
+      "density": 1.0,
+      "dry": false,
+      "mode": "hits"
      }
     ]
    }
@@ -7789,16 +7782,10 @@
       "depth": 0.3
      },
      {
-      "src": 2,
-      "target": "seq.1",
-      "param": "density",
-      "depth": -0.8
-     },
-     {
       "src": 3,
       "target": "seq.0",
       "param": "gain",
-      "depth": 0.4
+      "depth": 0.13333333333333333
      }
     ]
    },
@@ -7819,9 +7806,9 @@
     "layers": [
      {
       "on": true,
-      "sound": "bd",
+      "sound": "frame-drum",
       "pattern": "<0(3,8)!3 0(5,8) 0(3,8)!3 0(3,8,2)>",
-      "gain": 0.32,
+      "gain": 0.15,
       "speed": 1.0,
       "density": 1.0,
       "dry": false,
@@ -7829,15 +7816,14 @@
       "humanize": 0.5
      },
      {
-      "on": true,
-      "sound": "hh",
-      "pattern": "<[0*8?0.5]!3 [0*16?0.6]>",
-      "gain": 0.1,
+      "on": false,
+      "sound": "bell",
+      "pattern": "",
+      "gain": 0.5,
       "speed": 1.0,
       "density": 1.0,
       "dry": false,
-      "mode": "hits",
-      "humanize": 0.5
+      "mode": "hits"
      },
      {
       "on": false,

@@ -476,7 +476,11 @@ into this file.
   (3,8) ×3 then (5,8), rotated every 8th bar, hats doubling on the 4th,
   humanize 0.5, the hats' density and the kick's gain breathing (bd 0.32,
   hh 0.1). Each was confirmed by ear in round 5, byte for byte the file
-  heard. By ear: layers want
+  heard. Round 6 (users found both "angry", the motorik too insistent):
+  Molten groove lost its snare and went quieter and lower (bd 0.2, hats
+  0.08 at speed 0.75, conga 0.09); Bell walk plays its phrase on a frame
+  drum instead of the synth kick and hats, a third as loud as drafted
+  (0.15, its breathing depth a third too). By ear: layers want
   to be quieter than a sample's −1 dBFS suggests (beds ~0.1, bd ~0.4),
   always wet (every `dry` draft was rejected — the point's echo is the
   point), rhythms neither fast nor slow. Their pictures are their bases'
