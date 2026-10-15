@@ -108,6 +108,9 @@ syn-core/src/settings_page.rs the web app's ⚙ Settings as a model (assets/sett
                           + the rules: formula limit, filter rows per type, route
                           targets and new routes, same_point); settings.rs is the
                           generated, gene-by-gene view of the same point
+syn-core/src/seq/         the sequencer layers (PLAN-SAMPLES-SCRIPTS.md): mini (the
+                          mini-notation parser), pattern (exact fractions, the tree,
+                          the allocation-free span → events query)
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout

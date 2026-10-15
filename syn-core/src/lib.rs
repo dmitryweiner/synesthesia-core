@@ -13,6 +13,7 @@ pub mod genome;
 pub mod modmatrix;
 pub mod point;
 pub mod schema;
+pub mod seq;
 pub mod settings;
 pub mod settings_page;
 pub mod share;

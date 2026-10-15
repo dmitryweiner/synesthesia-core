@@ -217,7 +217,14 @@ token     := name (':' int)? | int     "owl:1" "2"
 
 `*n` speeds a step up, `/n` slows it, `!` repeats, `?` drops with
 probability 0.5 (or the given one), `(3,8)` is a Euclidean rhythm, `@3`
-weights a step. `.` as a group separator and `_` elongation come with
+weights a step. The third Euclidean number rotates **right**, as Strudel's
+mini-notation does (it calls `euclidRot`, `rotate(b, −r)`): `(3,8,2)` is
+`x.x..x..`; Tidal's `(3,8,2)` rotates left, so a Tidal pattern with a
+rotation sounds different here — as it does in Strudel. One group mixes
+`,` or `|`, not both. Limits, each an error at parse: 512 bytes, brackets
+16 deep, factors and step counts ≤ 128, and time rescaled ≤ 2²⁴ root to
+leaf (with the engine's 2⁻²⁰-cycle grid that keeps every fraction inside
+`i64`). `.` as a group separator and `_` elongation come with
 polymeter in S6 if a preset wants them. Everything parses to a `Pattern`
 tree when the point changes; nothing is interpreted at render time.
 
@@ -366,9 +373,14 @@ into this file.
     candidate with a rhythm out of it (or into it). The number decides
     whether layers are scored as part of the candidate, left out of the
     scout's render, or get a term of their own.
-- **S1 — the pattern engine** (`seq/mini.rs`, `pattern.rs`): the subset
-  above, exact fractions, the fixed-array query, the Strudel examples as
-  tests, a number for one query per block.
+- **S1 — the pattern engine** (`seq/mini.rs`, `pattern.rs`): ✅ 2026-10-15.
+  The subset above except `{ }` (S6), exact fractions (`i64`, `i128` only
+  inside an operation), the tree as an arena (a Euclidean rhythm shares its
+  step), the fixed-array query (64 events, overflow counted), `?` and `|`
+  by `unit_hash(time, salt, seed)`, `Pattern::fast/slow/degrade_by`. The
+  tests: Strudel's documented examples as event lists, `fast(2)` ≡ `*2`,
+  and a query cut into random grid-aligned pieces equals the whole, every
+  event inside its span. `syn-bench --patterns` (*S1, measured* below).
 - **S2 — voices and the bank** (`bank.rs`, `voice.rs`, `sequencer.rs`,
   `engine.rs`, `syn-player`): the in-memory test bank, the sampler and bed
   voices, the five synth drums with their golden takes, the sequencer in the
@@ -461,6 +473,23 @@ the format numbers decided the format:
   the decoded sounds. That is S2's design input.
 - Not measured yet: one sampler voice and 16 voices (S0 item 3), the
   score probe (item 4). Both need the core's sampler, which is S1–S2 work.
+
+### S1, measured (2026-10-15)
+
+`syn-bench --patterns`: one query per 128-frame block over an hour of
+cycles, the span put on the grid as the engine will, M1 Max, native:
+
+| pattern | ns / query, cps 0.5 · 2 | events/s at cps 2 |
+|---|---|---|
+| `0` | 45 · 21 | 2 |
+| `bd sd [hh hh] ~` | 275 · 248 | 8 |
+| `0(3,8) , ~ sd ~ sd , hh*8?0.3` | 390 · 369 | 21 |
+| `[[0 [1 2]] <3 4 [5 6]>]*2 , 0(7,16) , hh*16?` | 1037 · 1045 | 47 |
+
+The heaviest is ~1 µs of a 2.67 ms block: four such layers are 0.15 % of
+one core at 48 kHz (at 22.05 kHz, 1.2 µs of 5.8 ms). No overflow at either
+rate. Not measured: wasm, where the `i128` products are libcalls — S2's
+voice probe measures both on the worklet build.
 
 ## Risks and open questions
 

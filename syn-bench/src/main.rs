@@ -15,6 +15,7 @@
 //! syn-bench --onsets [--secs 16]              onset hits and the swell's swing per point
 //! syn-bench --switch 0,3,10,7 [--at 20]       clicks at preset switches (the apps' fade-out → switch → fade-in)
 //! syn-bench --configs 30@22050,24@11025       does a cheap render rank like an expensive one? (Spearman ρ)
+//! syn-bench --patterns [--sr 48000]           ns for one pattern query per block (PLAN-SAMPLES-SCRIPTS.md S1)
 //! ```
 //!
 //! Points render in parallel on every core; each render is deterministic,
@@ -248,6 +249,9 @@ fn pad(s: &str, n: usize) -> String {
 
 fn main() {
     let a = Args::parse();
+    if a.has("patterns") {
+        return patterns(&a);
+    }
     let points = candidates(&a);
     if points.is_empty() {
         eprintln!("no points to measure");
@@ -263,6 +267,43 @@ fn main() {
         return configs(&a, &points);
     }
     fractality(&a, &points);
+}
+
+/// What one block's pattern query costs: every block of an hour of cycles
+/// at `cps` 0.5 and 2, the span turned into fractions on the grid as the
+/// engine will, the events counted (the sequencer's work per block).
+fn patterns(a: &Args) {
+    use syn_core::seq::{parse, Events, Frac};
+    let sr = a.num("sr", 48000.0);
+    let srcs = [
+        "0",
+        "bd sd [hh hh] ~",
+        "<0 ~ ~ 1> ~ ~ ~",
+        "0(3,8) , ~ sd ~ sd , hh*8?0.3",
+        "[0 1 2 3]*4?0.5 , <0 [1 2]>(5,8,2) , [3 | 4 | 5]*2",
+        "[[0 [1 2]] <3 4 [5 6]>]*2 , 0(7,16) , hh*16?",
+    ];
+    println!("{} cps   ns/query  events/s  overflow   ({sr} Hz, {BLOCK}-frame blocks)", pad("pattern", 52));
+    for src in srcs {
+        let p = parse(src).expect("bench pattern parses");
+        for cps in [0.5, 2.0] {
+            let blocks = (3600.0 * sr / BLOCK as f64) as u64;
+            let mut out = Events::default();
+            let (mut events, mut overflow) = (0u64, 0u64);
+            let t0 = Instant::now();
+            let mut begin = Frac::ZERO;
+            for k in 1..=blocks {
+                let end = Frac::approx((k * BLOCK as u64) as f64 / sr * cps);
+                out.clear();
+                p.query(begin, end, 1, &mut out);
+                events += out.len() as u64;
+                overflow += u64::from(out.overflow);
+                begin = end;
+            }
+            let ns = t0.elapsed().as_nanos() as f64 / blocks as f64;
+            println!("{} {cps:<4}  {ns:>8.1}  {:>8.2}  {overflow:>8}", pad(src, 52), events as f64 / 3600.0);
+        }
+    }
 }
 
 fn fractality(a: &Args, points: &[Point]) {
