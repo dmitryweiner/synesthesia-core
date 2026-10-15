@@ -1,0 +1,16 @@
+[package]
+name = "syn-noalloc"
+description = "Test only: a counting allocator proves the render path allocates nothing."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+# Not `[lints] workspace = true`: a `GlobalAlloc` is unsafe to implement, and
+# the workspace forbids unsafe code. This crate is that one impl and its tests;
+# the model crates keep the lint.
+
+[dependencies]
+syn-core = { path = "../syn-core" }
+syn-player = { path = "../syn-player" }

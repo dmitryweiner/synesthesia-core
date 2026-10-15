@@ -42,6 +42,8 @@ pub struct Engine {
     /// read (PLAN.md decision 7).
     t: f64,
     scratch: Vec<f32>,
+    /// The FX state with the LFOs laid over it, rewritten every block.
+    fx_eff: FxState,
 
     // The feature bus (PLAN.md decision 5): the same numbers the browser's
     // analyser produced, published for whatever draws them.
@@ -63,6 +65,7 @@ impl Engine {
             master: state.audio.master_gain,
             t: 0.0,
             scratch: vec![0.0; BLOCK],
+            fx_eff: state.audio.fx.clone(),
             analyser: Analyser::new(sr),
             tracker: FeatureTracker::new(sr),
             onsets: OnsetDetector::default(),
@@ -169,13 +172,14 @@ impl Engine {
 
         // FX parameters follow the LFOs at block rate, as they do in the
         // browser (there at ~40 Hz from a timer; here exactly per block).
-        let eff = modulate_fx(
+        modulate_fx_into(
             &self.state.audio.fx,
             &self.state.modulation.routes,
             &self.state.modulation.lfos,
             self.t,
+            &mut self.fx_eff,
         );
-        self.fx.set(&eff);
+        self.fx.set(&self.fx_eff);
         self.fx.process(out);
 
         let master_target = self.state.audio.master_gain;
@@ -242,8 +246,16 @@ fn routes_for(state: &AppState, target: &str) -> Vec<ModRoute> {
 /// Effective FX state at time `t`: the base with every allowlisted field that
 /// has a route laid over it.
 pub fn modulate_fx(base: &FxState, routes: &[ModRoute], lfos: &[LfoDef], t: f64) -> FxState {
-    let ranges = &schema().fx_param_ranges;
     let mut eff = base.clone();
+    modulate_fx_into(base, routes, lfos, t, &mut eff);
+    eff
+}
+
+/// [`modulate_fx`] into a state kept between blocks, so the render path
+/// allocates nothing.
+pub fn modulate_fx_into(base: &FxState, routes: &[ModRoute], lfos: &[LfoDef], t: f64, eff: &mut FxState) {
+    let ranges = &schema().fx_param_ranges;
+    eff.copy_from(base);
     for r in routes.iter().filter(|r| r.target == "fx") {
         let (Some(lfo), Some(range), Some(v)) = (lfos.get(r.src), ranges.get(&r.param), base.get(&r.param))
         else {
@@ -251,7 +263,6 @@ pub fn modulate_fx(base: &FxState, routes: &[ModRoute], lfos: &[LfoDef], t: f64)
         };
         eff.set(&r.param, effective_param(v, lfo_value(lfo, t), r.depth, *range, r.exp));
     }
-    eff
 }
 
 /// Renders `seconds` of a point offline, faster than realtime. Used by the

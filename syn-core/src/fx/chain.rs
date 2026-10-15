@@ -121,7 +121,7 @@ impl FxChain {
 
     /// New target values; the chain glides to them.
     pub fn set(&mut self, fx: &FxState) {
-        self.fx = fx.clone();
+        self.fx.copy_from(fx);
     }
 
     /// Hard switch (a new point): jump every parameter and drop every tail, so
@@ -177,7 +177,9 @@ impl FxChain {
         let sr = self.sr;
         let dt = buf.len() as f64 / sr;
         let coef = 1.0 - (-dt / SMOOTH_TC).exp();
-        let fx = self.fx.clone();
+        // Borrowed, not cloned: a clone would allocate the strings on the
+        // audio thread. Only other fields are mutated below.
+        let fx = &self.fx;
 
         // --- block-rate parameters -----------------------------------------
         let filter_freq = self.s.filter_freq.glide(fx.filter_freq, coef);

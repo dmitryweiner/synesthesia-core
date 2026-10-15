@@ -72,6 +72,17 @@ fn schema_default_fx() -> serde_json::Value {
 
 /// A modulatable FX field, read and written by name (what a `ModRoute` aims at).
 impl FxState {
+    /// `*self = o.clone()` without allocating once the two strings have
+    /// room: the render path copies the FX state every block.
+    pub fn copy_from(&mut self, o: &FxState) {
+        let mut filter_type = std::mem::take(&mut self.filter_type);
+        let mut chorus_mode = std::mem::take(&mut self.chorus_mode);
+        filter_type.clone_from(&o.filter_type);
+        chorus_mode.clone_from(&o.chorus_mode);
+        // Every other field is `Copy`; a new non-`Copy` one fails to compile here.
+        *self = FxState { filter_type, chorus_mode, ..*o };
+    }
+
     pub fn get(&self, key: &str) -> Option<f64> {
         Some(match key {
             "filterFreq" => self.filter_freq,

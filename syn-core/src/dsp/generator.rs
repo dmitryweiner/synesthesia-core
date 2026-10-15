@@ -350,16 +350,20 @@ impl FormulaGenerator {
                 continue;
             }
             let v = effective_param(base, lfo_value(lfo, self.mod_t), r.depth, *range, r.exp);
-            self.p.insert(r.param.clone(), v);
+            // The key is there (its value was finite): no new String per block.
+            if let Some(slot) = self.p.get_mut(&r.param) {
+                *slot = v;
+            }
         }
     }
 
     fn restore_mod(&mut self) {
         for i in 0..self.mod_routes.len() {
-            let key = self.mod_routes[i].param.clone();
             let saved = self.mod_saved[i];
             if saved.is_finite() {
-                self.p.insert(key, saved);
+                if let Some(slot) = self.p.get_mut(&self.mod_routes[i].param) {
+                    *slot = saved;
+                }
             }
         }
     }

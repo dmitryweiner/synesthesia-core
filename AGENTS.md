@@ -145,6 +145,8 @@ syn-ffi/src/points.rs     … and the points: the kept list, `#s=` tokens, what
 syn-wasm/src/             the wasm-bindgen surface for the web app: AudioCore (the
                           player, for one AudioWorklet), session, picture, settings,
                           point (sanitize, id — the points Worker), share (links)
+syn-noalloc/              test only: a counting allocator — `Engine::render` allocates
+                          nothing (outside the workspace's `forbid(unsafe_code)`)
 syn-bench/src/main.rs     the sound bench: fractality, character, onsets, clicks
                           at switches, render configs, WAVs and waterfalls
 ```

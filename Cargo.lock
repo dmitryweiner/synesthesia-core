@@ -869,6 +869,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "syn-noalloc"
+version = "0.1.0"
+dependencies = [
+ "syn-core",
+ "syn-player",
+]
+
+[[package]]
 name = "syn-player"
 version = "0.1.0"
 dependencies = [
