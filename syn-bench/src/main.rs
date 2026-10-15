@@ -19,6 +19,8 @@
 //! syn-bench --listen DIR --points drafts.json [--bank FILE] [--secs 40]
 //!                                             drafts with their layers → DIR/NN.wav + DIR/list.json, for a
 //!                                             listening page (.claude/skills/new-preset/listen.py)
+//! syn-bench --flashes [--preset 18,19] [--secs 30] [--bank FILE]
+//!                                             the picture's flashes per second (WCAG 2.3.1: ≤ 3), layers playing
 //! syn-bench --seq [--bank FILE] [--preset 0,10] [--wav DIR]
 //!                                             what layers cost (ns a sample) and do to the score (S0, S2);
 //!                                             --wav: the drums, a groove, and every probe render
@@ -264,6 +266,9 @@ fn main() {
     if a.has("listen") {
         return listen(&a);
     }
+    if a.has("flashes") {
+        return flashes(&a);
+    }
     let points = candidates(&a);
     if points.is_empty() {
         eprintln!("no points to measure");
@@ -316,6 +321,141 @@ fn patterns(a: &Args) {
             println!("{} {cps:<4}  {ns:>8.1}  {:>8.2}  {overflow:>8}", pad(src, 52), events as f64 / 3600.0);
         }
     }
+}
+
+/// Photosensitivity: how often the picture flashes, the way WCAG 2.3.1
+/// counts it — a flash is a pair of opposing changes in relative luminance
+/// of at least 0.1 (the darker side below 0.8); more than three in any one
+/// second is a hazard. Each point plays live (layers from the bank) at 62.5
+/// frames a second, the core's CPU picture draws every frame at 96×64, and
+/// the count is taken over the whole frame and over each of 4×4 tiles (a
+/// quarter of the screen flashing is enough to count).
+fn flashes(a: &Args) {
+    use syn_core::seq::{SampleBank, SeqProgram};
+    use syn_core::sim::picture::Picture;
+    use syn_core::visualizer::{Visualizer, VizInput};
+    let path = a.get("bank").unwrap_or("../synesthesia-samples/bank.bin");
+    let bank = fs::read(path).ok().and_then(|b| SampleBank::from_bytes(b).ok());
+    let secs = a.num("secs", 30.0);
+    let sr = 48000.0;
+    let idx = a.list("preset").unwrap_or_else(|| (0..presets().len()).collect());
+    let blocks_per_frame = 6; // 768 samples: 62.5 frames a second at 48 kHz
+    let fps = sr / (blocks_per_frame * BLOCK) as f64;
+    println!("{} worst/s whole  worst/s tile  mean L  L swing   ({secs}s, WCAG: ≤ 3)", pad("point", 30));
+    let rows: Vec<String> = idx
+        .par_iter()
+        .filter_map(|&i| {
+            let p = presets().get(i)?;
+            let mut engine = Engine::new(sr, &p.state, 1);
+            engine.set_seq(Box::new(SeqProgram::new(&p.state.seq, bank.as_ref())));
+            let mut pic = Picture::new(96, 64, 1);
+            let mut buf = vec![0.0f32; BLOCK];
+            let frames = (secs * fps) as usize;
+            // relative luminance per frame: the whole image and 16 tiles
+            let mut lum: Vec<[f64; 17]> = Vec::with_capacity(frames);
+            for k in 0..frames {
+                for _ in 0..blocks_per_frame {
+                    engine.render(&mut buf);
+                }
+                let input = VizInput {
+                    state: &p.state,
+                    features: engine.features(),
+                    hits: engine.hits(),
+                    time: engine.time(),
+                };
+                pic.step(&input);
+                let img = pic.draw(engine.time());
+                let mut l = [0.0f64; 17];
+                let mut n = [0usize; 17];
+                for y in 0..img.h {
+                    for x in 0..img.w {
+                        let [r, g, b] = img.rgb[y * img.w + x];
+                        let lin = |c: u8| {
+                            let c = f64::from(c) / 255.0;
+                            if c <= 0.04045 {
+                                c / 12.92
+                            } else {
+                                ((c + 0.055) / 1.055).powf(2.4)
+                            }
+                        };
+                        let y_ = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+                        let t = 1 + (y * 4 / img.h) * 4 + x * 4 / img.w;
+                        l[0] += y_;
+                        n[0] += 1;
+                        l[t] += y_;
+                        n[t] += 1;
+                    }
+                }
+                for j in 0..17 {
+                    l[j] /= n[j].max(1) as f64;
+                }
+                // the first seconds build the pattern up: not counted
+                if k as f64 >= 2.0 * fps {
+                    lum.push(l);
+                }
+            }
+            let worst = |j: usize| worst_flashes(&lum.iter().map(|l| l[j]).collect::<Vec<_>>(), fps);
+            let whole = worst(0);
+            let tile = (1..17).map(worst).max().unwrap_or(0);
+            let ls: Vec<f64> = lum.iter().map(|l| l[0]).collect();
+            let mean = ls.iter().sum::<f64>() / ls.len().max(1) as f64;
+            let (lo, hi) = ls.iter().fold((f64::MAX, f64::MIN), |(lo, hi), &v| (lo.min(v), hi.max(v)));
+            Some(format!(
+                "{} {:>9}  {:>12}  {mean:>6.3}  {:>7.3}{}",
+                pad(&format!("{i}: {}", p.name), 30),
+                whole,
+                tile,
+                hi - lo,
+                if whole.max(tile) > 3 { "   ← over" } else { "" }
+            ))
+        })
+        .collect();
+    for r in rows {
+        println!("{r}");
+    }
+}
+
+/// The most flashes in any one-second window of a luminance series: a flash
+/// is a rise and a fall (or a fall and a rise) of at least 0.1 each, the
+/// darker side below 0.8 (WCAG 2.3.1's general flash threshold).
+fn worst_flashes(l: &[f64], fps: f64) -> usize {
+    // turning points of swings ≥ 0.1: the series reduced to its extremes
+    let mut turns: Vec<(usize, f64)> = Vec::new();
+    let mut dir = 0i8;
+    let mut ext = (0usize, *l.first().unwrap_or(&0.0));
+    for (i, &v) in l.iter().enumerate() {
+        match dir {
+            1 if v > ext.1 => ext = (i, v),
+            -1 if v < ext.1 => ext = (i, v),
+            1 if ext.1 - v >= 0.1 => {
+                turns.push(ext);
+                dir = -1;
+                ext = (i, v);
+            }
+            -1 if v - ext.1 >= 0.1 => {
+                turns.push(ext);
+                dir = 1;
+                ext = (i, v);
+            }
+            0 if (v - ext.1).abs() >= 0.1 => {
+                turns.push(ext);
+                dir = if v > ext.1 { 1 } else { -1 };
+                ext = (i, v);
+            }
+            _ => {}
+        }
+    }
+    turns.push(ext);
+    // a transition is a pair of neighbouring turns; two transitions, a flash
+    let transitions: Vec<usize> =
+        turns.windows(2).filter(|w| w[0].1.min(w[1].1) < 0.8).map(|w| w[1].0).collect();
+    let win = fps as usize;
+    let mut worst = 0;
+    for (k, &start) in transitions.iter().enumerate() {
+        let n = transitions[k..].iter().take_while(|&&t| t < start + win).count();
+        worst = worst.max(n / 2);
+    }
+    worst
 }
 
 /// Renders drafts as the user will hear them — with their sample and drum

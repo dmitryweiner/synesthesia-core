@@ -8,6 +8,7 @@
 //! redraw rate (GRAPHICS.md decision 4).
 
 pub mod advect;
+pub mod calm;
 pub mod coupling;
 pub mod display;
 pub mod driver;

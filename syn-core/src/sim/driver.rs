@@ -16,6 +16,7 @@
 //! two pictures are the same picture, and a Swift app will not write this a
 //! third time.
 
+use super::calm::Calm;
 use super::coupling::{RippleSet, MAX_RIPPLES};
 use super::field::Seed;
 use super::frame::{frame_params, FrameParams};
@@ -103,6 +104,9 @@ pub struct Driver {
     /// `now` − the sound's clock, which keeps the LFOs' phase when the sound
     /// stops and starts again (`clockOffset`).
     lfo_offset: f64,
+    /// The features as the picture may see them: slewed so that a drum's
+    /// hits never strobe the screen ([`Calm`]).
+    calm: Calm,
 }
 
 impl Driver {
@@ -115,6 +119,7 @@ impl Driver {
             pointer: None,
             stamped: None,
             lfo_offset: 0.0,
+            calm: Calm::default(),
         }
     }
 
@@ -174,7 +179,8 @@ impl Driver {
         let mut injects = Vec::new();
         self.seed_on_hits(input, &mut injects);
         self.paint_stroke(aspect, &mut injects);
-        let params = frame_params(input.state, &input.features, input.time);
+        let features = self.calm.apply(&input.features, input.time);
+        let params = frame_params(input.state, &features, input.time);
         // The noise fields drift by this frame's flow rate, as the step they
         // are about to feed will see it.
         self.evolve_t += params.sim.flow.evolve_rate * EVOLVE_DT;

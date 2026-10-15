@@ -91,6 +91,11 @@ what each prints. An agent cannot hear: read the `--png` waterfall.
   into the module's memory, nothing allocated per quantum. `check.sh`
   clippies it for `wasm32-unknown-unknown` and runs its tests under node.
 - Measure first: a performance claim comes with a number from a bench.
+- **The picture must not strobe** (photosensitivity, WCAG 2.3.1: at most
+  three flashes in any second; the user's rule, 2026-10-15). The features
+  the picture reads go through `sim::calm` first; a change to the display
+  couplings, the driver or the presets is measured with
+  `syn-bench --flashes` (every preset ≤ 1 a second since the guard).
 
 ## Module map
 
