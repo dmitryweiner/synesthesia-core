@@ -145,6 +145,27 @@ impl PointEdit {
         self.locked().active(&id)
     }
 
+    /// Layer `layer`'s pattern as it plays (mini-notation): a built-in
+    /// rhythm's, or the point's own.
+    pub fn pattern(&self, layer: u32) -> String {
+        self.locked().pattern(layer as usize)
+    }
+
+    /// Writes a layer's pattern. `None` when it was taken; otherwise what is
+    /// wrong with it and where — and nothing changed.
+    pub fn set_pattern(&self, layer: u32, pattern: String) -> Option<String> {
+        self.locked().set_pattern(layer as usize, &pattern).err()
+    }
+
+    /// A layer's humanize, 0–1: each hit up to 30 % softer and 15 ms later.
+    pub fn humanize(&self, layer: u32) -> f64 {
+        self.locked().humanize(layer as usize)
+    }
+
+    pub fn set_humanize(&self, layer: u32, value: f64) {
+        self.locked().set_humanize(layer as usize, value);
+    }
+
     /// The user's volume: not a gene, so no press and no edit elsewhere
     /// changes it.
     pub fn master_gain(&self) -> f64 {
@@ -182,6 +203,22 @@ impl PointEdit {
 mod tests {
     use super::*;
     use crate::preset_state_json;
+
+    #[test]
+    fn a_layers_pattern_is_edited_through_the_page() {
+        let i = crate::presets().iter().position(|p| p.name == "Night meadow").expect("the preset") as u32;
+        let e = PointEdit::new(preset_state_json(i).unwrap()).unwrap();
+        assert_eq!(e.pattern(0), "<0 3 [5 ~] 10 ~ 11 ~ ~>/2");
+        assert!(e.set_pattern(0, "0 ~ 1 ~".into()).is_none());
+        assert!(e.set_pattern(0, "{0 1}".into()).is_some_and(|m| m.contains("polymeter")));
+        e.set_humanize(0, 0.3);
+        let back = parse_point(&e.point_json()).unwrap();
+        assert_eq!((back.seq.layers[0].pattern.as_str(), back.seq.layers[0].humanize), ("0 ~ 1 ~", 0.3));
+        let page = settings_page();
+        let layer = page.iter().find(|s| s.id == "seq.0").expect("a layer section");
+        assert!(!layer.description.is_empty());
+        assert_eq!(layer.toggle.as_ref().map(|c| c.id.as_str()), Some("seq.0.on"));
+    }
 
     #[test]
     fn the_page_is_the_schemas_own_and_covers_every_control() {

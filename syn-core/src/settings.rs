@@ -228,7 +228,7 @@ pub fn sections() -> Vec<Section> {
         out.push(Section {
             id: "seq".into(),
             title,
-            description: String::new(),
+            description: s.seq_description.clone(),
             tab: Tab::Sound,
             toggle: None,
             controls: tempo,
@@ -239,7 +239,8 @@ pub fn sections() -> Vec<Section> {
         let mut controls = genes_in(&group);
         let toggle = controls.iter().position(|g| g.id == format!("{group}.on")).map(|i| controls.remove(i));
         let title = toggle.map_or_else(|| group.clone(), |t| t.label.clone());
-        out.push(Section { id: group, title, description: String::new(), tab: Tab::Sound, toggle, controls });
+        let description = s.seq_layer_description.clone();
+        out.push(Section { id: group, title, description, tab: Tab::Sound, toggle, controls });
     }
 
     for i in 0..s.lfo_count {
@@ -341,6 +342,51 @@ impl Edit {
         }
     }
 
+    /// Layer `i`'s pattern as it plays: a built-in rhythm's, or the point's
+    /// own when its rhythm is "custom".
+    pub fn pattern(&self, i: usize) -> String {
+        let r = gene_index_of(&format!("seq.{i}.rhythm")).map_or(0.0, |g| self.genome[g]) as usize;
+        match schema().seq_rhythms.get(r) {
+            Some(p) if r > 0 => p.clone(),
+            _ => self.seq.layers.get(i).map(|l| l.pattern.clone()).unwrap_or_default(),
+        }
+    }
+
+    /// Writes layer `i`'s pattern. One of the built-in rhythms becomes the
+    /// rhythm gene (so the search may vary it); anything else is the point's
+    /// own ("custom"), carried beside the genome. A pattern that does not
+    /// parse changes nothing, and the error says where it went wrong.
+    pub fn set_pattern(&mut self, i: usize, text: &str) -> Result<(), String> {
+        let Some(g) = gene_index_of(&format!("seq.{i}.rhythm")) else { return Err("no such layer".into()) };
+        crate::seq::parse(text).map_err(|e| e.to_string())?;
+        match schema().seq_rhythms.iter().skip(1).position(|r| r == text) {
+            Some(k) => self.genome[g] = (k + 1) as f64,
+            None => {
+                self.genome[g] = 0.0;
+                self.layer_text(i).pattern = text.to_string();
+            }
+        }
+        Ok(())
+    }
+
+    /// Layer `i`'s `humanize` (0–1): not a gene, kept beside the genome.
+    pub fn humanize(&self, i: usize) -> f64 {
+        self.seq.layers.get(i).map_or(0.0, |l| l.humanize)
+    }
+
+    pub fn set_humanize(&mut self, i: usize, v: f64) {
+        if i < schema().seq_layers {
+            self.layer_text(i).humanize = if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 };
+        }
+    }
+
+    fn layer_text(&mut self, i: usize) -> &mut crate::seq::Layer {
+        while self.seq.layers.len() <= i {
+            self.seq.layers.push(crate::seq::Layer::default());
+        }
+        &mut self.seq.layers[i]
+    }
+
     pub fn set_value(&mut self, id: &str, v: f64) {
         if let Some(i) = gene_index_of(id) {
             self.genome[i] = gene_from_value(&genes()[i], v);
@@ -374,6 +420,7 @@ impl Edit {
         }
         // Not a gene, and the sound's: the picture's reset must not move it.
         if tab == Tab::Sound {
+            self.seq = SeqState::default();
             self.master_gain = fresh.audio.master_gain;
         }
     }
@@ -402,6 +449,47 @@ pub fn lfo_shape(index: f64) -> LfoShape {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn a_layers_pattern_and_humanize_are_edited_beside_the_genome() {
+        let mut point = crate::state::presets()[0].state.clone();
+        point.seq = crate::seq::SeqState {
+            cps: 0.5,
+            layers: vec![crate::seq::Layer {
+                on: true,
+                sound: "owl:2".into(),
+                pattern: "0".into(),
+                ..Default::default()
+            }],
+        };
+        let mut e = Edit::new(&point);
+        assert_eq!(e.pattern(0), "0");
+        // A built-in rhythm is the gene.
+        e.set_pattern(0, "0(3,8)").unwrap();
+        assert_eq!(
+            e.value("seq.0.rhythm") as usize,
+            schema().seq_rhythms.iter().position(|r| r == "0(3,8)").unwrap()
+        );
+        // Anything else is the point's own, and comes back whole.
+        e.set_pattern(0, "<0 [~ 0]> 1?").unwrap();
+        assert_eq!(e.value("seq.0.rhythm"), 0.0);
+        e.set_humanize(0, 0.4);
+        let p = e.point();
+        assert_eq!(p.seq.layers[0].pattern, "<0 [~ 0]> 1?");
+        assert_eq!(p.seq.layers[0].sound, "owl:2", "the variant stays");
+        assert_eq!(p.seq.layers[0].humanize, 0.4);
+        assert_eq!(e.pattern(0), "<0 [~ 0]> 1?");
+        // A pattern that does not parse says why and changes nothing.
+        let err = e.set_pattern(0, "[0 1").unwrap_err();
+        assert!(err.contains("unclosed"), "{err}");
+        assert_eq!(e.pattern(0), "<0 [~ 0]> 1?");
+        // A layer that was not there: written into its slot.
+        e.set_value("seq.2.on", 1.0);
+        e.set_pattern(2, "hh*4").unwrap();
+        assert_eq!(e.point().seq.layers[2].pattern, "hh*4");
+        // The sound's reset clears them.
+        e.reset(Tab::Sound);
+        assert!(e.point().seq.layers.is_empty());
+    }
     use crate::state::presets;
     use std::collections::BTreeSet;
 

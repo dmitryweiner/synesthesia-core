@@ -77,6 +77,13 @@ pub fn modulated_keys(routes_json: &str) -> Result<String, JsError> {
     Ok(serde_json::to_string(&page::modulated_keys(&routes))?)
 }
 
+/// Whether a layer's pattern (mini-notation) parses: `""` when it does, else
+/// what is wrong and where ("unclosed bracket at byte 4").
+#[wasm_bindgen(js_name = checkPattern)]
+pub fn check_pattern(pattern: &str) -> String {
+    syn_core::seq::parse(pattern).err().map_or_else(String::new, |e| e.to_string())
+}
+
 #[wasm_bindgen(js_name = vowelLabel)]
 pub fn vowel_label(v: f64) -> String {
     page::vowel_label(v).to_string()

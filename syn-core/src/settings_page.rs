@@ -115,6 +115,28 @@ pub struct TargetGroups {
     pub picture: Vec<TargetGroup>,
 }
 
+/// One group of the layer's sound picker ("Birds": owl, robin, …).
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SoundGroup {
+    pub group: String,
+    pub names: Vec<String>,
+}
+
+/// The sample and drum layers as the page shows them: the tempo, each
+/// layer's sliders (`gain speed density humanize`), how it plays, and its
+/// sounds in groups. The sounds and the rhythms themselves are the schema's
+/// (`seqSounds`, `seqRhythms`).
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LayersPage {
+    pub tempo: Control,
+    pub sliders: Vec<Control>,
+    pub modes: Vec<ChoiceOption>,
+    pub sound_groups: Vec<SoundGroup>,
+    /// How the rhythm picker names "the point's own pattern".
+    pub custom_rhythm: String,
+}
+
 /// The page's data (`assets/settings-page.json`).
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -129,6 +151,7 @@ pub struct SettingsPage {
     pub route_depth: Scale,
     pub new_route_depth: f64,
     pub target_groups: TargetGroups,
+    pub layers: LayersPage,
 }
 
 pub const SETTINGS_PAGE_JSON: &str = include_str!("../../assets/settings-page.json");
@@ -285,4 +308,30 @@ fn round(v: &mut Value) {
 /// question when a point comes back from the page.
 pub fn same_genes(a: &AppState, b: &AppState) -> bool {
     same_genome(&encode_genome(a), &encode_genome(b))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_layers_page_offers_every_sound_once_and_real_controls() {
+        let l = &page().layers;
+        let mut grouped: Vec<&str> =
+            l.sound_groups.iter().flat_map(|g| g.names.iter().map(String::as_str)).collect();
+        grouped.sort_unstable();
+        let mut catalogue: Vec<&str> = schema().seq_sounds.iter().map(|s| s.name.as_str()).collect();
+        catalogue.sort_unstable();
+        assert_eq!(grouped, catalogue, "every sound of the catalogue in exactly one group");
+        let keys: Vec<&str> = l.sliders.iter().map(|c| c.k.as_str()).collect();
+        assert_eq!(keys, ["gain", "speed", "density", "humanize"]);
+        for c in l.sliders.iter().filter(|c| c.k != "humanize") {
+            let g = crate::genome::genes::gene_by_id(&format!("seq.0.{}", c.k)).expect("a gene");
+            assert_eq!((c.min, c.max), (g.min, g.max), "{}: the slider is the gene's range", c.k);
+        }
+        let cps = crate::genome::genes::gene_by_id("seq.cps").unwrap();
+        assert_eq!((l.tempo.min, l.tempo.max), (cps.min, cps.max));
+        let modes: Vec<&str> = l.modes.iter().map(|m| m.value.as_str()).collect();
+        assert_eq!(modes, ["hits", "bed"]);
+    }
 }

@@ -1419,5 +1419,131 @@
     ]
    }
   ]
+ },
+ "layers": {
+  "tempo": {
+   "k": "cps",
+   "name": "Tempo (cycles/s)",
+   "min": 0.25,
+   "max": 2,
+   "step": 0.01,
+   "exp": true
+  },
+  "sliders": [
+   {
+    "k": "gain",
+    "name": "Gain",
+    "min": 0,
+    "max": 1,
+    "step": 0.01
+   },
+   {
+    "k": "speed",
+    "name": "Speed (pitch)",
+    "min": 0.5,
+    "max": 2,
+    "step": 0.01,
+    "exp": true
+   },
+   {
+    "k": "density",
+    "name": "Density",
+    "min": 0,
+    "max": 1,
+    "step": 0.01
+   },
+   {
+    "k": "humanize",
+    "name": "Humanize",
+    "min": 0,
+    "max": 1,
+    "step": 0.01
+   }
+  ],
+  "modes": [
+   {
+    "value": "hits",
+    "label": "Hits — plays the rhythm"
+   },
+   {
+    "value": "bed",
+    "label": "Bed — loops under everything"
+   }
+  ],
+  "soundGroups": [
+   {
+    "group": "Birds",
+    "names": [
+     "blackbird",
+     "canary",
+     "crow",
+     "dove",
+     "goldfinch",
+     "great-tit",
+     "kookaburra",
+     "lyrebird",
+     "nightingale",
+     "oriole",
+     "owl",
+     "pigeon",
+     "potoo",
+     "robin",
+     "wings"
+    ]
+   },
+   {
+    "group": "Night, water, fire",
+    "names": [
+     "crickets",
+     "cicada",
+     "night",
+     "frog",
+     "rain",
+     "stream",
+     "fire",
+     "elk",
+     "whale"
+    ]
+   },
+   {
+    "group": "Wood, glass, metal",
+    "names": [
+     "creak",
+     "pendulum",
+     "bottle-blow",
+     "bottle-clink",
+     "chimes",
+     "mark-trees",
+     "bell",
+     "hand-bell",
+     "sleigh-bells",
+     "triangle",
+     "cowbell"
+    ]
+   },
+   {
+    "group": "Hand percussion",
+    "names": [
+     "woodblock",
+     "slit-drum",
+     "shaker",
+     "bongo",
+     "conga",
+     "darbuka",
+     "frame-drum"
+    ]
+   },
+   {
+    "group": "Synth drums",
+    "names": [
+     "bd",
+     "sd",
+     "hh",
+     "oh",
+     "cp"
+    ]
+   }
+  ],
+  "customRhythm": "custom (write your own)"
  }
 }

@@ -162,6 +162,10 @@ pub struct Schema {
     /// point's own pattern, which the genome does not carry.
     pub seq_rhythms: Vec<String>,
     pub seq_layers: usize,
+    /// What the layers are, for the Settings page: the section as a whole,
+    /// and one layer.
+    pub seq_description: String,
+    pub seq_layer_description: String,
 }
 
 /// The index of a sound name in the catalogue.

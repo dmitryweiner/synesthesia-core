@@ -5741,5 +5741,7 @@
   "<0 1 2 3>",
   "0? 1? 2? 3?"
  ],
- "seqLayers": 4
+ "seqLayers": 4,
+ "seqDescription": "Recorded sounds and drums over the formulas, in rhythms written in Strudel's mini-notation. The tempo is in cycles per second: 0.5 is a four-beat bar at 120 bpm.",
+ "seqLayerDescription": "One sound — a recording or a synth drum — played to a rhythm (hits) or looped under everything (bed). It goes into the effects with the formulas."
 }
