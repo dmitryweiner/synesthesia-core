@@ -480,7 +480,13 @@ into this file.
   Molten groove lost its snare and went quieter and lower (bd 0.2, hats
   0.08 at speed 0.75, conga 0.09); Bell walk plays its phrase on a frame
   drum instead of the synth kick and hats, a third as loud as drafted
-  (0.15, its breathing depth a third too). By ear: layers want
+  (0.15, its breathing depth a third too).
+  **Magic forest** (round 8, named by the user): over Stillness ink, four
+  layers at random — each bar one moment or none (`|`), each hit maybe
+  (`?`), humanize 0.6: birds (great tit, robin, blackbird, goldfinch,
+  oriole, dove, canary) 0.35, bottles 0.25, creaks 0.25, ringing
+  (chimes, mark-trees, a hand bell, a triangle) 0.25. Asked for over the
+  sea (Wind ash's `ocean`); the user chose it over Stillness ink instead. By ear: layers want
   to be quieter than a sample's −1 dBFS suggests (beds ~0.1, bd ~0.4),
   always wet (every `dry` draft was rejected — the point's echo is the
   point), rhythms neither fast nor slow. Their pictures are their bases'

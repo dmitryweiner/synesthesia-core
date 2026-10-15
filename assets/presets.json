@@ -7848,5 +7848,400 @@
     ]
    }
   }
+ },
+ {
+  "name": "Magic forest",
+  "state": {
+   "v": 1,
+   "audio": {
+    "masterGain": 0.75,
+    "fx": {
+     "filterOn": true,
+     "filterType": "lowpass",
+     "filterFreq": 2000,
+     "filterQ": 6.3,
+     "filterGain": 0,
+     "filterVowel": 0,
+     "filterCombFb": 0.5,
+     "chorusOn": true,
+     "chorusMode": "chorus",
+     "chorusRate": 0.01,
+     "chorusDepth": 8.4,
+     "chorusMix": 0.35,
+     "chorusFb": 0.95,
+     "reverbOn": true,
+     "reverbDecay": 3.2,
+     "reverbMix": 0.5,
+     "limiterOn": true,
+     "limiterThr": -12,
+     "limiterRel": 0.15,
+     "delayOn": true,
+     "delayTime": 0.63,
+     "delayFb": 0.62,
+     "delayMix": 0.3,
+     "delayShimmer": 0,
+     "phaserOn": true,
+     "phaserRate": 0.47,
+     "phaserDepth": 0.59,
+     "phaserStages": 4,
+     "phaserFb": 0.62,
+     "phaserMix": 0.22
+    },
+    "formulas": {
+     "additive": {
+      "enabled": true,
+      "params": {
+       "gain": 0.474,
+       "fund": 57,
+       "N": 12,
+       "move": 0.35
+      }
+     },
+     "lorenz": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "sigma": 10,
+       "rho": 28,
+       "beta": 2.6667,
+       "lBase": 120,
+       "lFreqScale": 40,
+       "lAmp": 0.25
+      }
+     },
+     "rossler": {
+      "enabled": true,
+      "params": {
+       "gain": 0.169,
+       "rossA": 0.181,
+       "rossB": 0.238,
+       "rossC": 6.42,
+       "rossBase": 345,
+       "rossFreqScale": 38.4,
+       "rossAmp": 0.25
+      }
+     },
+     "gliss": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "f0": 55,
+       "k": 0.15
+      }
+     },
+     "shepard": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "shepBase": 55,
+       "shepSpeed": 0.1,
+       "shepOctaves": 6
+      }
+     },
+     "bell": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "bellF0": 320,
+       "bellRatio": 1.4,
+       "bellIndex": 4,
+       "bellDecay": 3,
+       "bellPeriod": 6
+      }
+     },
+     "risset": {
+      "enabled": false,
+      "params": {
+       "gain": 0.4,
+       "rissF0": 480,
+       "rissDecay": 5,
+       "rissPeriod": 6
+      }
+     },
+     "fm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "fc": 220,
+       "fm": 2,
+       "I": 3
+      }
+     },
+     "beats": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "fbeat": 220,
+       "df": 0.8
+      }
+     },
+     "pm": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "f": 220,
+       "f2pm": 3
+      }
+     },
+     "quasi": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "fq": 120,
+       "Aq": 220,
+       "wq": 0.8
+      }
+     },
+     "logistic": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "base": 110,
+       "depth": 330,
+       "r": 3.86,
+       "lfoHz": 40
+      }
+     },
+     "dist": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "fd": 110,
+       "alpha": 3
+      }
+     },
+     "karplus": {
+      "enabled": false,
+      "params": {
+       "gain": 0.14,
+       "ksFreq": 110,
+       "ksDamp": 0.985,
+       "ksBright": 0.5
+      }
+     },
+     "bytebeat": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "bbRecipe": 1,
+       "bbRate": 8000
+      }
+     },
+     "ocean": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "oceanRate": 0.12,
+       "oceanCut": 600,
+       "oceanDepth": 0.7
+      }
+     },
+     "rain": {
+      "enabled": false,
+      "params": {
+       "gain": 0.35,
+       "rainDensity": 4,
+       "rainPitch": 900,
+       "rainBed": 0.15
+      }
+     },
+     "noiselp": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "nCut": 800
+      }
+     },
+     "pinknoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.12,
+       "pinkBright": 0.3
+      }
+     },
+     "brownnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.15,
+       "brownStep": 0.02
+      }
+     },
+     "velvetnoise": {
+      "enabled": false,
+      "params": {
+       "gain": 0.1,
+       "velvetDensity": 2000
+      }
+     },
+     "tanpura": {
+      "enabled": false,
+      "params": {
+       "gain": 0.3,
+       "tanSa": 55,
+       "tanCycle": 5,
+       "tanJawari": 0.5,
+       "tanSustain": 16,
+       "tanBright": 0.45
+      }
+     },
+     "bowl": {
+      "enabled": false,
+      "params": {
+       "gain": 0.25,
+       "bowlF": 130,
+       "bowlBeat": 0.4,
+       "bowlBright": 0.4
+      }
+     }
+    }
+   },
+   "visual": {
+    "cards": {
+     "reaction": {
+      "on": true,
+      "params": {
+       "feed": 0.03,
+       "kill": 0.057,
+       "diffU": 0.2097,
+       "diffV": 0.105,
+       "speed": 10
+      }
+     },
+     "fieldVariation": {
+      "on": true,
+      "params": {
+       "feedVarAmount": 0.015,
+       "feedVarScale": 3,
+       "feedVarWarp": 1.6,
+       "killVarAmount": 0.008,
+       "killVarScale": 4,
+       "killVarWarp": 1.4
+      }
+     },
+     "flow": {
+      "on": true,
+      "params": {
+       "curlStrength": 0.004,
+       "curlScale": 3,
+       "driftX": 0,
+       "driftY": 0,
+       "advectAmount": 0.2,
+       "evolveRate": 0.006
+      }
+     },
+     "palette": {
+      "on": true,
+      "params": {
+       "shift": 0,
+       "contrast": 1.2,
+       "bands": 2,
+       "relief": 0.8,
+       "lightAngle": 2,
+       "gloss": 0.3,
+       "paletteId": 3
+      }
+     }
+    }
+   },
+   "mod": {
+    "lfos": [
+     {
+      "shape": "saw",
+      "rate": 0.01,
+      "phase": 0
+     },
+     {
+      "shape": "sine",
+      "rate": 0.03,
+      "phase": 0
+     },
+     {
+      "shape": "sine",
+      "rate": 0.05,
+      "phase": 0
+     },
+     {
+      "shape": "sine",
+      "rate": 0.05,
+      "phase": 0
+     }
+    ],
+    "routes": [
+     {
+      "src": 0,
+      "target": "palette",
+      "param": "lightAngle",
+      "depth": 0.5
+     },
+     {
+      "src": 1,
+      "target": "palette",
+      "param": "gloss",
+      "depth": 0.2
+     }
+    ]
+   },
+   "coupling": {
+    "loudToFlow": 0,
+    "loudToCurl": 0,
+    "loudToGloss": 0.4,
+    "brightToShift": 0.3,
+    "onsetToLight": 0,
+    "loudToPulse": 0.8,
+    "onsetToFlash": 0.2,
+    "onsetToSeed": 0.3,
+    "spectrumToTint": 0.7
+   },
+   "seq": {
+    "cps": 0.5,
+    "layers": [
+     {
+      "on": true,
+      "sound": "great-tit",
+      "pattern": "[~ 0? ~ ~] | [~ ~ robin:1? ~] | [blackbird:2? ~ ~ ~] | ~ | [~ goldfinch? ~ ~] | [~ ~ ~ oriole:1?] | [dove:2? ~ ~ ~] | [~ canary:3? ~ ~] | ~",
+      "gain": 0.35,
+      "speed": 1.0,
+      "density": 1.0,
+      "dry": false,
+      "mode": "hits",
+      "humanize": 0.6
+     },
+     {
+      "on": true,
+      "sound": "bottle-clink",
+      "pattern": "~ | [bottle-clink:1? ~ ~ ~] | ~ | [~ ~ bottle-blow?] | [~ bottle-clink:3? bottle-clink:4? ~] | ~ | ~",
+      "gain": 0.25,
+      "speed": 1.0,
+      "density": 1.0,
+      "dry": false,
+      "mode": "hits",
+      "humanize": 0.6
+     },
+     {
+      "on": true,
+      "sound": "creak",
+      "pattern": "~ | ~ | [~ 3? ~ ~] | ~ | [8? ~ ~ ~] | ~ | [~ ~ 11? ~] | ~",
+      "gain": 0.25,
+      "speed": 1.0,
+      "density": 1.0,
+      "dry": false,
+      "mode": "hits",
+      "humanize": 0.6
+     },
+     {
+      "on": true,
+      "sound": "chimes",
+      "pattern": "[0? ~ ~ ~] | ~ | ~ | [~ ~ mark-trees? ~] | ~ | [~ hand-bell:1? ~ ~] | ~ | [triangle? ~ ~ ~] | ~ | [~ ~ chimes:2? ~]",
+      "gain": 0.25,
+      "speed": 1.0,
+      "density": 1.0,
+      "dry": false,
+      "mode": "hits",
+      "humanize": 0.6
+     }
+    ]
+   },
+   "preset_name": "Magic forest"
+  }
  }
 ]
