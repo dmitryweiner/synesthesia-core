@@ -22,7 +22,7 @@ const SWELL: f64 = 0.5;
 const BANDS: f64 = 0.25;
 const LOUDNESS: f64 = 0.15;
 const BRIGHTNESS: f64 = 0.25;
-/// A gap longer than this (a stop, a dropped frame) restarts the glide.
+/// A gap longer than this (a stop, a stall) restarts the glide.
 const MAX_DT: f64 = 0.25;
 
 #[derive(Clone, Debug, Default)]
@@ -38,15 +38,14 @@ fn toward(x: &mut f64, target: f64, dt: f64, tau: f64) {
 impl Calm {
     /// The features as the picture may see them at engine time `t`.
     pub fn apply(&mut self, raw: &AudioFeatures, t: f64) -> AudioFeatures {
-        let dt = match self.last {
-            Some(last) => (t - last).clamp(0.0, MAX_DT),
-            // the first frame: start where the sound is, without a flare
-            None => {
-                self.f = AudioFeatures { onset: 0.0, ..*raw };
-                0.0
-            }
-        };
-        self.last = Some(t);
+        let last = self.last.replace(t);
+        let dt = last.map_or(f64::NAN, |last| t - last);
+        // The first frame, a clock that went back (another sound) or a gap
+        // (a stop): start again from where the sound is, the flare capped.
+        if !(0.0..=MAX_DT).contains(&dt) {
+            self.f = AudioFeatures { onset: raw.onset.clamp(0.0, ONSET_MAX), ..*raw };
+            return self.f;
+        }
         if dt == 0.0 {
             return self.f;
         }
@@ -87,6 +86,18 @@ mod tests {
         assert!(hi <= ONSET_MAX, "{hi}");
         assert!(hi - lo < 0.2, "the flare swings {lo}..{hi} with every hit");
         assert!(lo > 0.05, "but it is there: {lo}");
+    }
+
+    #[test]
+    fn a_new_clock_starts_from_the_sound_as_it_is() {
+        let mut calm = Calm::default();
+        let quiet = AudioFeatures::default();
+        for k in 0..60 {
+            calm.apply(&quiet, 99.0 + k as f64 / 60.0);
+        }
+        let loud = AudioFeatures { swell: 1.0, onset: 1.0, ..Default::default() };
+        let seen = calm.apply(&loud, 12.0);
+        assert_eq!((seen.swell, seen.onset), (1.0, ONSET_MAX), "back in time: a new sound, seen at once");
     }
 
     #[test]
