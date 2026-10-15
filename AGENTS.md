@@ -7,9 +7,10 @@ PLAN-CORE.md C2, since 2026-10-05): used by the Android app (`syn-ffi`),
 the web app (`syn-wasm`) and the console app (synesthesia-rust: `syn-core`, `syn-player`, `syn-session`),
 each pinned by revision; meant for an iOS app too.
 A new preset, generator, LFO shape or FX parameter is made here first.
-Decisions for work in progress live in a plan file next to this one:
-**PLAN-SAMPLES-SCRIPTS.md** (recorded samples and pattern scripts) — read it
-before touching what it covers. Docs, UI strings and code comments are in
+Decisions for work in progress live in plan files next to this one:
+**PLAN-SAMPLES-SCRIPTS.md** (recorded samples and pattern scripts) and
+**PLAN-BINAURAL.md** (stereo, space around the head, binaural beats) — read
+them before touching what they cover. Docs, UI strings and code comments are in
 English; the user talks to agents in Russian.
 
 ## Commands
