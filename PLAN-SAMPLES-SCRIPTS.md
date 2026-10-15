@@ -497,7 +497,10 @@ into this file.
   `AudioCore.addSound` takes them as bytes (`seq::bank::pack`) into a bank
   of shared sounds (`Player::add_sound`). Android: `SoundBank` (syn-ffi),
   parsed once and shared by players, `prepare(pointJson)` decodes a point's
-  sounds on a background thread, `SoundPlayer.setBank`.
+  sounds on a background thread, `SoundPlayer.setBank`. ✅ the web app
+  (`b6d0c74`, smoke checks Night meadow's sounds reach the worklet) and
+  Android (`0fffdcf`, the bank packed into the APK by `fetchBank`) on
+  core `fe04915`.
 - **S8 — a metric for the layers, by ear** (proposed by the user
   2026-10-15, who offered to be the listener): the fractality score is
   for the sound under the layers; how good a layer is over it gets a
