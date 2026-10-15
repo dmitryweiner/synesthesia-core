@@ -55,6 +55,8 @@ where it exists under a licence we may put in a repository:
 | [BigSoundBank](https://bigsoundbank.com/) (LaSonothèque, Joseph Sardin) | CC0, no attribution required (stated on every sound page) | Tawny Owl #1–#4, Barn Owl #1–#4, Long-eared Owl #1–#2; Field cricket, Nocturnal insect #1–#3, Insect song #1–#4; Fireplace #1–#5, Big branching fire #1–#3; Creaking door #1–#8, Floating floor squeaks, Squeaky steps; Bottle blow, Bottle clink, Wine stopper, Champagne cork; Nightingale, Blackbird, Robin, Blackcap, Crows | direct download, WAV/FLAC/OGG; 48 kHz 24-bit mono recordings |
 | [VCSL](https://github.com/sgossner/VCSL) — Versilian Community Sample Library | **CC0** (README) | percussion: Woodblock, Claves, Shaker (3), Cabasa, Cajon, Bongos, Conga, Darbuka, Frame Drum, Bass Drum, Snare, Hi-Hat, Claps, Cowbells, Agogo, Guiro, Finger Cymbals, Triangles, Hand Bells, Sleigh Bells, Tambourines, Vibraslap, Ratchet, Flexatone, Slapstick, Ocean Drum, Wine Glasses, Kalimba, Mbira … (~5 GB, 4,000+ WAVs in all) | git; take single hits, not whole instruments |
 | OpenGameArt (CC0 packs), Wikimedia Commons (CC0/PD items) | per item | animal and creature packs | by hand |
+| Wikimedia Commons — NOAA, NPS, FWS recordings (added 2026-10-15) | public domain (US Government works) or CC0, per file page | whales (blue and fin sped up 10× by NOAA, humpback, minke, beluga, sperm-whale clicks), bearded seal (PD-self), elk, kookaburra | the Commons API; licence read from each file's page |
+| [Yellowstone Sound Library](https://www.nps.gov/yell/learn/photosmultimedia/soundlibrary.htm) (NPS) | public domain, stated on the library page | elk bugles, the elk chorus, a calf | direct MP3 download |
 | Strudel's `tidal-drum-machines`, `Dirt-Samples`, `EmuSP12` | **no licence stated**; the Tidal forum calls Dirt-Samples' provenance "largely unknown" | the classic drum machines | **not used** |
 | xeno-canto, BBC Sound Effects, Pixabay, Zapsplat, Sonniss | CC BY-NC-SA / RemArc / own terms — no redistribution | birds, everything | **not used** |
 
@@ -104,27 +106,31 @@ Freesound CC0 pages found while looking, a starting list for the curator
 5. **Made here, heard on the console first.** All of 1–4 lands in this
    repository with its tests and `syn-bench`; synesthesia-rust — on the
    core since 2026-10-15 (`syn-core`, `syn-player`, `syn-session` at one
-   `rev`; its PLAN.md decisions 11 and 12) — bumps, embeds the bank, shows
+   `rev`; its PLAN.md decisions 11 and 12) — bumps, loads the bank, shows
    the layers and does the listening pass. `syn-wasm` and `syn-ffi` get a
    `loadBank(bytes)` when their apps bump.
 
 6. **The core takes samples as bytes, never as files.** *No I/O in
    `syn-core`* holds. The host hands over one blob — `bank.bin`: header +
-   manifest JSON + 16-bit PCM 48 kHz mono — and `syn_core::seq::bank`
-   parses it into a `SampleBank`. The console embeds it with
-   `include_bytes!`; the web app fetches it next to the wasm package;
-   Android reads it from assets. A host with no bank still plays the synth
+   manifest JSON + one FLAC stream per sample (v2; amended by S0's numbers,
+   see *The bank*) — and `syn_core::seq::bank` parses it into a
+   `SampleBank`. The console loads it from a file (17.6 MB is too fat to
+   embed); the web app fetches it next to the wasm package; Android reads
+   it from assets. A host with no bank still plays the synth
    drums; a sample name the bank lacks is silent, never an error — a point
    must open everywhere.
 
 7. **The samples live in their own repository, `synesthesia-samples`.** The
-   web app clones the pinned core on every `npm run core`, so 10–30 MB of
-   WAV here would be paid on every build. This repository holds the
+   web app clones the pinned core on every `npm run core`, so 17 MB of
+   audio here would be paid on every build. This repository holds the
    *catalogue* — the ordered list of sound names (`seqSounds` in
    `assets/schema.json`) the choice gene indexes — and a test that a bank's
-   manifest covers it. The samples repository holds the WAVs, the manifest,
-   `scripts/build-bank.py` and the provenance; apps pin it by revision the
-   way they pin the core. Tests here need no real audio: the sampler's tests
+   manifest covers it. [synesthesia-samples](https://github.com/dmitryweiner/synesthesia-samples)
+   (made 2026-10-15) holds the FLACs, `manifest.json`, `provenance.md`, the
+   pick (`picks.json`) and the tools that made them (`tools/cut.py`,
+   `listen.py`, `build_bank.py`); apps pin it by revision the way they pin
+   the core, and `build_bank.py` rebuilds `bank.bin` byte for byte from a
+   revision. Tests here need no real audio: the sampler's tests
    build a two-sample bank of sine blips in memory.
 
 8. **Realtime discipline, extended.** Nothing allocates in `Engine::render`
@@ -238,9 +244,9 @@ Pattern (tree)  --query(span, &mut Events)-->  events {onset, dur, sound, n, gai
 
 ### Voices
 
-- **Sampler voice**: a bank slice, a position, rate = `speed · bank_sr / sr`
-  (so the 22 050 Hz scout render and the 48 000 Hz live render play the same
-  pitch), linear interpolation, 2 ms attack, 2 ms release when stolen or
+- **Sampler voice**: a decoded sample, a position, rate = `speed ·
+  entry_sr / sr` — each sample has its own rate (24, 32 or 48 kHz) — so the
+  22 050 Hz scout render and the 48 000 Hz live render play the same pitch, linear interpolation, 2 ms attack, 2 ms release when stolen or
   cut, per-event gain. `cut` groups (an open hat silenced by the closed one)
   in S6.
 - **Bed voice**: two sampler voices crossfading over the loop point.
@@ -254,17 +260,36 @@ Pattern (tree)  --query(span, &mut Events)-->  events {onset, dur, sound, n, gai
 ### The bank
 
 ```
-bank.bin = magic "SYNB" | u32 version | u32 manifest_len | manifest JSON (UTF-8)
-         | u32 sample_rate | i16 PCM mono, every sample back to back
-manifest = { "sounds": { "owl": [ {"offset":0,"len":96000,"src":"https://…","author":"…",
-             "license":"CC0","trim":"0.4-2.4s","gain_db":-3.0}, … ], "crickets": [...] } }
+bank.bin = "SYNB" | u32 version = 2 | u32 manifest_len | manifest JSON (UTF-8)
+         | the FLAC streams (mono, 16-bit), back to back      — integers little-endian
+manifest = { "version": 2, "sounds": { "owl": [
+             { "file": "samples/owl/00.flac", "sr": 24000, "frames": 51234,
+               "offset": 0, "bytes": 61234, "sha256": "…16 hex…", "mode": "hits",
+               "src": "bigsoundbank", "page": "https://…", "author": "…",
+               "license": "CC0", "title": "…", "trim": "1.20-3.30s", "cand": "…" }, … ],
+             "crickets": [ … ] } }
 ```
 
-`scripts/build-bank.py` in the samples repository: trims, normalizes to a
-peak (beds to an RMS), resamples to 48 kHz mono, writes the blob and a
-`provenance.md` from the same manifest. 16-bit PCM needs no decoder here
-(`wav.rs` gets a reader); FLAC (`claxon`) is the fallback if S0's size
-number breaks the budget, and would be a dependency decision.
+`offset` counts from the first byte after the manifest. Names are sorted;
+a name's variants are in the order the curator's pick listed them (`owl:1`
+is the second entry). `mode` is what the sample was cut for — `hits` (one
+event, peak-normalized to −1 dBFS, 2 ms in / 30 ms out) or `bed` (a loop
+with its 1 s equal-power crossfade already baked in, RMS −20 dBFS); a layer
+may still play a bed sample as a hit and the other way round.
+
+The samples repository's `tools/cut.py` cuts candidates from the raw
+downloads, `tools/listen.py` makes the listening page, and
+`tools/build_bank.py` turns the pick into `samples/<name>/<nn>.flac`, the
+manifest, `provenance.md` and `bank.bin`, choosing each sample's rate by
+its spectrum (S0 below). Decoding needs `claxon` in `syn-core`.
+
+The 42 names of the first bank (S4), which `seqSounds` starts from:
+`bell blackbird bongo bottle-blow bottle-clink canary chimes cicada conga
+cowbell creak crickets crow darbuka dove elk fire frame-drum frog goldfinch
+great-tit hand-bell kookaburra lyrebird mark-trees night nightingale oriole
+owl pendulum pigeon potoo rain robin shaker sleigh-bells slit-drum stream
+triangle whale wings woodblock`. None collides with the synth drums
+(`bd sd hh oh cp`).
 
 ### Genes and schema
 
@@ -298,7 +323,8 @@ unknown sound or mode, keep an unparsable pattern as `""`.
 syn-core/src/seq/
   mini.rs        the parser → Pattern
   pattern.rs     Pattern tree, Fraction, query(span, &mut Events)
-  bank.rs        SampleBank from bytes; the manifest; the in-memory test bank
+  bank.rs        SampleBank from bytes (v2: FLAC per sample, claxon), decoded
+                 per sound on demand; the manifest; the in-memory test bank
   voice.rs       sampler, bed, the synth drums
   sequencer.rs   layers → voices per block; the hash of decision 8
 syn-core/src/engine.rs      owns a Sequencer; render: formulas + layers → FX
@@ -314,9 +340,9 @@ golden/                     + one take per synth drum
 assets/schema.json          + seqSounds, seqRhythms, 29 genes, 13 mod targets
 assets/presets.json         + presets that use layers (S5)
 
-synesthesia-samples (new)   samples/<name>/<nn>.wav · manifest.json ·
-                            scripts/build-bank.py · provenance.md
-synesthesia-rust (console)  bump the rev; include_bytes!(bank.bin), the TUI
+synesthesia-samples         samples/<name>/<nn>.flac · manifest.json · provenance.md ·
+                            picks.json · sources/ · tools/{cut,listen,build_bank}.py
+synesthesia-rust (console)  bump the rev; bank.bin loaded from a file, the TUI
                             `seq` line, config, the listening pass
 ```
 
@@ -326,13 +352,13 @@ Each phase ends green on `./scripts/check.sh` and with its numbers written
 into this file.
 
 - **S0 — probes (throwaway).** Before any port:
-  - a 40–60 sample pick from the table above, trimmed: **bytes** as 16-bit
-    PCM 48 kHz, as 22 kHz, as FLAC → decides decision 6's format and
-    whether the console embeds or loads the bank;
-  - bank parse cost against the apps' startup budgets (the console's is
+  - ✅ the pick, trimmed: **bytes** as 16-bit PCM 48 kHz, as 22 kHz, as
+    FLAC → decided decision 6's format and that the console loads the bank
+    (*S0, measured* below);
+  - ✅ bank parse cost against the apps' startup budgets (the console's is
     300 ms to first sound; the worklet compiles the module first, then
-    would parse the bank);
-  - one sampler voice and 16 voices in a tight loop: **ns per sample** next
+    would parse the bank) → decode per sound, on demand;
+  - open: one sampler voice and 16 voices in a tight loop: **ns per sample** next
     to the generators' worst (2.4 µs for Fractal garden), native and wasm;
   - **the score probe**: `syn-bench` on *Fractal garden* and *Bell spots*
     alone, with crickets under them, and with `bd(3,8)` — the fractality
@@ -355,13 +381,12 @@ into this file.
   `133 → 146`), `fixtures/genomes.json` still matching as a prefix. The
   test: a point without `seq` encodes to the same 250 leading genes and
   the same canonical JSON as before.
-- **S4 — the samples repository**: the curated pick (listened to), the
-  manifest with provenance, `build-bank.py`, `provenance.md`; here, the
-  catalogue (`seqSounds`) and the test that a bank covers it. Candidates:
-  owls (tawny, barn, long-eared), great tit, crickets ×3, fire ×2, creaks
-  ×4, bottle blow and clink, a cork, nightingale, blackbird, robin; VCSL
-  woodblock, claves, shaker, cajon, bongo, frame drum, cowbell, triangle,
-  finger cymbals, hand bells, kalimba, ocean drum, wine glass.
+- **S4 — the samples repository**: ✅ in synesthesia-samples `78a6508` (2026-10-15):
+  the curated pick (446 candidates listened to, 165 kept under the 42 names
+  in *The bank*), the manifest with provenance, the tools, `provenance.md`.
+  Left for this repository: the catalogue (`seqSounds`, the 42 names in
+  that order, appended to from then on) and the test that a bank's manifest
+  covers it.
 - **S5 — presets and the listening pass** (`new-preset` and `sound-check`
   skills): 3–4 presets that use layers — "Night meadow" (a crickets bed,
   an owl now and then, a slow bowl), "Workshop" (creaks, bottles, a
@@ -376,19 +401,19 @@ into this file.
   bundle `bank.bin`.
 
 On the console side (synesthesia-rust, on the core since 2026-10-15 with
-`syn-audio` left as the device): **C1** — bump to S3's revision, embed the
-bank (or load it from `$XDG_DATA_HOME` if S0 says the binary gets too
-fat), `--no-samples`, the TUI `seq` line, `samples = true` in config, the
-`verify` ladder with the heaviest layered preset — 0 xruns in 30 min is the
-bar (`soak.py`, or `soak.py --null` on a machine without PipeWire).
+`syn-audio` left as the device): **C1** — bump to S3's revision, load the
+bank from `$XDG_DATA_HOME` (S0 says it is too fat to embed), `--no-samples`,
+the TUI `seq` line, `samples = true` in config, the `verify` ladder with the
+heaviest layered preset — 0 xruns in 30 min is the bar (`soak.py`, or
+`soak.py --null` on a machine without PipeWire).
 
 ## Budget (thresholds; checked by the bench, filled in as measured)
 
 | metric | target | measured |
 |---|---|---|
-| bank, 40–60 samples | ≤ 20 MB in the samples repository, ≤ 12 MB embedded in the console binary | S0 |
-| bank parse | ≤ 50 ms native; the worklet's load gate unchanged | S0 |
-| one sampler voice | ≤ 50 ns a sample native (a `sin` is 24.6 ns on the console's A76) | S0 |
+| bank | ≤ 20 MB in the samples repository, ≤ 12 MB embedded in the console binary | 165 samples picked (468 s): **17.6 MB** as FLAC at a measured rate per sample — fits the repository, not the console embed (S0 below) |
+| bank parse | ≤ 50 ms native; the worklet's load gate unchanged | **148 ms** to decode all of it with `claxon` on an M1 Max — 3× over; decode lazily (S0 below) |
+| one sampler voice | ≤ 50 ns a sample native (a `sin` is 24.6 ns on the console's A76) | S0 (open; needs S2's voice) |
 | 16 voices + a 4-layer pattern query | ≤ 3 % of one core on top of the point, native; inside PLAN-CORE's 35 % quantum gate on the phones | S2 |
 | allocations in `render` | 0 | S2 (test) |
 | event array overflow | 0 on every preset at 48 kHz and 22.05 kHz | S2 (bench counter) |
@@ -396,6 +421,46 @@ bar (`soak.py`, or `soak.py --null` on a machine without PipeWire).
 | xruns, drum preset, 48 kHz / 1024 frames | 0 in 30 min | C1 (`soak.py`) |
 | genes | 279; the first 250 unchanged for a point without `seq`; `fixtures/points.json` unchanged | S3 (tests) |
 | fractality of the presets with layers | inside the presets' band like the others, or the scout's rule is amended by S0's number | S0 / S5 |
+
+### S0, measured (2026-10-15)
+
+The pick was made by ear over 446 cut candidates (synesthesia-samples
+`picks.json`): **165 samples under 42 names, 468 s** — 296 s of hits, 172 s
+of beds (18 loops of 10 s). That is ~2.5× the 40–60 the plan assumed, so
+the format numbers decided the format:
+
+| bank as | MB |
+|---|---|
+| 16-bit PCM, 48 kHz (decision 6 as written) | 44.7 |
+| 16-bit PCM, 24 kHz | 22.4 |
+| FLAC, 48 kHz | 22.4 |
+| FLAC, 24 kHz | 12.6 |
+| **FLAC, rate per sample by measurement (chosen)** | **17.6** |
+
+- **The format changes (amends decision 6, with the user's choice).**
+  `bank.bin` v2 carries one FLAC stream per sample, and each manifest
+  entry has its own `sr`, `frames`, `offset`, `bytes`. A sample's rate is
+  measured, not set by hand: more than −30 dB of its energy above 15.5 kHz
+  → 48 kHz, above 11 kHz → 32 kHz, else 24 kHz (112 × 24, 24 × 32, 29 × 48
+  kHz: bells, sleigh bells, cicada, fire, rain keep their air; birds,
+  whales, elk do not pay for it). The voice's rate is `speed · entry_sr /
+  sr`, per entry. Decoding needs `claxon` (pure Rust, Apache-2.0) in
+  `syn-core` — the dependency decision this file left open.
+- **Noise does not compress.** Fire, crickets and rain are near noise;
+  the beds are ~37 % of the seconds and most of the bytes. Rate tiers took
+  the bank from 22.4 to 17.6 MB; reaching 12 MB would take shorter beds
+  (6 s loops ≈ −3 MB) or fewer of them. So the console **loads the bank
+  from a file** (the plan's fallback), and the web app may want a smaller
+  bank later.
+- **Decode cost: 148 ms** for the whole bank (15.8 M frames) with
+  `claxon`'s block API on an M1 Max (the per-sample iterator: 179 ms); the
+  console's A76 will be slower. Decoded, the bank is 31.5 MB as `i16`
+  (63 MB as `f32`). So the core must not decode the whole bank up front:
+  decode a sound when a point that uses it is set (on the control side,
+  never in `render`), keep it as `i16`, and let the scout's render share
+  the decoded sounds. That is S2's design input.
+- Not measured yet: one sampler voice and 16 voices (S0 item 3), the
+  score probe (item 4). Both need the core's sampler, which is S1–S2 work.
 
 ## Risks and open questions
 
@@ -406,15 +471,20 @@ bar (`soak.py`, or `soak.py --null` on a machine without PipeWire).
   number, not here.
 - **Licences are per file, not per site.** BigSoundBank states CC0 on each
   page and Freesound's filter is reliable, but the manifest records what
-  the page said on the day, and the curator opens each page.
+  the page said on the day, and each page was opened. Two traps met in S4:
+  the same Yellowstone elk recordings are public domain at nps.gov and
+  CC BY-NC at the Acoustic Atlas (taken from nps.gov), and Commons'
+  `En-humpback whale.ogg` is a spoken article, not a whale.
 - **Four apps, one shape.** Appending genes and an optional section is the
   compatible way, but the Android and web apps will carry a `seq`-less
   point until they bump; a point saved from them loses its layers. Known
   and accepted — the same happened with `delay_shimmer`.
-- **The bank in wasm memory.** 10–20 MB of f32 in the worklet grows the
-  module's memory once at load; the worklet remakes its view then (it
-  already handles growth). The web app may want the 22 kHz bed variants
-  from S0.
+- **The bank in wasm memory.** The whole bank decoded is 31.5 MB as `i16`
+  (63 MB as `f32`), so the worklet decodes only the sounds the point uses
+  and keeps them as `i16`; its memory grows when a new sound is decoded and
+  the worklet remakes its view then (it already handles growth). The web
+  app may still want a smaller bank (shorter beds, fewer variants) — a
+  second build of the same samples repository, not a fork.
 - **Pretty samples are a taste, not a test.** The listening pass is a phase
   with a deliverable (the presets and their gains), so it does not become
   folklore.

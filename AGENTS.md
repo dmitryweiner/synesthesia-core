@@ -10,7 +10,9 @@ A new preset, generator, LFO shape or FX parameter is made here first.
 Decisions for work in progress live in plan files next to this one:
 **PLAN-SAMPLES-SCRIPTS.md** (recorded samples and pattern scripts) and
 **PLAN-BINAURAL.md** (stereo, space around the head, binaural beats) — read
-them before touching what they cover. Docs, UI strings and code comments are in
+them before touching what they cover; the sounds themselves live in
+[synesthesia-samples](https://github.com/dmitryweiner/synesthesia-samples)
+(`../synesthesia-samples`), never here. Docs, UI strings and code comments are in
 English; the user talks to agents in Russian.
 
 ## Commands
