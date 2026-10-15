@@ -15,6 +15,10 @@ Agreed follow-ups that are not done yet. Remove an item when it is done.
   pictures of their own for the six layered presets; `humanize` as a
   gene, if the search should vary it; decoding a sound per variant if the
   A76 makes a bed's 8 variants (39 ms on an M1) felt.
+  **First:** synesthesia-android's `SearchTest` flakes on the API 35
+  emulator since the bank (2 of 5 CI runs; its PLAN.md "Open"): if the
+  cause is `syn_player`'s layers lock held while a program is built (a
+  decode), the fix is here — build the program outside the lock.
 - **Binaural sound** — PLAN-BINAURAL.md (agreed 2026-10-15): a stereo
   mode beside mono, sources around the head (structural head model),
   binaural beats by single-sideband shift, all as genes. Next: B0, the
