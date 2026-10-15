@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::modmatrix::ModState;
 use crate::schema::schema;
+use crate::seq::SeqState;
 
 pub type Params = BTreeMap<String, f64>;
 
@@ -188,6 +189,11 @@ pub struct AppState {
     /// Worker's rows, localStorage — spell it `presetName`; they still load.
     #[serde(alias = "presetName", default, skip_serializing_if = "Option::is_none")]
     pub preset_name: Option<String>,
+    /// The sample and drum layers (PLAN-SAMPLES-SCRIPTS.md). Left out of a
+    /// point with no layer on, so such a point serializes — and gets its id —
+    /// exactly as it did before there were layers.
+    #[serde(default, skip_serializing_if = "SeqState::is_silent")]
+    pub seq: SeqState,
 }
 
 impl AppState {
@@ -211,6 +217,7 @@ impl AppState {
             modulation: ModState { lfos: vec![s.default_lfo; s.lfo_count], routes: Vec::new() },
             coupling: crate::schema::default_coupling(),
             preset_name: None,
+            seq: SeqState::default(),
         }
     }
 

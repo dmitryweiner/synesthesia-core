@@ -38,8 +38,37 @@ fn presets() -> Vec<Frozen> {
     fixture().into_iter().map(|c| Frozen { name: c.name, state: c.state }).collect()
 }
 
+/// The web app's genomes have its 250 genes; the sample and drum layers'
+/// are appended after them (PLAN-SAMPLES-SCRIPTS.md). A point without
+/// layers encodes them as `layer_tail()`, so this is each web genome as this
+/// build has it.
 fn web_genomes() -> Vec<Genome> {
-    fixture().into_iter().map(|c| c.genome).collect()
+    fixture().into_iter().map(|c| [c.genome, layer_tail()].concat()).collect()
+}
+
+/// The genes after the web app's 250, for a point with no layers.
+fn layer_tail() -> Vec<f64> {
+    encode_genome(&AppState::new())[WEB_GENES..].to_vec()
+}
+
+const WEB_GENES: usize = 250;
+
+#[test]
+fn the_web_genomes_are_a_prefix_and_a_point_without_layers_adds_only_the_tail() {
+    for c in fixture() {
+        assert_eq!(c.genome.len(), WEB_GENES, "{}: the fixture is the web app's", c.name);
+        let got = encode_genome(&c.state);
+        assert_eq!(&got[WEB_GENES..], &layer_tail()[..], "{}: no layers, the default tail", c.name);
+        assert!(c.state.seq.is_silent());
+    }
+    // The tail: every layer off, at its defaults.
+    let tail = layer_tail();
+    assert_eq!(tail.len(), genes().len() - WEB_GENES);
+    for (i, g) in genes()[WEB_GENES..].iter().enumerate() {
+        if g.id.ends_with(".on") {
+            assert_eq!(tail[i], 0.0, "{}", g.id);
+        }
+    }
 }
 
 #[test]

@@ -38,6 +38,36 @@ const BED_SMOOTH: f64 = 0.3;
 /// `cps` is kept inside this, whatever the point says.
 const CPS: (f64, f64) = (0.01, 16.0);
 
+/// A layer's numbers for one block: the point's, with the LFOs laid over
+/// them. The program says what a layer plays; these say how loud, how fast,
+/// how dense — so a morph glides them without a new program.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct LiveLayer {
+    pub gain: f64,
+    pub speed: f64,
+    pub density: f64,
+    pub dry: bool,
+}
+
+/// The layers' numbers for one block, as a fixed array: the engine fills it
+/// every block without allocating.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SeqLive {
+    pub cps: f64,
+    pub layers: [LiveLayer; LAYERS],
+}
+
+impl SeqLive {
+    /// The section's own numbers, unmodulated.
+    pub fn of(seq: &SeqState) -> SeqLive {
+        let mut layers = [LiveLayer { gain: 0.0, speed: 1.0, density: 1.0, dry: false }; LAYERS];
+        for (o, l) in layers.iter_mut().zip(&seq.layers) {
+            *o = LiveLayer { gain: l.gain, speed: l.speed, density: l.density, dry: l.dry };
+        }
+        SeqLive { cps: seq.cps, layers }
+    }
+}
+
 /// What a name plays.
 #[derive(Clone, Debug)]
 enum Voicing {
@@ -111,15 +141,6 @@ impl SeqProgram {
     /// Nothing to play: no layer is on.
     pub fn is_silent(&self) -> bool {
         self.seq.is_silent()
-    }
-
-    fn cps(&self) -> f64 {
-        let c = self.seq.cps;
-        if c.is_finite() {
-            c.clamp(CPS.0, CPS.1)
-        } else {
-            0.5
-        }
     }
 
     /// What layer `li` loops as a bed, if it is one.
@@ -227,14 +248,14 @@ impl Sequencer {
 
     /// A hard switch: every voice and bed stops at once (the caller ducks
     /// around it), and the clock is set to `t · cps`.
-    pub fn reset(&mut self, t: f64) {
+    pub fn reset(&mut self, t: f64, cps: f64) {
         for v in &mut self.voices {
             v.src = Source::Idle;
         }
         for bed in self.beds.iter_mut().flatten() {
             *bed = Bed::default();
         }
-        self.set_cycle(t * self.program.cps());
+        self.set_cycle(t * cps_of(cps));
         // The program's beds start again, from silence.
         for li in 0..LAYERS {
             if let Some((v, idx)) = self.program.bed(li) {
@@ -257,8 +278,8 @@ impl Sequencer {
     }
 
     /// Moves the clock on by `n` samples without playing (when idle).
-    pub fn advance(&mut self, n: usize) {
-        let c = self.cycle + self.program.cps() * n as f64 / self.sr;
+    pub fn advance(&mut self, n: usize, cps: f64) {
+        let c = self.cycle + cps_of(cps) * n as f64 / self.sr;
         self.set_cycle(c);
     }
 
@@ -268,19 +289,19 @@ impl Sequencer {
 
     /// One block: layers into `wet` (added: it goes on into the FX chain
     /// with the formulas) and `dry` (added: straight to the master).
-    pub fn render(&mut self, wet: &mut [f32], dry: &mut [f32]) {
+    pub fn render(&mut self, live: &SeqLive, wet: &mut [f32], dry: &mut [f32]) {
         let n = wet.len();
         if n == 0 {
             return;
         }
-        let c1 = self.cycle + self.program.cps() * n as f64 / self.sr;
+        let c1 = self.cycle + cps_of(live.cps) * n as f64 / self.sr;
         let end = Frac::approx(c1);
         if end > self.at {
             for li in 0..self.program.layers.len().min(LAYERS) {
-                self.start_events(li, end, c1, n);
+                self.start_events(li, &live.layers[li], end, c1, n);
             }
         }
-        self.render_beds(wet, dry);
+        self.render_beds(live, wet, dry);
         for v in &mut self.voices {
             if v.is_active() {
                 v.render(if v.dry { &mut *dry } else { &mut *wet });
@@ -291,12 +312,12 @@ impl Sequencer {
     }
 
     /// Starts layer `li`'s events of `[self.at, end)`.
-    fn start_events(&mut self, li: usize, end: Frac, c1: f64, n: usize) {
+    fn start_events(&mut self, li: usize, live: &LiveLayer, end: Frac, c1: f64, n: usize) {
         let l = &self.program.seq.layers[li];
         if !l.on || l.mode != Mode::Hits || self.program.layers[li].pattern.is_silent() {
             return;
         }
-        let (gain, speed, density, dry) = (l.gain, l.speed, l.density, l.dry);
+        let (gain, speed, density, dry) = (live.gain, live.speed, live.density, live.dry);
         let seed = self.layer_seed(li);
         self.events.clear();
         self.program.layers[li].pattern.query(self.at, end, seed, &mut self.events);
@@ -355,13 +376,12 @@ impl Sequencer {
         self.next_id += 1;
     }
 
-    fn render_beds(&mut self, wet: &mut [f32], dry: &mut [f32]) {
+    fn render_beds(&mut self, live: &SeqLive, wet: &mut [f32], dry: &mut [f32]) {
         let coef = self.bed_coef;
         for li in 0..LAYERS {
-            let layer = self.program.seq.layers.get(li);
+            let l = &live.layers[li];
             let playing = self.program.bed(li).is_some();
-            let (gain, speed, to_dry) =
-                layer.map_or((0.0, 1.0, false), |l| (gain_of(l.gain), speed_of(l.speed), l.dry));
+            let (gain, speed, to_dry) = (gain_of(l.gain), speed_of(l.speed), l.dry);
             let out: &mut [f32] = if to_dry { &mut *dry } else { &mut *wet };
             for (slot, bed) in self.beds[li].iter_mut().enumerate() {
                 let Some(r) = &mut bed.r else { continue };
@@ -379,6 +399,14 @@ impl Sequencer {
                 }
             }
         }
+    }
+}
+
+fn cps_of(c: f64) -> f64 {
+    if c.is_finite() {
+        c.clamp(CPS.0, CPS.1)
+    } else {
+        0.5
     }
 }
 
@@ -445,8 +473,9 @@ mod tests {
         q.set_program(Box::new(SeqProgram::new(s, bank)));
         let n = (secs * SR) as usize / BLOCK * BLOCK;
         let (mut wet, mut dry) = (vec![0.0f32; n], vec![0.0f32; n]);
+        let live = SeqLive::of(s);
         for (w, d) in wet.chunks_mut(BLOCK).zip(dry.chunks_mut(BLOCK)) {
-            q.render(w, d);
+            q.render(&live, w, d);
         }
         (wet, dry, q)
     }
@@ -591,9 +620,10 @@ mod tests {
         q.set_program(Box::new(SeqProgram::new(&off, Some(&b))));
         let mut buf = vec![0.0f32; BLOCK];
         let mut dry = vec![0.0f32; BLOCK];
+        let live = SeqLive::of(&off);
         for _ in 0..(SR as usize * 6 / BLOCK) {
             buf.fill(0.0);
-            q.render(&mut buf, &mut dry);
+            q.render(&live, &mut buf, &mut dry);
         }
         assert!(q.is_idle());
     }
@@ -607,11 +637,12 @@ mod tests {
         // A new cps carries on from where the cycle is: no jump.
         let mut q = q;
         let before = q.cycle();
-        q.set_program(Box::new(SeqProgram::new(&seq(2.0, vec![layer("blip", "0")]), Some(&b))));
-        q.render(&mut [0.0; BLOCK], &mut [0.0; BLOCK]);
+        let faster = seq(2.0, vec![layer("blip", "0")]);
+        q.set_program(Box::new(SeqProgram::new(&faster, Some(&b))));
+        q.render(&SeqLive::of(&faster), &mut [0.0; BLOCK], &mut [0.0; BLOCK]);
         assert!((q.cycle() - (before + 2.0 * BLOCK as f64 / SR)).abs() < 1e-12);
         // A hard switch puts it back on t · cps.
-        q.reset(10.0);
+        q.reset(10.0, 2.0);
         assert!((q.cycle() - 20.0).abs() < 1e-12);
         assert!(!q.voices.iter().any(Voice::is_active));
     }

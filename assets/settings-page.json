@@ -1077,6 +1077,101 @@
     ]
    },
    {
+    "id": "seq",
+    "title": "Layers",
+    "params": [
+     {
+      "k": "cps",
+      "name": "Tempo",
+      "exp": true
+     }
+    ]
+   },
+   {
+    "id": "seq.0",
+    "title": "Layer 1",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "speed",
+      "name": "Speed",
+      "exp": true
+     },
+     {
+      "k": "density",
+      "name": "Density",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "seq.1",
+    "title": "Layer 2",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "speed",
+      "name": "Speed",
+      "exp": true
+     },
+     {
+      "k": "density",
+      "name": "Density",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "seq.2",
+    "title": "Layer 3",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "speed",
+      "name": "Speed",
+      "exp": true
+     },
+     {
+      "k": "density",
+      "name": "Density",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "seq.3",
+    "title": "Layer 4",
+    "params": [
+     {
+      "k": "gain",
+      "name": "Gain",
+      "exp": false
+     },
+     {
+      "k": "speed",
+      "name": "Speed",
+      "exp": true
+     },
+     {
+      "k": "density",
+      "name": "Density",
+      "exp": false
+     }
+    ]
+   },
+   {
     "id": "fx",
     "title": "Effects",
     "params": [

@@ -3351,7 +3351,7 @@
    "kind": "choice",
    "group": "route.0",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.0.on"
   },
   {
@@ -3396,7 +3396,7 @@
    "kind": "choice",
    "group": "route.1",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.1.on"
   },
   {
@@ -3441,7 +3441,7 @@
    "kind": "choice",
    "group": "route.2",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.2.on"
   },
   {
@@ -3486,7 +3486,7 @@
    "kind": "choice",
    "group": "route.3",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.3.on"
   },
   {
@@ -3531,7 +3531,7 @@
    "kind": "choice",
    "group": "route.4",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.4.on"
   },
   {
@@ -3576,7 +3576,7 @@
    "kind": "choice",
    "group": "route.5",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.5.on"
   },
   {
@@ -3621,7 +3621,7 @@
    "kind": "choice",
    "group": "route.6",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.6.on"
   },
   {
@@ -3666,7 +3666,7 @@
    "kind": "choice",
    "group": "route.7",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.7.on"
   },
   {
@@ -3711,7 +3711,7 @@
    "kind": "choice",
    "group": "route.8",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.8.on"
   },
   {
@@ -3756,7 +3756,7 @@
    "kind": "choice",
    "group": "route.9",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.9.on"
   },
   {
@@ -3801,7 +3801,7 @@
    "kind": "choice",
    "group": "route.10",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.10.on"
   },
   {
@@ -3846,7 +3846,7 @@
    "kind": "choice",
    "group": "route.11",
    "min": 0,
-   "max": 132,
+   "max": 145,
    "activeIf": "route.11.on"
   },
   {
@@ -3939,6 +3939,307 @@
    "group": "coupling",
    "min": 0,
    "max": 1
+  },
+  {
+   "id": "seq.cps",
+   "label": "Layers · Tempo (cycles/s)",
+   "kind": "cont",
+   "group": "seq",
+   "min": 0.25,
+   "max": 2,
+   "exp": true
+  },
+  {
+   "id": "seq.0.on",
+   "label": "Layer 1",
+   "kind": "bool",
+   "group": "seq.0",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "seq.0.sound",
+   "label": "Layer 1 sound",
+   "kind": "choice",
+   "group": "seq.0",
+   "min": 0,
+   "max": 46,
+   "activeIf": "seq.0.on"
+  },
+  {
+   "id": "seq.0.rhythm",
+   "label": "Layer 1 rhythm",
+   "kind": "choice",
+   "group": "seq.0",
+   "min": 0,
+   "max": 18,
+   "activeIf": "seq.0.on"
+  },
+  {
+   "id": "seq.0.gain",
+   "label": "Layer 1 gain",
+   "kind": "cont",
+   "group": "seq.0",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.0.on",
+   "neutral": 0
+  },
+  {
+   "id": "seq.0.speed",
+   "label": "Layer 1 speed",
+   "kind": "cont",
+   "group": "seq.0",
+   "min": 0.5,
+   "max": 2,
+   "exp": true,
+   "activeIf": "seq.0.on"
+  },
+  {
+   "id": "seq.0.density",
+   "label": "Layer 1 density",
+   "kind": "cont",
+   "group": "seq.0",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.0.on"
+  },
+  {
+   "id": "seq.0.dry",
+   "label": "Layer 1 dry",
+   "kind": "bool",
+   "group": "seq.0",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.0.on"
+  },
+  {
+   "id": "seq.0.bed",
+   "label": "Layer 1 bed",
+   "kind": "bool",
+   "group": "seq.0",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.0.on"
+  },
+  {
+   "id": "seq.1.on",
+   "label": "Layer 2",
+   "kind": "bool",
+   "group": "seq.1",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "seq.1.sound",
+   "label": "Layer 2 sound",
+   "kind": "choice",
+   "group": "seq.1",
+   "min": 0,
+   "max": 46,
+   "activeIf": "seq.1.on"
+  },
+  {
+   "id": "seq.1.rhythm",
+   "label": "Layer 2 rhythm",
+   "kind": "choice",
+   "group": "seq.1",
+   "min": 0,
+   "max": 18,
+   "activeIf": "seq.1.on"
+  },
+  {
+   "id": "seq.1.gain",
+   "label": "Layer 2 gain",
+   "kind": "cont",
+   "group": "seq.1",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.1.on",
+   "neutral": 0
+  },
+  {
+   "id": "seq.1.speed",
+   "label": "Layer 2 speed",
+   "kind": "cont",
+   "group": "seq.1",
+   "min": 0.5,
+   "max": 2,
+   "exp": true,
+   "activeIf": "seq.1.on"
+  },
+  {
+   "id": "seq.1.density",
+   "label": "Layer 2 density",
+   "kind": "cont",
+   "group": "seq.1",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.1.on"
+  },
+  {
+   "id": "seq.1.dry",
+   "label": "Layer 2 dry",
+   "kind": "bool",
+   "group": "seq.1",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.1.on"
+  },
+  {
+   "id": "seq.1.bed",
+   "label": "Layer 2 bed",
+   "kind": "bool",
+   "group": "seq.1",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.1.on"
+  },
+  {
+   "id": "seq.2.on",
+   "label": "Layer 3",
+   "kind": "bool",
+   "group": "seq.2",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "seq.2.sound",
+   "label": "Layer 3 sound",
+   "kind": "choice",
+   "group": "seq.2",
+   "min": 0,
+   "max": 46,
+   "activeIf": "seq.2.on"
+  },
+  {
+   "id": "seq.2.rhythm",
+   "label": "Layer 3 rhythm",
+   "kind": "choice",
+   "group": "seq.2",
+   "min": 0,
+   "max": 18,
+   "activeIf": "seq.2.on"
+  },
+  {
+   "id": "seq.2.gain",
+   "label": "Layer 3 gain",
+   "kind": "cont",
+   "group": "seq.2",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.2.on",
+   "neutral": 0
+  },
+  {
+   "id": "seq.2.speed",
+   "label": "Layer 3 speed",
+   "kind": "cont",
+   "group": "seq.2",
+   "min": 0.5,
+   "max": 2,
+   "exp": true,
+   "activeIf": "seq.2.on"
+  },
+  {
+   "id": "seq.2.density",
+   "label": "Layer 3 density",
+   "kind": "cont",
+   "group": "seq.2",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.2.on"
+  },
+  {
+   "id": "seq.2.dry",
+   "label": "Layer 3 dry",
+   "kind": "bool",
+   "group": "seq.2",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.2.on"
+  },
+  {
+   "id": "seq.2.bed",
+   "label": "Layer 3 bed",
+   "kind": "bool",
+   "group": "seq.2",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.2.on"
+  },
+  {
+   "id": "seq.3.on",
+   "label": "Layer 4",
+   "kind": "bool",
+   "group": "seq.3",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "seq.3.sound",
+   "label": "Layer 4 sound",
+   "kind": "choice",
+   "group": "seq.3",
+   "min": 0,
+   "max": 46,
+   "activeIf": "seq.3.on"
+  },
+  {
+   "id": "seq.3.rhythm",
+   "label": "Layer 4 rhythm",
+   "kind": "choice",
+   "group": "seq.3",
+   "min": 0,
+   "max": 18,
+   "activeIf": "seq.3.on"
+  },
+  {
+   "id": "seq.3.gain",
+   "label": "Layer 4 gain",
+   "kind": "cont",
+   "group": "seq.3",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.3.on",
+   "neutral": 0
+  },
+  {
+   "id": "seq.3.speed",
+   "label": "Layer 4 speed",
+   "kind": "cont",
+   "group": "seq.3",
+   "min": 0.5,
+   "max": 2,
+   "exp": true,
+   "activeIf": "seq.3.on"
+  },
+  {
+   "id": "seq.3.density",
+   "label": "Layer 4 density",
+   "kind": "cont",
+   "group": "seq.3",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.3.on"
+  },
+  {
+   "id": "seq.3.dry",
+   "label": "Layer 4 dry",
+   "kind": "bool",
+   "group": "seq.3",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.3.on"
+  },
+  {
+   "id": "seq.3.bed",
+   "label": "Layer 4 bed",
+   "kind": "bool",
+   "group": "seq.3",
+   "min": 0,
+   "max": 1,
+   "activeIf": "seq.3.on"
   }
  ],
  "modTargets": [
@@ -4739,6 +5040,84 @@
    "param": "gloss",
    "exp": false,
    "label": "Palette · Gloss"
+  },
+  {
+   "target": "seq",
+   "param": "cps",
+   "exp": true,
+   "label": "Layers · Tempo"
+  },
+  {
+   "target": "seq.0",
+   "param": "gain",
+   "exp": false,
+   "label": "Layer 1 · Gain"
+  },
+  {
+   "target": "seq.0",
+   "param": "speed",
+   "exp": true,
+   "label": "Layer 1 · Speed"
+  },
+  {
+   "target": "seq.0",
+   "param": "density",
+   "exp": false,
+   "label": "Layer 1 · Density"
+  },
+  {
+   "target": "seq.1",
+   "param": "gain",
+   "exp": false,
+   "label": "Layer 2 · Gain"
+  },
+  {
+   "target": "seq.1",
+   "param": "speed",
+   "exp": true,
+   "label": "Layer 2 · Speed"
+  },
+  {
+   "target": "seq.1",
+   "param": "density",
+   "exp": false,
+   "label": "Layer 2 · Density"
+  },
+  {
+   "target": "seq.2",
+   "param": "gain",
+   "exp": false,
+   "label": "Layer 3 · Gain"
+  },
+  {
+   "target": "seq.2",
+   "param": "speed",
+   "exp": true,
+   "label": "Layer 3 · Speed"
+  },
+  {
+   "target": "seq.2",
+   "param": "density",
+   "exp": false,
+   "label": "Layer 3 · Density"
+  },
+  {
+   "target": "seq.3",
+   "param": "gain",
+   "exp": false,
+   "label": "Layer 4 · Gain"
+  },
+  {
+   "target": "seq.3",
+   "param": "speed",
+   "exp": true,
+   "label": "Layer 4 · Speed"
+  },
+  {
+   "target": "seq.3",
+   "param": "density",
+   "exp": false,
+   "label": "Layer 4 · Density"
   }
  ],
  "routeSlots": 12,
@@ -5150,5 +5529,217 @@
    "onsetToSeed": 0.4,
    "spectrumToTint": 0.4
   }
- }
+ },
+ "seqSounds": [
+  {
+   "name": "bell",
+   "mode": "hits"
+  },
+  {
+   "name": "blackbird",
+   "mode": "hits"
+  },
+  {
+   "name": "bongo",
+   "mode": "hits"
+  },
+  {
+   "name": "bottle-blow",
+   "mode": "hits"
+  },
+  {
+   "name": "bottle-clink",
+   "mode": "hits"
+  },
+  {
+   "name": "canary",
+   "mode": "hits"
+  },
+  {
+   "name": "chimes",
+   "mode": "hits"
+  },
+  {
+   "name": "cicada",
+   "mode": "bed"
+  },
+  {
+   "name": "conga",
+   "mode": "hits"
+  },
+  {
+   "name": "cowbell",
+   "mode": "hits"
+  },
+  {
+   "name": "creak",
+   "mode": "hits"
+  },
+  {
+   "name": "crickets",
+   "mode": "bed"
+  },
+  {
+   "name": "crow",
+   "mode": "hits"
+  },
+  {
+   "name": "darbuka",
+   "mode": "hits"
+  },
+  {
+   "name": "dove",
+   "mode": "hits"
+  },
+  {
+   "name": "elk",
+   "mode": "hits"
+  },
+  {
+   "name": "fire",
+   "mode": "bed"
+  },
+  {
+   "name": "frame-drum",
+   "mode": "hits"
+  },
+  {
+   "name": "frog",
+   "mode": "hits"
+  },
+  {
+   "name": "goldfinch",
+   "mode": "hits"
+  },
+  {
+   "name": "great-tit",
+   "mode": "hits"
+  },
+  {
+   "name": "hand-bell",
+   "mode": "hits"
+  },
+  {
+   "name": "kookaburra",
+   "mode": "hits"
+  },
+  {
+   "name": "lyrebird",
+   "mode": "hits"
+  },
+  {
+   "name": "mark-trees",
+   "mode": "hits"
+  },
+  {
+   "name": "night",
+   "mode": "bed"
+  },
+  {
+   "name": "nightingale",
+   "mode": "hits"
+  },
+  {
+   "name": "oriole",
+   "mode": "hits"
+  },
+  {
+   "name": "owl",
+   "mode": "hits"
+  },
+  {
+   "name": "pendulum",
+   "mode": "hits"
+  },
+  {
+   "name": "pigeon",
+   "mode": "hits"
+  },
+  {
+   "name": "potoo",
+   "mode": "hits"
+  },
+  {
+   "name": "rain",
+   "mode": "bed"
+  },
+  {
+   "name": "robin",
+   "mode": "hits"
+  },
+  {
+   "name": "shaker",
+   "mode": "hits"
+  },
+  {
+   "name": "sleigh-bells",
+   "mode": "hits"
+  },
+  {
+   "name": "slit-drum",
+   "mode": "hits"
+  },
+  {
+   "name": "stream",
+   "mode": "bed"
+  },
+  {
+   "name": "triangle",
+   "mode": "hits"
+  },
+  {
+   "name": "whale",
+   "mode": "hits"
+  },
+  {
+   "name": "wings",
+   "mode": "hits"
+  },
+  {
+   "name": "woodblock",
+   "mode": "hits"
+  },
+  {
+   "name": "bd",
+   "mode": "hits"
+  },
+  {
+   "name": "sd",
+   "mode": "hits"
+  },
+  {
+   "name": "hh",
+   "mode": "hits"
+  },
+  {
+   "name": "oh",
+   "mode": "hits"
+  },
+  {
+   "name": "cp",
+   "mode": "hits"
+  }
+ ],
+ "seqRhythms": [
+  "",
+  "0",
+  "0 0",
+  "0*4",
+  "0*8",
+  "0*8?0.5",
+  "0(3,8)",
+  "0(5,8)",
+  "0(3,8,2)",
+  "0(7,16)",
+  "~ 0",
+  "~ 0 ~ 0",
+  "<0 ~ ~ ~>",
+  "<0 ~ ~ 1> ~ ~ ~",
+  "<0 ~> ~ 1 ~",
+  "[0 1]*4?0.3",
+  "0 [~ 0] ~ [0 0]",
+  "<0 1 2 3>",
+  "0? 1? 2? 3?"
+ ],
+ "seqLayers": 4
 }

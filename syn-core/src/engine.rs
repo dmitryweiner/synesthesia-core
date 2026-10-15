@@ -12,7 +12,8 @@ use crate::features::{Analyser, AudioFeatures, FeatureTracker, OnsetDetector, FP
 use crate::fx::FxChain;
 use crate::modmatrix::{effective_param, lfo_value, LfoDef, ModRoute};
 use crate::schema::{formula_ranges, schema};
-use crate::seq::{SeqProgram, Sequencer};
+use crate::seq::sequencer::SeqLive;
+use crate::seq::{SampleBank, SeqProgram, SeqState, Sequencer, LAYERS};
 use crate::state::{AppState, FxState};
 use crate::{FormulaId, BLOCK};
 
@@ -105,6 +106,8 @@ impl Engine {
             });
         }
         e.fx.reset(&state.audio.fx);
+        // Built here, so the first block does not build it.
+        let _ = seq_ranges();
         e
     }
 
@@ -151,7 +154,7 @@ impl Engine {
     /// delay cannot bleed into the new sound. The caller ducks around it.
     pub fn switch_to(&mut self, state: &AppState) {
         self.set_state(state);
-        self.seq.reset(self.t);
+        self.seq.reset(self.t, self.state.seq.cps);
         self.fx.reset(&state.audio.fx);
         self.master = state.audio.master_gain;
         for slot in &mut self.slots {
@@ -195,12 +198,14 @@ impl Engine {
         // A point with no layers skips the sequencer, so its sound is bit for
         // bit what it was before there was one.
         let seq_live = !self.seq.is_idle();
+        let live =
+            modulate_seq(&self.state.seq, &self.state.modulation.routes, &self.state.modulation.lfos, self.t);
         if seq_live {
             let dry = &mut self.dry[..n];
             dry.fill(0.0);
-            self.seq.render(out, dry);
+            self.seq.render(&live, out, dry);
         } else {
-            self.seq.advance(n);
+            self.seq.advance(n, live.cps);
         }
 
         // FX parameters follow the LFOs at block rate, as they do in the
@@ -303,20 +308,70 @@ pub fn modulate_fx_into(base: &FxState, routes: &[ModRoute], lfos: &[LfoDef], t:
     }
 }
 
-/// Renders `seconds` of a point offline, faster than realtime. Used by the
-/// scout and by `synesthesia render`.
-pub fn render_offline(state: &AppState, seconds: f64, sr: f64, seed: u32) -> Vec<f32> {
-    render_offline_with(state, Box::default(), seconds, sr, seed)
+/// The ranges the LFOs move the layers' numbers in: their genes'.
+fn seq_ranges() -> &'static [[f64; 2]; 4] {
+    static R: std::sync::OnceLock<[[f64; 2]; 4]> = std::sync::OnceLock::new();
+    R.get_or_init(|| {
+        let range = |id: &str| {
+            let g = crate::genome::genes::gene_by_id(id).expect("a seq gene");
+            [g.min, g.max]
+        };
+        [range("seq.cps"), range("seq.0.gain"), range("seq.0.speed"), range("seq.0.density")]
+    })
 }
 
-/// [`render_offline`] with the sequencer playing `program`.
+/// The layers' numbers at time `t`: the point's, with every route aimed at
+/// them laid over (`seq` · cps, `seq.<i>` · gain, speed, density).
+/// Allocates nothing — it runs every block.
+pub fn modulate_seq(seq: &SeqState, routes: &[ModRoute], lfos: &[LfoDef], t: f64) -> SeqLive {
+    let mut live = SeqLive::of(seq);
+    let [cps, gain, speed, density] = *seq_ranges();
+    for r in routes {
+        let Some(rest) = r.target.strip_prefix("seq") else { continue };
+        let Some(lfo) = lfos.get(r.src) else { continue };
+        let at = |base: f64, range: [f64; 2]| effective_param(base, lfo_value(lfo, t), r.depth, range, r.exp);
+        if rest.is_empty() {
+            if r.param == "cps" {
+                live.cps = at(seq.cps, cps);
+            }
+            continue;
+        }
+        let Some(i) = rest.strip_prefix('.').and_then(|x| x.parse::<usize>().ok()).filter(|i| *i < LAYERS)
+        else {
+            continue;
+        };
+        let (Some(base), l) = (seq.layers.get(i), &mut live.layers[i]) else { continue };
+        match r.param.as_str() {
+            "gain" => l.gain = at(base.gain, gain),
+            "speed" => l.speed = at(base.speed, speed),
+            "density" => l.density = at(base.density, density),
+            _ => {}
+        }
+    }
+    live
+}
+
+/// Renders `seconds` of a point offline, faster than realtime: the formulas
+/// and the FX, **not** the sample and drum layers — the scout's render (the
+/// layers are the user's choice and are not scored, decided with the user
+/// 2026-10-15) and the bench's.
+pub fn render_offline(state: &AppState, seconds: f64, sr: f64, seed: u32) -> Vec<f32> {
+    render_with(state, Box::default(), seconds, sr, seed)
+}
+
+/// [`render_offline`] with the point's layers too, played from `bank` (or,
+/// without one, only the synth drums) — what the point sounds like live.
 pub fn render_offline_with(
     state: &AppState,
-    program: Box<SeqProgram>,
+    bank: Option<&SampleBank>,
     seconds: f64,
     sr: f64,
     seed: u32,
 ) -> Vec<f32> {
+    render_with(state, Box::new(SeqProgram::new(&state.seq, bank)), seconds, sr, seed)
+}
+
+fn render_with(state: &AppState, program: Box<SeqProgram>, seconds: f64, sr: f64, seed: u32) -> Vec<f32> {
     let n = (seconds * sr) as usize;
     let mut engine = Engine::new(sr, state, seed);
     engine.set_seq(program);
@@ -406,18 +461,48 @@ mod tests {
                 ..Layer::default()
             }],
         };
-        let wet = render_offline_with(&quiet, Box::new(SeqProgram::new(&seq(false), None)), 2.0, 22050.0, 1);
-        let dry = render_offline_with(&quiet, Box::new(SeqProgram::new(&seq(true), None)), 2.0, 22050.0, 1);
+        let with = |seq: SeqState| AppState { seq, ..quiet.clone() };
+        let wet = render_offline_with(&with(seq(false)), None, 2.0, 22050.0, 1);
+        let dry = render_offline_with(&with(seq(true)), None, 2.0, 22050.0, 1);
         assert!(rms(&wet) > 0.01 && rms(&dry) > 0.01);
         assert_ne!(wet, dry, "the chain (its reverb, its limiter) colours only the wet one");
-        // No program, or one with every layer off: the formulas' sound alone,
-        // bit for bit.
+        // The scout's render leaves the layers out.
+        assert!(render_offline(&with(seq(false)), 2.0, 22050.0, 1).iter().all(|v| *v == 0.0));
+        // Every layer off: the formulas' sound alone, bit for bit.
         let p = &presets()[3].state;
         let mut off = seq(false);
         off.layers[0].on = false;
         let a = render_offline(p, 2.0, 22050.0, 1);
-        let b = render_offline_with(p, Box::new(SeqProgram::new(&off, None)), 2.0, 22050.0, 1);
+        let b = render_offline_with(&AppState { seq: off, ..p.clone() }, None, 2.0, 22050.0, 1);
         assert_eq!(a, b);
+    }
+
+    #[test]
+    fn an_lfo_moves_a_layer_and_the_tempo() {
+        use crate::modmatrix::{LfoShape, ModRoute};
+        use crate::seq::{Layer, SeqState};
+        let seq = SeqState {
+            cps: 1.0,
+            layers: vec![Layer { on: true, sound: "hh".into(), pattern: "0*4".into(), ..Layer::default() }],
+        };
+        let lfos = vec![LfoDef { shape: LfoShape::Square, rate: 0.5, phase: 0.0 }];
+        let route = |target: &str, param: &str, exp| ModRoute {
+            src: 0,
+            target: target.into(),
+            param: param.into(),
+            depth: 1.0,
+            exp,
+        };
+        let routes =
+            vec![route("seq", "cps", true), route("seq.0", "gain", false), route("fx", "delayMix", false)];
+        let a = modulate_seq(&seq, &routes, &lfos, 0.1);
+        let b = modulate_seq(&seq, &routes, &lfos, 1.1);
+        assert_ne!(a.cps, b.cps);
+        assert_ne!(a.layers[0].gain, b.layers[0].gain);
+        assert_eq!(a.layers[0].speed, 1.0);
+        assert!(a.cps >= 0.25 && a.cps <= 2.0 && b.cps >= 0.25 && b.cps <= 2.0);
+        // Nothing aimed at the layers: their own numbers.
+        assert_eq!(modulate_seq(&seq, &[], &lfos, 0.1), crate::seq::sequencer::SeqLive::of(&seq));
     }
 
     #[test]

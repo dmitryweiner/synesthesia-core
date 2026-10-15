@@ -8,7 +8,7 @@ use std::sync::OnceLock;
 use crate::dsp::rng::{gaussian, Rng};
 use crate::schema::{schema, GeneDef, GeneKind};
 
-use super::genes::{gene_index, genes, is_gene_active, route_slots, Genome};
+use super::genes::{any_layer_on, gene_index, genes, is_gene_active, route_slots, Genome};
 
 fn formula_enabled_idx() -> &'static [usize] {
     static IDX: OnceLock<Vec<usize>> = OnceLock::new();
@@ -60,6 +60,20 @@ fn card_toggles() -> &'static [usize] {
 fn lfo_shape_idx() -> &'static [usize] {
     static IDX: OnceLock<Vec<usize>> = OnceLock::new();
     IDX.get_or_init(|| (0..schema().lfo_count).map(|i| gene_index(&format!("lfo.{i}.shape"))).collect())
+}
+
+/// The sample/drum layers' genes (`seq.*`), appended after the web app's.
+fn seq_idx() -> &'static [usize] {
+    static IDX: OnceLock<Vec<usize>> = OnceLock::new();
+    IDX.get_or_init(|| {
+        genes().iter().enumerate().filter(|(_, g)| g.group.starts_with("seq")).map(|(i, _)| i).collect()
+    })
+}
+
+/// What the layers' genes hold for a point without layers.
+fn no_layers() -> &'static Genome {
+    static G: OnceLock<Genome> = OnceLock::new();
+    G.get_or_init(|| super::codec::encode_genome(&crate::state::AppState::new()))
 }
 
 fn gate_idx() -> &'static [Option<usize>] {
@@ -240,13 +254,86 @@ fn route_move(g: &mut Genome, rng: &mut dyn Rng, avoid: &HashSet<usize>) -> bool
     true
 }
 
+/// One of the layers (PLAN-SAMPLES-SCRIPTS.md): switch one on — with a
+/// sound, a built-in rhythm and a modest gain — or, when two or more are
+/// on, one off.
+fn layer_toggle(g: &mut Genome, rng: &mut dyn Rng) -> bool {
+    let layers = schema().seq_layers;
+    let on = |g: &Genome, i: usize| g[gene_index(&format!("seq.{i}.on"))] == 1.0;
+    let (active, inactive): (Vec<usize>, Vec<usize>) = (0..layers).partition(|&i| on(g, i));
+    if !inactive.is_empty() && (active.len() < 2 || rng.next() < 0.5) {
+        let i = pick(rng, &inactive);
+        g[gene_index(&format!("seq.{i}.on"))] = 1.0;
+        let si = gene_index(&format!("seq.{i}.sound"));
+        g[si] = random_choice(rng, &genes()[si], -1.0);
+        set_bed_by_sound(g, i);
+        rechoose_rhythm(g, rng, i);
+        g[gene_index(&format!("seq.{i}.gain"))] = 0.3 + rng.next() * 0.3;
+        return true;
+    }
+    if active.len() < 2 {
+        return false;
+    }
+    g[gene_index(&format!("seq.{}.on", pick(rng, &active)))] = 0.0;
+    true
+}
+
+/// A layer that changes its sound plays it as what it was cut for: a bed
+/// for crickets, hits for an owl.
+fn set_bed_by_sound(g: &mut Genome, i: usize) {
+    let sound = g[gene_index(&format!("seq.{i}.sound"))] as usize;
+    let bed = schema().seq_sounds.get(sound).is_some_and(|s| s.mode == crate::seq::Mode::Bed);
+    g[gene_index(&format!("seq.{i}.bed"))] = f64::from(bed);
+}
+
+/// A built-in rhythm, never "custom" (0): the search cannot write one.
+fn rechoose_rhythm(g: &mut Genome, rng: &mut dyn Rng, i: usize) {
+    let ri = gene_index(&format!("seq.{i}.rhythm"));
+    let n = genes()[ri].max as usize;
+    let mut v = 1 + ((rng.next() * n as f64) as usize).min(n - 1);
+    if v as f64 == g[ri] && n > 1 {
+        v = 1 + v % n;
+    }
+    g[ri] = v as f64;
+}
+
+fn layer_rechoose(g: &mut Genome, rng: &mut dyn Rng, sound: bool) -> bool {
+    let active: Vec<usize> =
+        (0..schema().seq_layers).filter(|i| g[gene_index(&format!("seq.{i}.on"))] == 1.0).collect();
+    if active.is_empty() {
+        return false;
+    }
+    let i = pick(rng, &active);
+    if sound {
+        let si = gene_index(&format!("seq.{i}.sound"));
+        g[si] = random_choice(rng, &genes()[si], g[si]);
+        set_bed_by_sound(g, i);
+    } else {
+        rechoose_rhythm(g, rng, i);
+    }
+    true
+}
+
 const MOVE_WEIGHTS: [f64; 7] = [3.0, 2.0, 1.0, 1.0, 1.5, 1.0, 2.5];
+/// The layers' three moves — toggle one, rechoose its sound, its rhythm —
+/// together weighted like the formula toggles. They join only when a layer
+/// is on: the search varies the layers the user put in, it does not add
+/// layers to a point without any (the scout does not hear them — decided
+/// with the user 2026-10-15). A point without layers mutates exactly as it
+/// did before there were layers.
+const LAYER_MOVE_WEIGHTS: [f64; 3] = [1.0, 1.0, 1.0];
 
 fn structural_move(g: &mut Genome, rng: &mut dyn Rng, avoid: &HashSet<usize>) {
-    let sum: f64 = MOVE_WEIGHTS.iter().sum();
+    let layers = any_layer_on(g);
+    let weights: Vec<f64> = if layers {
+        MOVE_WEIGHTS.iter().chain(&LAYER_MOVE_WEIGHTS).copied().collect()
+    } else {
+        MOVE_WEIGHTS.to_vec()
+    };
+    let sum: f64 = weights.iter().sum();
     for _ in 0..4 {
         let mut r = rng.next() * sum;
-        for (which, weight) in MOVE_WEIGHTS.iter().enumerate() {
+        for (which, weight) in weights.iter().enumerate() {
             r -= weight;
             if r > 0.0 {
                 continue;
@@ -258,7 +345,10 @@ fn structural_move(g: &mut Genome, rng: &mut dyn Rng, avoid: &HashSet<usize>) {
                 3 => toggle_one_of(g, rng, card_toggles()),
                 4 => rechoose_one_of(g, rng, &[gene_index("v.palette.paletteId")], false),
                 5 => rechoose_one_of(g, rng, lfo_shape_idx(), false),
-                _ => route_move(g, rng, avoid),
+                6 => route_move(g, rng, avoid),
+                7 => layer_toggle(g, rng),
+                8 => layer_rechoose(g, rng, true),
+                _ => layer_rechoose(g, rng, false),
             };
             if done {
                 return;
@@ -311,7 +401,9 @@ pub fn mutate(g: &Genome, rng: &mut dyn Rng, opts: &MutateOptions) -> Genome {
 /// A fully random but sane genome: 1–3 formulas, sparse FX and routes.
 pub fn random_genome(rng: &mut dyn Rng) -> Genome {
     let mut g: Genome = vec![0.0; genes().len()];
-    for (i, d) in genes().iter().enumerate() {
+    // The layers' genes take no draws: a random point has no layers, and
+    // the web app's genes get the same numbers they always did.
+    for (i, d) in genes().iter().enumerate().take(seq_idx()[0]) {
         g[i] = match d.kind {
             GeneKind::Cont => rng.next(),
             GeneKind::Choice => d.min + (rng.next() * (d.max - d.min + 1.0)).floor(),
@@ -337,6 +429,9 @@ pub fn random_genome(rng: &mut dyn Rng) -> Genome {
         let j = ((rng.next() * pool.len() as f64) as usize).min(pool.len() - 1);
         g[pool[j]] = 1.0;
         pool.remove(j);
+    }
+    for &i in seq_idx() {
+        g[i] = no_layers()[i];
     }
     // Keep random gains tame: 0.05..0.5 of the slider.
     for f in &schema().formulas {
@@ -424,6 +519,66 @@ mod tests {
     use crate::dsp::rng::Mulberry32;
     use crate::genome::codec::{decode_genome, encode_genome, is_valid_genome};
     use crate::state::presets;
+
+    fn opts() -> MutateOptions<'static> {
+        MutateOptions { sigma: 0.15, k: 6, structural_prob: 1.0, ..MutateOptions::default() }
+    }
+
+    #[test]
+    fn a_point_without_layers_never_grows_one() {
+        let mut rng = Mulberry32::new(5);
+        for p in presets() {
+            let mut g = encode_genome(&p.state);
+            for _ in 0..200 {
+                g = mutate(&g, &mut rng, &opts());
+                for &i in seq_idx() {
+                    assert_eq!(g[i], no_layers()[i], "{}: {} moved", p.name, genes()[i].id);
+                }
+            }
+        }
+        let r = random_genome(&mut rng);
+        assert!(!any_layer_on(&r) && is_valid_genome(&r));
+    }
+
+    #[test]
+    fn the_layers_a_point_has_are_varied() {
+        use crate::seq::{Layer, SeqState};
+        let mut state = presets()[0].state.clone();
+        state.seq = SeqState {
+            cps: 0.5,
+            layers: vec![Layer {
+                on: true,
+                sound: "owl".into(),
+                pattern: "0(3,8)".into(),
+                ..Layer::default()
+            }],
+        };
+        let start = encode_genome(&state);
+        let mut rng = Mulberry32::new(9);
+        let (mut sounds, mut rhythms, mut more) = (0, 0, 0);
+        for _ in 0..400 {
+            let g = mutate(&start, &mut rng, &opts());
+            assert!(is_valid_genome(&g));
+            let d = decode_genome(&g);
+            let on: Vec<&Layer> = d.seq.layers.iter().filter(|l| l.on).collect();
+            assert!(!on.is_empty(), "the last layer is never switched off");
+            for l in &on {
+                assert!(!l.pattern.is_empty(), "the search picks built-in rhythms only");
+                let cut = &schema().seq_sounds.iter().find(|s| s.name == l.sound).unwrap().mode;
+                if l.sound != "owl" {
+                    assert_eq!(&l.mode, cut, "{}: played as it was cut", l.sound);
+                    sounds += 1;
+                }
+                if l.pattern != "0(3,8)" {
+                    rhythms += 1;
+                }
+            }
+            if on.len() > 1 {
+                more += 1;
+            }
+        }
+        assert!(sounds > 10 && rhythms > 10 && more > 10, "{sounds} {rhythms} {more}");
+    }
 
     #[test]
     fn a_point_that_went_through_the_codec_is_still_the_same_point() {

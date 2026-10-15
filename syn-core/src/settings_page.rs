@@ -185,10 +185,17 @@ pub fn target_groups(domain: Domain) -> &'static [TargetGroup] {
 }
 
 /// Whether a route's target is audible or visible now: its formula or card
-/// is on; the effects, and the cards that are always on, always are.
+/// is on; a layer is on (the layers' tempo: any of them); the effects, and
+/// the cards that are always on, always are.
 pub fn is_target_on(point: &AppState, target: &str) -> bool {
     if target == FX_TARGET || schema().always_on_card_ids.iter().any(|id| id == target) {
         return true;
+    }
+    if target == "seq" {
+        return !point.seq.is_silent();
+    }
+    if let Some(i) = target.strip_prefix("seq.").and_then(|i| i.parse::<usize>().ok()) {
+        return point.seq.layers.get(i).is_some_and(|l| l.on);
     }
     if let Some(f) = point.audio.formulas.get(target) {
         return f.enabled;
@@ -253,7 +260,7 @@ fn key(s: &AppState) -> Value {
         .collect();
     let mut v = json!({
         "fx": s.audio.fx, "formulas": s.audio.formulas, "visual": s.visual, "coupling": s.coupling,
-        "lfos": s.modulation.lfos, "routes": routes,
+        "lfos": s.modulation.lfos, "routes": routes, "seq": s.seq,
     });
     round(&mut v);
     v

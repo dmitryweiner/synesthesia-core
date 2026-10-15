@@ -37,7 +37,8 @@ use syn_core::dsp::rng::{Mulberry32, Rng};
 use syn_core::genome::evolve::{diff_summary, lerp_genome, same_genome, ChangeDir};
 use syn_core::genome::explorer::{Explorer, ExplorerAction, ExplorerOptions};
 use syn_core::genome::scout::{self, ScoutKind, ScoutResult, ScoutSettings};
-use syn_core::genome::{decode_genome, encode_genome, Genome};
+use syn_core::genome::{decode_genome_over, encode_genome, Genome};
+use syn_core::seq::SeqState;
 use syn_core::state::{presets, AppState, Preset};
 
 /// How long a change takes to arrive, seconds — the web app's feel.
@@ -224,6 +225,10 @@ pub struct Session {
     steps: u32,
     /// Not a gene, and not the search's business: the user's volume.
     master_gain: f64,
+    /// Not genes either: the layers' own text — a pattern written by hand,
+    /// a sound's variant — laid back over every point the search decodes
+    /// (`decode_genome_over`), so a 👍 does not lose them.
+    base_seq: SeqState,
     playing: bool,
     settings_open: bool,
     /// The point that is audible: `morph_from` eased towards `morph_to`.
@@ -258,6 +263,7 @@ impl Session {
             base_name,
             steps: 0,
             master_gain: point.audio.master_gain,
+            base_seq: point.seq.clone(),
             playing: false,
             settings_open: false,
             live: g.clone(),
@@ -450,6 +456,7 @@ impl Session {
         self.named = !self.base_name.is_empty();
         self.steps = 0;
         self.master_gain = point.audio.master_gain;
+        self.base_seq = point.seq.clone();
         let g = encode_genome(point);
         self.explorer.load(g.clone());
         self.live = g.clone();
@@ -499,6 +506,7 @@ impl Session {
         let mut fx = Vec::new();
         self.settings_open = false;
         self.master_gain = point.audio.master_gain;
+        self.base_seq = point.seq.clone();
         let prev = self.explorer.current.clone();
         let g = encode_genome(point);
         // Not an exact comparison: the point went out through the codec and
@@ -712,7 +720,7 @@ impl Session {
     }
 
     fn state_of(&self, g: &Genome) -> AppState {
-        let mut s = decode_genome(g);
+        let mut s = decode_genome_over(g, &self.base_seq);
         s.audio.master_gain = self.master_gain;
         s.preset_name = (self.named && !self.base_name.is_empty()).then(|| self.base_name.clone());
         s
@@ -778,8 +786,31 @@ fn arrow(dir: ChangeDir) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use syn_core::genome::decode_genome;
     use syn_core::genome::genes::genes;
     use syn_core::schema::GeneKind;
+
+    #[test]
+    fn a_hand_written_pattern_and_a_variant_survive_the_search() {
+        use syn_core::seq::{Layer, SeqState};
+        let mut point = presets()[0].state.clone();
+        let mine =
+            Layer { on: true, sound: "owl:2".into(), pattern: "0 [~ 0] <1 2>".into(), ..Layer::default() };
+        point.seq = SeqState { cps: 0.5, layers: vec![mine.clone()] };
+        let mut s = Session::new("mine", &point, opts());
+        let mut kept = 0;
+        for k in 0..30 {
+            s.like(k as f64 * 10.0);
+            let l = &s.point().seq.layers[0];
+            if l.on && l.pattern == mine.pattern {
+                kept += 1;
+                if l.sound.starts_with("owl") {
+                    assert_eq!(l.sound, "owl:2");
+                }
+            }
+        }
+        assert!(kept > 0, "the custom pattern never came back");
+    }
 
     /// Without the scout, so a test spends no time rendering candidates.
     fn opts() -> SessionOptions {

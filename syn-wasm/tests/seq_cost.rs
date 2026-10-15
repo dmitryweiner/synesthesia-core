@@ -91,9 +91,10 @@ fn sequencer_cost_in_wasm() {
         q.set_program(Box::new(SeqProgram::new(s, Some(&bank))));
         let (mut wet, mut dry) = (vec![0.0f32; BLOCK], vec![0.0f32; BLOCK]);
         let blocks = (20.0 * sr) as usize / BLOCK;
+        let live = syn_core::seq::sequencer::SeqLive::of(s);
         let t0 = now();
         for _ in 0..blocks {
-            q.render(&mut wet, &mut dry);
+            q.render(&live, &mut wet, &mut dry);
         }
         let ns = (now() - t0) * 1e6 / (blocks * BLOCK) as f64;
         console_log!("{name:24} {ns:8.1} ns/sample  {:6.2} % of a core", ns * sr / 1e7);

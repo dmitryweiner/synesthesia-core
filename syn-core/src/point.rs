@@ -82,6 +82,9 @@ fn is_mod_target(target: &str, param: &str) -> bool {
     if target == "fx" {
         return is_fx_mod_param(param);
     }
+    if target == "seq" || target.starts_with("seq.") {
+        return schema().mod_targets.iter().any(|t| t.target == target && t.param == param);
+    }
     if schema().formula_ids.iter().any(|id| id == target) {
         return formula_def(target).is_some_and(|f| f.sliders.iter().any(|s| s.k == param));
     }
@@ -118,6 +121,60 @@ fn sanitize_route(v: &Value, lfo_count: usize) -> Option<Value> {
         route["exp"] = Value::Bool(true);
     }
     Some(route)
+}
+
+/// A gene's range, for clamping a layer's number to what the genome holds.
+fn gene_range(id: &str) -> (f64, f64) {
+    crate::genome::genes::gene_by_id(id).map_or((0.0, 1.0), |g| (g.min, g.max))
+}
+
+/// One layer made safe: numbers clamped to their genes' ranges, a pattern
+/// that does not parse kept as `""`, an unknown mode as `hits`. A sound
+/// outside the catalogue (or a variant that is not a number) gives `None`:
+/// such a layer is dropped, rather than kept under a name nothing plays.
+fn sanitize_layer(v: &Value) -> Option<crate::seq::Layer> {
+    use crate::seq::{split_sound, Layer, Mode};
+    if !is_record(v) {
+        return None;
+    }
+    let sound = v.get("sound").and_then(Value::as_str)?;
+    let (name, _) = split_sound(sound);
+    let variant_ok = sound.split_once(':').is_none_or(|(_, n)| n.parse::<u16>().is_ok());
+    if crate::schema::seq_sound_index(name).is_none() || !variant_ok {
+        return None;
+    }
+    let num = |k: &str, default: f64| {
+        let (lo, hi) = gene_range(&format!("seq.0.{k}"));
+        finite(v.get(k)).map_or(default, |x| clamp(x, lo, hi))
+    };
+    let d = Layer::default();
+    let pattern = v.get("pattern").and_then(Value::as_str).unwrap_or("");
+    Some(Layer {
+        on: v.get("on").and_then(Value::as_bool).unwrap_or(false),
+        sound: sound.to_string(),
+        pattern: if crate::seq::parse(pattern).is_ok() { pattern.to_string() } else { String::new() },
+        gain: num("gain", d.gain),
+        speed: num("speed", d.speed),
+        density: num("density", d.density),
+        dry: v.get("dry").and_then(Value::as_bool).unwrap_or(false),
+        mode: if v.get("mode").and_then(Value::as_str) == Some("bed") { Mode::Bed } else { Mode::Hits },
+    })
+}
+
+/// The `seq` section made safe, or `None` when no layer is on — a point
+/// with no layer on has no section, as before there were layers.
+fn sanitize_seq(v: &Value) -> Option<Value> {
+    use crate::seq::{Layer, SeqState};
+    if !is_record(v) {
+        return None;
+    }
+    let (lo, hi) = gene_range("seq.cps");
+    let cps = finite(v.get("cps")).map_or(SeqState::default().cps, |x| clamp(x, lo, hi));
+    let given = v.get("layers").and_then(Value::as_array)?;
+    let layers: Vec<Layer> =
+        (0..schema().seq_layers).map(|i| given.get(i).and_then(sanitize_layer).unwrap_or_default()).collect();
+    let seq = SeqState { cps, layers };
+    (!seq.is_silent()).then(|| serde_json::to_value(seq).expect("a SeqState serializes"))
 }
 
 /// The web app's `sanitizeState` + `stateToAppState`: `None` only when the
@@ -240,6 +297,10 @@ pub fn sanitize(u: &Value) -> Option<AppState> {
                 state["coupling"][k.as_str()] = clamp(x, *lo, *hi).into();
             }
         }
+    }
+
+    if let Some(seq) = u.get("seq").and_then(sanitize_seq) {
+        state["seq"] = seq;
     }
 
     // `if (partial.presetName)`: an empty name is no name. The new spelling
@@ -380,6 +441,52 @@ pub fn point_id(canonical: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_seq_section_is_made_safe() {
+        let mut p = serde_json::to_value(&crate::state::presets()[0].state).unwrap();
+        p["seq"] = serde_json::json!({
+            "cps": 9,
+            "layers": [
+                { "on": true, "sound": "owl:1", "pattern": "<0 ~ ~ 1> ~ ~ ~", "gain": 3, "speed": 0.1,
+                  "density": -1, "dry": "yes", "mode": "bed" },
+                { "on": true, "sound": "bd", "pattern": "[0 0", "mode": "loop" },
+                { "on": true, "sound": "kazoo", "pattern": "0" },
+                { "on": true, "sound": "owl:x", "pattern": "0" },
+                { "on": true, "sound": "hh", "pattern": "0*8" }
+            ]
+        });
+        let s = sanitize(&p).unwrap();
+        assert_eq!(s.seq.cps, 2.0);
+        assert_eq!(s.seq.layers.len(), 4, "a fixed count: the fifth is dropped");
+        let l = &s.seq.layers;
+        assert_eq!((l[0].sound.as_str(), l[0].gain, l[0].speed, l[0].density), ("owl:1", 1.0, 0.5, 0.0));
+        assert!(!l[0].dry && l[0].mode == crate::seq::Mode::Bed);
+        assert_eq!((l[1].pattern.as_str(), l[1].mode), ("", crate::seq::Mode::Hits));
+        assert!(!l[2].on && !l[3].on, "an unknown sound, a broken variant: dropped");
+        // A fixed point: sanitized again, the same.
+        let again = sanitize(&serde_json::to_value(&s).unwrap()).unwrap();
+        assert_eq!(again, s);
+        // Every layer off, or none at all: no section.
+        p["seq"]["layers"] = serde_json::json!([{ "on": false, "sound": "owl", "pattern": "0" }]);
+        assert!(sanitize(&p).unwrap().seq.layers.is_empty());
+        let json = serde_json::to_string(&sanitize(&p).unwrap()).unwrap();
+        assert!(!json.contains("\"seq\""), "{json}");
+    }
+
+    #[test]
+    fn a_route_may_aim_at_a_layer() {
+        let mut p = serde_json::to_value(&crate::state::presets()[0].state).unwrap();
+        p["mod"]["routes"] = serde_json::json!([
+            { "src": 0, "target": "seq", "param": "cps", "depth": 0.3 },
+            { "src": 1, "target": "seq.2", "param": "gain", "depth": -0.5 },
+            { "src": 1, "target": "seq.9", "param": "gain", "depth": 0.5 },
+            { "src": 1, "target": "seq.0", "param": "pattern", "depth": 0.5 }
+        ]);
+        let s = sanitize(&p).unwrap();
+        let kept: Vec<_> = s.modulation.routes.iter().map(|r| format!("{}.{}", r.target, r.param)).collect();
+        assert_eq!(kept, ["seq.cps", "seq.2.gain"]);
+    }
 
     #[test]
     fn numbers_are_written_as_javascript_writes_them() {

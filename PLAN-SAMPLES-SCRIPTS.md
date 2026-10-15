@@ -321,14 +321,29 @@ Appended to `assets/schema.json` (edited here, by hand, with its tests):
 | `seq.<i>.speed` | cont, exp | 0.5–2 | `seq.<i>.on` |
 | `seq.<i>.density` | cont | 0–1 | `seq.<i>.on` |
 | `seq.<i>.dry` | bool | | `seq.<i>.on` |
+| `seq.<i>.bed` | bool | | `seq.<i>.on` |
 
-4 × 7 + 1 = **29 genes → 279**; mod targets `seq.cps` and per layer `gain`,
-`speed`, `density` → **13 → 146**. `seqRhythms` is a built-in list of ~16
-patterns (`"0 ~ ~ ~"`, `"0(3,8)"`, `"0*4?0.5"`, `"<0 ~> ~ 1 ~"`, …) so a
-structural move can swap a rhythm; a hand-written pattern encodes as
-"custom" and survives decode unchanged. `evolve.rs` gets three structural
-moves — toggle a layer, rechoose its sound, rechoose its rhythm — weighted
-like the formula toggles. The morph (`lerp_genome`) treats the new genes as
+*As built in S3:* 4 × 8 + 1 = **33 genes → 283** — `seq.<i>.bed` (the
+layer's `mode`) was added, because a genome decodes a point from scratch
+and the table had nowhere for it; mod targets `seq.cps` and per layer
+`gain`, `speed`, `density` → **13 → 146** (the route `target` choice's max
+goes 132 → 145; choices are indices, so every old route keeps its target).
+`seq.cps` has no gate of its own: it counts as active while any layer is on
+(`is_gene_active`). `seqSounds` is the 42 bank names then the five synth
+drums (`bd sd hh oh cp`), each with the mode the bank cut it for;
+`seqRhythms` is 18 built-in patterns after index 0, `""` = "custom". A
+hand-written pattern encodes as "custom"; the genome cannot carry its text,
+so `decode_genome_over(genome, base_seq)` lays the base point's pattern
+(and a sound's `:n` variant) back over the decoded layers — the session
+and the Settings page keep the base, as they keep the volume and the name.
+`evolve.rs` has three structural moves — toggle a layer (on with a random
+sound, a built-in rhythm, a modest gain; off only while two or more are
+on), rechoose its sound (and `bed` as the catalogue says it was cut),
+rechoose its rhythm (never "custom") — together weighted like the formula
+toggles, **and only while a layer is on**: the search varies the layers a
+user put in and does not add layers to a point without any (the scout does
+not hear them). A point without layers mutates, and a random genome is
+drawn, exactly as before there were layers. The morph (`lerp_genome`) treats the new genes as
 it treats the old: continuous ones glide, choices and bools switch where
 they switch today. `sanitize` learns the section: clamp the numbers, drop an
 unknown sound or mode, keep an unparsable pattern as `""`.
@@ -410,12 +425,22 @@ into this file.
   already allocated 12–36 times a block (FxState's strings cloned, a
   modulated param re-inserted) — fixed, bit-identical (`625f6d9`). A point
   without layers skips the sequencer: its render is bit-identical.
-- **S3 — the point**: `SeqState` in `AppState`, `sanitize`, the genes and
-  mod targets appended, codec, the three structural moves, the Layers
-  section of the Settings page, the count assertions updated (`250 → 279`,
-  `133 → 146`), `fixtures/genomes.json` still matching as a prefix. The
-  test: a point without `seq` encodes to the same 250 leading genes and
-  the same canonical JSON as before.
+- **S3 — the point**: ✅ 2026-10-15. `AppState.seq` (skipped when no layer
+  is on), `sanitize` (numbers clamped to the genes' ranges, an unknown
+  sound drops its layer, an unparsable pattern is `""`, routes may aim at
+  `seq`/`seq.<i>`), the 33 genes and 13 mod targets appended, the codec
+  and `decode_genome_over`, the three structural moves, the Settings
+  sections (Layers: the tempo; Layer 1–4) and the web page's route
+  targets, the counts (`250 → 283`, `133 → 146`). `fixtures/genomes.json`
+  matches as a prefix and a point without layers adds only the default
+  tail; `fixtures/points.json` is untouched. The engine reads a layer's
+  numbers from the point every block, LFOs laid over (`modulate_seq`), so
+  a morph glides them; `Player::set_state`/`switch_to` build a new
+  `SeqProgram` only when a layer's structure (on, sound, pattern, mode)
+  changes. **The scout scores without the layers** (decided with the user
+  2026-10-15): `render_offline` is the formulas and FX; `render_offline_with`
+  adds the layers. `tests/catalogue.rs` checks a bank's manifest covers
+  `seqSounds` (all 42, modes as cut, every licence CC0 or public domain).
 - **S4 — the samples repository**: ✅ in synesthesia-samples `78a6508` (2026-10-15):
   the curated pick (446 candidates listened to, 165 kept under the 42 names
   in *The bank*), the manifest with provenance, the tools, `provenance.md`.
@@ -434,6 +459,14 @@ into this file.
 - **S7 — hosts**: `loadBank` in `syn-wasm` (bytes in, like a point) and
   `syn-ffi`; the web and Android apps bump their revision and fetch or
   bundle `bank.bin`.
+- **S8 — a metric for the layers, by ear** (proposed by the user
+  2026-10-15, who offered to be the listener): the fractality score is
+  for the sound under the layers; how good a layer is over it gets a
+  measure of its own, fitted to the user's better/worse verdicts on pairs
+  (the bench renders A/B pairs — the same point with two layer choices —
+  the user picks, the metric's terms and weights are fitted to the picks
+  and checked on pairs held back). Until then the search varies layers
+  without scoring them.
 
 On the console side (synesthesia-rust, on the core since 2026-10-15 with
 `syn-audio` left as the device): **C1** — bump to S3's revision, load the
@@ -454,7 +487,7 @@ heaviest layered preset — 0 xruns in 30 min is the bar (`soak.py`, or
 | event array overflow | 0 on every preset at 48 kHz and 22.05 kHz | S2 (bench counter) |
 | offline render of a layered preset | ≥ 8× realtime on the console | C1 |
 | xruns, drum preset, 48 kHz / 1024 frames | 0 in 30 min | C1 (`soak.py`) |
-| genes | 279; the first 250 unchanged for a point without `seq`; `fixtures/points.json` unchanged | S3 (tests) |
+| genes | 283 (amended from 279: + `bed`); the first 250 unchanged for a point without `seq`; `fixtures/points.json` unchanged | **283**, 146 mod targets; the web genomes match as a prefix; points.json untouched (S3 tests) |
 | fractality of the presets with layers | inside the presets' band like the others, or the scout's rule is amended by S0's number | inside the band (0.37–0.96 against the presets' 0.21–0.97), but a layer moves a point's score by up to ±0.35 — the scout's rule is a decision for S3 (S2 below) |
 
 ### S0, measured (2026-10-15)
@@ -549,9 +582,12 @@ bank; the presets alone span 0.21–0.97):
   spots + bd: envβ 1.03 → −1.35), a noise bed flattens the centroid's.
   If layers are part of the scored candidate, the scout will learn to
   turn beats and beds off — the opposite of what a user who put them there
-  wants. The choice between scoring candidates **without** their layers
-  (the layers are the user's, the search is for the sound under them) and
-  scoring them whole is the user's, made before S3 wires the genes.
+  wants. **Decided with the user (2026-10-15): candidates are scored
+  without their layers** — the layers are the user's, the search is for
+  the sound under them; a metric of the layers' own, fitted by ear, is S8.
+- By ear (the user, 2026-10-15): Fractal garden + an owl now and then —
+  "very pleasant"; Bell spots + `bd(3,8)` at gain 0.6 — "superb with the
+  rhythm". The synth drums are accepted as made.
 - Levels: the probes' layers are loud for the presets — `bd` at gain 0.6
   raises Fractal garden from −28 to −19 dB RMS, Bell spots from −36 to
   −18. The samples are cut to −1 dBFS peak and the formulas mix far
@@ -560,11 +596,9 @@ bank; the presets alone span 0.21–0.97):
 
 ## Risks and open questions
 
-- **The scout's metric.** A steady beat is the opposite of 1/f; S0's score
-  probe comes first for a reason. If the score drops for every rhythm, the
-  options are: score the candidate without its layers (they are the user's
-  choice, not the search's), or add a rhythm-aware term — chosen by the
-  number, not here.
+- **The scout's metric.** A steady beat is the opposite of 1/f. Settled by
+  S0's probe and the user: the scout scores without the layers; S8 gives
+  the layers a metric of their own.
 - **Licences are per file, not per site.** BigSoundBank states CC0 on each
   page and Freesound's filter is reliable, but the manifest records what
   the page said on the day, and each page was opened. Two traps met in S4:

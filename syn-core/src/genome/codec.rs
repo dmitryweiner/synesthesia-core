@@ -3,7 +3,8 @@
 //! those from the defaults.
 
 use crate::modmatrix::{LfoDef, LfoShape, ModRoute};
-use crate::schema::{schema, GeneKind};
+use crate::schema::{schema, seq_sound_index, GeneKind};
+use crate::seq::{split_sound, Layer, Mode, SeqState};
 use crate::state::AppState;
 
 use super::genes::{
@@ -136,6 +137,29 @@ pub fn encode_genome(state: &AppState) -> Genome {
     for k in &s.coupling_keys {
         set_value(&mut g, &format!("c.{k}"), state.coupling.get(k).copied().unwrap_or(0.0));
     }
+
+    // The layers. A missing one is off at the defaults; a sound outside the
+    // catalogue reads as its first entry, a pattern that is not one of the
+    // built-in rhythms as "custom" (0) — the text itself is not a gene
+    // (`decode_genome_over` brings it back).
+    set_value(&mut g, "seq.cps", state.seq.cps);
+    let fresh = Layer::default();
+    for i in 0..s.seq_layers {
+        let l = state.seq.layers.get(i).unwrap_or(&fresh);
+        let id = |k: &str| format!("seq.{i}.{k}");
+        set_raw(&mut g, &id("on"), f64::from(l.on));
+        set_raw(&mut g, &id("sound"), seq_sound_index(split_sound(&l.sound).0).unwrap_or(0) as f64);
+        set_raw(
+            &mut g,
+            &id("rhythm"),
+            s.seq_rhythms.iter().position(|r| *r == l.pattern).unwrap_or(0) as f64,
+        );
+        set_value(&mut g, &id("gain"), l.gain);
+        set_value(&mut g, &id("speed"), l.speed);
+        set_value(&mut g, &id("density"), l.density);
+        set_raw(&mut g, &id("dry"), f64::from(l.dry));
+        set_raw(&mut g, &id("bed"), f64::from(l.mode == Mode::Bed));
+    }
     g
 }
 
@@ -225,6 +249,45 @@ pub fn decode_genome(g: &Genome) -> AppState {
 
     for k in &s.coupling_keys {
         state.coupling.insert(k.clone(), read_value(g, &format!("c.{k}")));
+    }
+
+    let layers: Vec<Layer> = (0..s.seq_layers)
+        .map(|i| {
+            let id = |k: &str| format!("seq.{i}.{k}");
+            let sound = s.seq_sounds.get(get_raw(g, &id("sound")) as usize).or(s.seq_sounds.first());
+            Layer {
+                on: get_raw(g, &id("on")) == 1.0,
+                sound: sound.map_or_else(String::new, |x| x.name.clone()),
+                pattern: s.seq_rhythms.get(get_raw(g, &id("rhythm")) as usize).cloned().unwrap_or_default(),
+                gain: read_value(g, &id("gain")),
+                speed: read_value(g, &id("speed")),
+                density: read_value(g, &id("density")),
+                dry: get_raw(g, &id("dry")) == 1.0,
+                mode: if get_raw(g, &id("bed")) == 1.0 { Mode::Bed } else { Mode::Hits },
+            }
+        })
+        .collect();
+    // No layer on: no section, as in a point from before there were layers.
+    if layers.iter().any(|l| l.on) {
+        state.seq = SeqState { cps: read_value(g, "seq.cps"), layers };
+    }
+    state
+}
+
+/// [`decode_genome`], with what the genome does not carry of the layers
+/// taken from `base` (the point the search or the page started from): a
+/// layer whose rhythm gene is "custom" keeps `base`'s pattern for that slot,
+/// and a layer still on `base`'s sound keeps its variant (`crickets:3`).
+pub fn decode_genome_over(g: &Genome, base: &SeqState) -> AppState {
+    let mut state = decode_genome(g);
+    for (i, l) in state.seq.layers.iter_mut().enumerate() {
+        let Some(b) = base.layers.get(i) else { continue };
+        if get_raw(g, &format!("seq.{i}.rhythm")) == 0.0 {
+            l.pattern = b.pattern.clone();
+        }
+        if split_sound(&b.sound).0 == l.sound {
+            l.sound = b.sound.clone();
+        }
     }
     state
 }

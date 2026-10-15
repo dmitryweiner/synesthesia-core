@@ -60,6 +60,17 @@ impl SeqState {
     pub fn is_silent(&self) -> bool {
         !self.layers.iter().any(|l| l.on)
     }
+
+    /// The same layers playing the same things — what a [`SeqProgram`] is
+    /// built from. Gain, speed, density, dry and the tempo may differ: the
+    /// engine reads those from the point every block.
+    pub fn same_structure(&self, other: &SeqState) -> bool {
+        fn key(l: &Layer) -> (bool, &str, &str, Mode) {
+            (l.on, &l.sound, &l.pattern, l.mode)
+        }
+        self.layers.len() == other.layers.len()
+            && self.layers.iter().zip(&other.layers).all(|(a, b)| key(a) == key(b))
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

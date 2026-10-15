@@ -52,8 +52,20 @@ fn layers_allocate_nothing() {
     };
     let mut buf = vec![0.0f32; BLOCK];
     for p in [&presets()[0].state, &presets()[3].state] {
-        let mut e = Engine::new(48000.0, p, 1);
-        e.set_seq(Box::new(SeqProgram::new(&seq, Some(&bank))));
+        // The layers in the point, and LFOs aimed at them: the engine reads
+        // and modulates their numbers every block.
+        let mut p = syn_core::state::AppState { seq: seq.clone(), ..p.clone() };
+        for (target, param) in [("seq", "cps"), ("seq.0", "gain"), ("seq.2", "speed"), ("seq.3", "density")] {
+            p.modulation.routes.push(syn_core::ModRoute {
+                src: 1,
+                target: target.into(),
+                param: param.into(),
+                depth: 0.6,
+                exp: false,
+            });
+        }
+        let mut e = Engine::new(48000.0, &p, 1);
+        e.set_seq(Box::new(SeqProgram::new(&p.seq, Some(&bank))));
         e.render(&mut buf);
         let ((), n) = count(|| {
             for _ in 0..3000 {

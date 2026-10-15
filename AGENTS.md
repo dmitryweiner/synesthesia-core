@@ -117,7 +117,9 @@ syn-core/src/seq/         the sequencer layers (PLAN-SAMPLES-SCRIPTS.md): mini (
                           samples, decoded per sound), voice (sampler, synth drums),
                           sequencer (SeqProgram built on the control side, played by
                           the engine's Sequencer)
-syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time
+syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time; render_offline
+                          (formulas + FX — the scout's, without the layers) and
+                          render_offline_with (+ the point's layers, from a bank)
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout
 syn-core/src/sim/         the picture: field, noise, fields, advect, palette,

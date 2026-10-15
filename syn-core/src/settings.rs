@@ -16,10 +16,11 @@
 //! ("Route 1"), a card by its `title`. Only the LFO sections are numbered
 //! from their group id, because the schema names no LFO as a whole.
 
-use crate::genome::codec::{decode_genome, encode_genome};
+use crate::genome::codec::{decode_genome_over, encode_genome};
 use crate::genome::genes::{gene_from_value, gene_index_of, genes, is_gene_active, read_value, Genome};
 use crate::modmatrix::LfoShape;
 use crate::schema::{card_def, formula_def, schema, GeneDef, GeneKind};
+use crate::seq::SeqState;
 use crate::state::AppState;
 
 /// Which tab a section sits on. The sound's parameters and the picture's are
@@ -104,6 +105,15 @@ pub fn options(gene: &GeneDef) -> Vec<String> {
         id if id.starts_with("lfo.") => s.lfo_shapes.clone(),
         id if id.ends_with(".src") => (0..s.lfo_count).map(|i| format!("LFO {}", i + 1)).collect(),
         id if id.ends_with(".target") => s.mod_targets.iter().map(|t| t.label.clone()).collect(),
+        id if id.starts_with("seq.") && id.ends_with(".sound") => {
+            s.seq_sounds.iter().map(|x| x.name.clone()).collect()
+        }
+        // A rhythm is shown as its own notation; 0 is the point's own pattern.
+        id if id.starts_with("seq.") && id.ends_with(".rhythm") => s
+            .seq_rhythms
+            .iter()
+            .map(|r| if r.is_empty() { "custom".to_string() } else { r.clone() })
+            .collect(),
         _ => {
             // A card's own select — the palette, for one.
             let card = gene.id.strip_prefix("v.").and_then(|rest| rest.split_once('.'));
@@ -167,7 +177,8 @@ fn genes_in(group: &str) -> Vec<&'static GeneDef> {
 
 /// The page: every section, in the order it is shown.
 ///
-/// Sound: the FX modules, then the formulas, then the LFOs and the routes.
+/// Sound: the FX modules, then the formulas, the sample and drum layers
+/// (their tempo, then each layer), then the LFOs and the routes.
 /// Picture: the cards, then the sound → image couplings.
 pub fn sections() -> Vec<Section> {
     let s = schema();
@@ -206,6 +217,29 @@ pub fn sections() -> Vec<Section> {
         let title = toggle.map_or_else(|| id.clone(), |t| t.label.clone());
         let description = formula_def(id).map_or_else(String::new, |f| describe(&f.tag, &f.desc));
         out.push(Section { id: group, title, description, tab: Tab::Sound, toggle, controls });
+    }
+
+    // "Layers · Tempo (cycles/s)" → the section is "Layers", as the
+    // couplings' is "Coupling".
+    let tempo = genes_in("seq");
+    if let Some(first) = tempo.first() {
+        let title =
+            first.label.split_once(" · ").map_or_else(|| "Layers".to_string(), |(head, _)| head.to_string());
+        out.push(Section {
+            id: "seq".into(),
+            title,
+            description: String::new(),
+            tab: Tab::Sound,
+            toggle: None,
+            controls: tempo,
+        });
+    }
+    for i in 0..s.seq_layers {
+        let group = format!("seq.{i}");
+        let mut controls = genes_in(&group);
+        let toggle = controls.iter().position(|g| g.id == format!("{group}.on")).map(|i| controls.remove(i));
+        let title = toggle.map_or_else(|| group.clone(), |t| t.label.clone());
+        out.push(Section { id: group, title, description: String::new(), tab: Tab::Sound, toggle, controls });
     }
 
     for i in 0..s.lfo_count {
@@ -265,14 +299,16 @@ pub fn sections() -> Vec<Section> {
 
 /// A point being edited by hand, as the Settings page edits it.
 ///
-/// The page changes genes, so the edit *is* a genome — plus the two things a
-/// genome does not carry: the user's volume and the point's name. Nothing is
+/// The page changes genes, so the edit *is* a genome — plus what a genome
+/// does not carry: the user's volume, the point's name, and the layers'
+/// own text (a custom pattern, a sound's variant). Nothing is
 /// repaired on the way out (no formula at all, or a coupling below the floor,
 /// is what the user chose); the next 👍/👎 repairs as usual.
 pub struct Edit {
     genome: Genome,
     master_gain: f64,
     name: Option<String>,
+    seq: SeqState,
 }
 
 impl Edit {
@@ -281,13 +317,14 @@ impl Edit {
             genome: encode_genome(point),
             master_gain: point.audio.master_gain,
             name: point.preset_name.clone(),
+            seq: point.seq.clone(),
         }
     }
 
     /// The point as edited, for the sound to follow and for the session to
     /// commit.
     pub fn point(&self) -> AppState {
-        let mut out = decode_genome(&self.genome);
+        let mut out = decode_genome_over(&self.genome, &self.seq);
         out.audio.master_gain = self.master_gain;
         out.preset_name = self.name.clone();
         out

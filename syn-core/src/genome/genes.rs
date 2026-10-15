@@ -76,9 +76,26 @@ pub fn gene_from_value(def: &GeneDef, v: f64) -> f64 {
     }
 }
 
+/// The `seq.<i>.on` genes, in layer order.
+fn layer_on_idx() -> &'static [usize] {
+    static IDX: OnceLock<Vec<usize>> = OnceLock::new();
+    IDX.get_or_init(|| {
+        (0..schema().seq_layers).filter_map(|i| gene_index_of(&format!("seq.{i}.on"))).collect()
+    })
+}
+
+/// Whether any sample/drum layer is on.
+pub fn any_layer_on(genome: &[f64]) -> bool {
+    layer_on_idx().iter().any(|&i| genome.get(i) == Some(&1.0))
+}
+
 /// Whether gene `i` currently matters — its gate, if it has one, is on.
+/// The layers' tempo (`seq.cps`) has no one gate: it matters while any
+/// layer is on — so a point without layers neither shows it as live nor
+/// mutates it, and searches as it did before there were layers.
 pub fn is_gene_active(genome: &[f64], i: usize) -> bool {
     match genes()[i].active_if.as_deref() {
+        None if genes()[i].group == "seq" => any_layer_on(genome),
         None => true,
         Some(gate) => match gene_index_of(gate) {
             None => true,
@@ -106,11 +123,18 @@ mod tests {
     #[test]
     fn the_gene_list_is_the_one_the_web_app_derives() {
         let g = genes();
-        assert_eq!(g.len(), 250, "gene count changed — share compatibility depends on it");
+        // 250 from the web app, then the sample/drum layers appended
+        // (PLAN-SAMPLES-SCRIPTS.md): the first 250 never move.
+        assert_eq!(g.len(), 283, "gene count changed — share compatibility depends on it");
         assert_eq!(g[0].id, "a.additive.enabled");
+        assert_eq!(g[249].id, "c.spectrumToTint");
+        assert_eq!(g[250].id, "seq.cps");
+        assert_eq!(g[282].id, "seq.3.bed");
         assert_eq!(gene_index("fx.filterOn"), gene_index_of("fx.filterOn").unwrap());
         assert_eq!(route_slots(), 12);
-        assert_eq!(mod_targets().len(), 133);
+        assert_eq!(mod_targets().len(), 146);
+        assert_eq!(mod_targets()[132].label, "Palette · Gloss", "the first 133 never move");
+        assert_eq!(genes()[gene_index("route.0.target")].max, 145.0);
     }
 
     #[test]

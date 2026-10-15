@@ -105,6 +105,16 @@ pub struct ModTarget {
     pub label: String,
 }
 
+/// A sound a layer's `sound` gene can pick (PLAN-SAMPLES-SCRIPTS.md, the
+/// catalogue): the 42 names of the first bank, then the five synth drums;
+/// appended to, never reordered. `mode` is what the bank's samples of it
+/// were cut for — what a layer that picks it plays it as.
+#[derive(Clone, Debug, Deserialize)]
+pub struct SeqSound {
+    pub name: String,
+    pub mode: crate::seq::Mode,
+}
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct FormulaDef {
     pub id: String,
@@ -146,6 +156,17 @@ pub struct Schema {
     pub fx_on_keys: Vec<String>,
     pub default_coupling: BTreeMap<String, f64>,
     pub default_state: serde_json::Value,
+    /// What a layer's `sound` gene indexes.
+    pub seq_sounds: Vec<SeqSound>,
+    /// What a layer's `rhythm` gene indexes; 0 (`""`) is "custom": the
+    /// point's own pattern, which the genome does not carry.
+    pub seq_rhythms: Vec<String>,
+    pub seq_layers: usize,
+}
+
+/// The index of a sound name in the catalogue.
+pub fn seq_sound_index(name: &str) -> Option<usize> {
+    schema().seq_sounds.iter().position(|s| s.name == name)
 }
 
 /// The parsed schema (parsed on first use, then shared).
@@ -254,6 +275,30 @@ mod tests {
         }
         assert_eq!(s.max_enabled_formulas, 5);
         assert_eq!(s.lfo_count, 4);
+    }
+
+    #[test]
+    fn the_layer_catalogue_is_the_first_bank_then_the_synth_drums() {
+        let s = schema();
+        assert_eq!(s.seq_layers, crate::seq::LAYERS);
+        let names: Vec<&str> = s.seq_sounds.iter().map(|x| x.name.as_str()).collect();
+        assert_eq!(names.len(), 47);
+        // Never reordered: the `sound` genes index this list.
+        assert_eq!(names[..3], ["bell", "blackbird", "bongo"]);
+        assert_eq!(names[41], "woodblock");
+        assert_eq!(names[42..], ["bd", "sd", "hh", "oh", "cp"]);
+        for d in crate::seq::Drum::ALL {
+            assert_eq!(seq_sound_index(d.name()).map(|i| i >= 42), Some(true));
+        }
+        assert_eq!(s.seq_rhythms[0], "", "0 is custom");
+        for r in &s.seq_rhythms[1..] {
+            let p = crate::seq::parse(r).unwrap_or_else(|e| panic!("{r}: {e}"));
+            assert!(!p.is_silent(), "{r}");
+            assert!(p.names().is_empty(), "{r}: a built-in rhythm plays the layer's own sound");
+        }
+        let mut seen = s.seq_rhythms.clone();
+        seen.dedup();
+        assert_eq!(seen.len(), s.seq_rhythms.len());
     }
 
     #[test]

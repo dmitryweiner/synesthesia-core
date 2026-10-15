@@ -127,7 +127,10 @@ impl Player {
     pub fn new(sample_rate: f64, state: &AppState) -> Self {
         let (tx, rx) = channel();
         let (tx_retired, rx_retired) = channel();
-        let engine = Engine::new(sample_rate, state, state_seed(state));
+        let mut engine = Engine::new(sample_rate, state, state_seed(state));
+        // No bank yet: a point's synth drums play from the start, its samples
+        // once `set_bank` brings them.
+        engine.set_seq(Box::new(SeqProgram::new(&state.seq, None)));
         Player {
             sample_rate,
             commands: tx,
@@ -148,7 +151,7 @@ impl Player {
                 level_step: 0.0,
             }),
             frames: Mutex::new(VecDeque::with_capacity(FRAME_RING)),
-            layers: Mutex::new(Layers::default()),
+            layers: Mutex::new(Layers { bank: None, old_banks: Vec::new(), seq: state.seq.clone() }),
         }
     }
 
@@ -156,31 +159,40 @@ impl Player {
         self.sample_rate
     }
 
-    /// Glide to `state`: parameters move, nothing is rebuilt.
+    /// Glide to `state`: parameters move, nothing is rebuilt — unless its
+    /// layers play something else (see [`Player::switch_to`]).
     pub fn set_state(&self, state: AppState) {
+        if let Some(p) = self.program_for(&state.seq) {
+            self.send(Command::SetSeq(p));
+        }
         self.send(Command::SetState(Box::new(state)));
     }
 
     /// Switch to `state` hard: the old point's tails are dropped.
+    ///
+    /// When the point's layers play something new — a layer on or off,
+    /// another sound, pattern or mode — their program is built here, on the
+    /// caller's thread: patterns parsed, samples decoded (a few milliseconds
+    /// the first time a sound is used), never on the audio thread. A morph
+    /// that only moves gains, speeds and the tempo builds nothing.
     pub fn switch_to(&self, state: AppState) {
+        if let Some(p) = self.program_for(&state.seq) {
+            self.send(Command::SetSeq(p));
+        }
         self.send(Command::SwitchTo(Box::new(state)));
     }
 
-    /// Play `seq`'s layers. Their patterns are parsed and their samples
-    /// decoded here, on the caller's thread — the first time a sound is
-    /// used this takes a few milliseconds — never on the audio thread.
-    pub fn set_seq(&self, seq: SeqState) {
-        let program = {
-            let mut l = self.layers.lock().unwrap_or_else(|e| e.into_inner());
-            let program = SeqProgram::new(&seq, l.bank.as_deref());
-            l.seq = seq;
-            program
-        };
-        self.send(Command::SetSeq(Box::new(program)));
+    fn program_for(&self, seq: &SeqState) -> Option<Box<SeqProgram>> {
+        let mut l = self.layers.lock().unwrap_or_else(|e| e.into_inner());
+        if l.seq.same_structure(seq) {
+            return None;
+        }
+        l.seq = seq.clone();
+        Some(Box::new(SeqProgram::new(seq, l.bank.as_deref())))
     }
 
     /// The samples the layers play (`bank.bin`, parsed by the caller). The
-    /// layers last set are rebuilt on it. A bank replaced here is kept until
+    /// point's layers are rebuilt on it. A bank replaced here is kept until
     /// the player is dropped: a voice still playing one of its samples must
     /// never be the last to let go of it on the audio thread.
     pub fn set_bank(&self, bank: Arc<SampleBank>) {
@@ -345,7 +357,6 @@ impl RenderSide {
     }
 }
 
-#[derive(Default)]
 struct Layers {
     bank: Option<Arc<SampleBank>>,
     old_banks: Vec<Arc<SampleBank>>,
@@ -514,8 +525,9 @@ mod tests {
         p.fade_in();
         let layer =
             |sound: &str| Layer { on: true, sound: sound.into(), pattern: "0*2".into(), ..Layer::default() };
+        let with = |seq: SeqState| AppState { seq, ..AppState::new() };
         // "tick" is not a synth drum and there is no bank yet: silence.
-        p.set_seq(SeqState { cps: 1.0, layers: vec![layer("tick")] });
+        p.set_state(with(SeqState { cps: 1.0, layers: vec![layer("tick")] }));
         assert!(rms(&render(&p, SR as usize)) == 0.0);
         let bank = SampleBank::from_pcm(vec![(
             "tick".into(),
@@ -523,7 +535,7 @@ mod tests {
         )]);
         p.set_bank(Arc::new(bank));
         assert!(rms(&render(&p, SR as usize)) > 1e-3);
-        p.set_seq(SeqState::default());
+        p.set_state(with(SeqState::default()));
         let x = render(&p, SR as usize);
         assert!(rms(&x[x.len() / 2..]) == 0.0);
     }

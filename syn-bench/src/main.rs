@@ -384,9 +384,10 @@ fn seq(a: &Args) {
         q.set_program(Box::new(SeqProgram::new(s, Some(&bank))));
         let (mut wet, mut dry) = (vec![0.0f32; BLOCK], vec![0.0f32; BLOCK]);
         let blocks = (secs * sr) as usize / BLOCK;
+        let live = syn_core::seq::sequencer::SeqLive::of(s);
         let t0 = Instant::now();
         for _ in 0..blocks {
-            q.render(&mut wet, &mut dry);
+            q.render(&live, &mut wet, &mut dry);
         }
         let ns = t0.elapsed().as_nanos() as f64 / (blocks * BLOCK) as f64;
         println!("{} {ns:>9.1}  {:>9.2} %   stolen {}", pad(name, 36), ns * sr / 1e7, q.stolen);
@@ -413,8 +414,8 @@ fn seq(a: &Args) {
                 layer("cp", "~ ~ ~ <~ 0>", Mode::Hits, 0.5),
             ],
         };
-        let quiet = syn_core::state::AppState::new();
-        let x = render_offline_with(&quiet, Box::new(SeqProgram::new(&groove, None)), 8.0, 48000.0, 1);
+        let quiet = syn_core::state::AppState { seq: groove, ..syn_core::state::AppState::new() };
+        let x = render_offline_with(&quiet, None, 8.0, 48000.0, 1);
         write_wav(dir, "drum_groove", &x, 48000.0);
     }
 
@@ -454,14 +455,9 @@ fn seq(a: &Args) {
     let results: Vec<SoundAnalysis> = jobs
         .par_iter()
         .map(|&(p, v)| {
-            let s = SeqState { cps: 0.5, layers: variants[v].1.clone() };
-            let x = render_offline_with(
-                &presets()[p].state,
-                Box::new(SeqProgram::new(&s, Some(&bank))),
-                secs,
-                sr,
-                1,
-            );
+            let seq = SeqState { cps: 0.5, layers: variants[v].1.clone() };
+            let state = syn_core::state::AppState { seq, ..presets()[p].state.clone() };
+            let x = render_offline_with(&state, Some(&bank), secs, sr, 1);
             if let Some(dir) = a.get("wav") {
                 let name = format!(
                     "probe_{p}_{}",
