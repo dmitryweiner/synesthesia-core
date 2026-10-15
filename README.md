@@ -2,8 +2,12 @@
 
 The portable model of [Synesthesia](https://github.com/dmitryweiner/synesthesia):
 one point in a ~500-gene space makes sound (23 formula generators, an FX
-chain, 4 shared LFOs) and a picture (Gray–Scott reaction-diffusion driven by
-the sound), and 👍/👎 steer the search through it.
+chain, 4 shared LFOs, and up to four layers of recorded samples and drums
+in Strudel-style rhythms) and a picture (Gray–Scott reaction-diffusion
+driven by the sound), and 👍/👎 steer the search through it. The samples
+are CC0 / public domain, in
+[synesthesia-samples](https://github.com/dmitryweiner/synesthesia-samples)
+(`bank.bin`, its release `bank-v1`); the core takes them as bytes.
 
 It is Rust with no I/O and no threads of its own. Three apps run on it
 today, each one *device + screen + storage* around the same model, each
@@ -74,9 +78,10 @@ and status lines (`fixtures/`).
 ```
 syn-core/   the model: generators, modulation, FX, engine, features,
             analysis, the point, the genome, the search, the scout, the
-            picture (`sim/`: the CPU one, the per-frame driver every
-            renderer shares, the quality ladder). No I/O, no threads,
-            deterministic.
+            sequencer layers (`seq/`: mini-notation, patterns, the sample
+            bank, voices, synth drums), the picture (`sim/`: the CPU one,
+            the per-frame driver every renderer shares, the flash guard,
+            the quality ladder). No I/O, no threads, deterministic.
 syn-player/ the render side every app shares: the engine behind a command
             queue, PCM out in any chunk size, fades, feature frames on the
             played clock
@@ -89,9 +94,13 @@ syn-ffi/    the foreign interface (UniFFI): records, functions, the live
 syn-wasm/   the same for JavaScript (wasm-bindgen): the web app's
             AudioWorklet, Web Workers and points Worker load it
 syn-bench/  the sound bench: render points and measure them (fractality,
-            character, onsets, clicks at switches, render configs, PNGs)
+            character, onsets, clicks at switches, render configs, PNGs,
+            the layers' cost, the picture's flashes, listening drafts)
+syn-noalloc/ test only: a counting allocator proves the render path
+            allocates nothing
 assets/     presets.json, schema.json, fx-presets.json — the source, edited here
-golden/     63 reference takes of the 21 generators, rendered by the web app
+golden/     63 reference takes of the 21 generators, rendered by the web app;
+            golden/drums/: the five synth drums' takes
 fixtures/   the TypeScript's behaviour, frozen: points (sanitize, canonical
             JSON, ids), status lines, measurements, preset genomes
 scripts/    check.sh; dump-points.mjs and dump-analysis.mjs (need ../synesthesia,
@@ -112,7 +121,11 @@ cargo install wasm-bindgen-cli --version 0.2.129   # the version syn-wasm pins
   takes; they match to the last bit or two (worst difference 1.6e-16 as of
   2026-10-05, after Additive and Shepard were rewritten for speed).
 - **The genome is the web app's genome**: every preset encodes to the same
-  250 genes to 1.1e-16.
+  250 genes to 1.1e-16; the 33 genes of the layers are appended after them
+  (283 in all), and a point without layers adds only their default tail.
+- **Nothing allocates in `Engine::render`** (`syn-noalloc`), and **the
+  picture never strobes**: `syn-bench --flashes` counts flashes the WCAG
+  2.3.1 way, every preset at most one a second.
 - **The picture** has no reference samples (the browser seeds it with
   `Math.random()`); its invariants are the contract.
 

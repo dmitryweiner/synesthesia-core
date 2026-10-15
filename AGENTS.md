@@ -128,7 +128,9 @@ syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time; ren
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout
 syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
-                          coupling, display, frame, picture (the CPU one);
+                          coupling, display, frame, picture (the CPU one),
+                          calm (the flash guard: what the picture reads of
+                          the sound, slewed so a drum never strobes it);
                           driver (what each frame does, for a renderer that
                           owns its field — the GPU's and the CPU's alike),
                           quality (the ladder and the boot probe)

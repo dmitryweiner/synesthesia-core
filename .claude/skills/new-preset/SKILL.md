@@ -44,6 +44,32 @@ Hard limits (`syn-core/tests/presets.rs` holds them): ≤ 5 formulas, ≤ 12
 routes, every value inside its range, explicit couplings ≥ the floor (1.2),
 a visual route or coupling. Two routes on one parameter add up.
 
+## 1½. Sample and drum layers (PLAN-SAMPLES-SCRIPTS.md)
+
+A point may carry up to four `seq` layers: recordings from the bank
+(`seqSounds` in the schema) and the synth drums (`bd sd hh oh cp`), in
+mini-notation rhythms. What the user's ear settled (memory `user-listens`,
+eight rounds on 2026-10-15): layers quieter than a sample's −1 dBFS
+suggests (beds ~0.1, a kick 0.2–0.3, birds 0.35–0.45, glass 0.2–0.3);
+always through the effects (every `dry` draft was rejected); rhythms
+neither fast nor slow; no fills or breaks mid-phrase; slow LFOs that
+breathe a layer's density or gain; `humanize` ~0.5; synth drums soon
+sound "angry" — a frame drum, no snare, lower hats soften them; random
+moments (`|`, `?`) of birds, glass, creaks and bells never tire.
+
+**The user listens on a page, not to loose files.** Drafts as JSON
+(`[{ group, name, desc, state }]`), then:
+
+```bash
+cargo run --release -p syn-bench -- --listen DIR --points drafts.json --secs 64   # with the layers, from the bank
+python3 .claude/skills/new-preset/listen.py DIR "Round N — what this round asks"
+open DIR/index.html   # ★ ✓ ✗, the layers' level, a note → verdicts.json in ~/Downloads
+```
+
+Put the current version first in each group, as the thing to hear the
+others against. A chosen draft goes into `assets/presets.json` byte for
+byte: render it again with `--listen` and `cmp` it with the file heard.
+
 ## 2. Drafts, rendered side by side
 
 Write drafts as a JSON file (`[{ "name": …, "state": AppState }]`, e.g.
@@ -95,11 +121,14 @@ freeze, and it must fill the canvas.
 cargo run --release -p syn-bench -- --character --ref 0,3,5,6,8 --preset 0,3,5,6,8,15   # distance ≲ 1.3
 cargo run --release -p syn-bench -- --onsets --preset 15,0      # set loudToPulse so the exposure stays ~0.75–1.4
 cargo run --release -p syn-bench -- --switch 11,15,0,15 --at 30 # no click at a switch
+cargo run --release -p syn-bench -- --flashes --preset 15       # the picture must not strobe: ≤ 1 a second (WCAG allows 3)
 ./scripts/check.sh                                               # presets.rs, the golden takes, everything
 ```
 
 The `fixtures/genomes.json` codec check does not move with a new preset
-(its states are frozen). Update the preset count where the docs give one.
+(its states are frozen). Update the preset count where the docs give one,
+and where the tests hold it: `syn-core/src/state.rs` (here) and
+synesthesia-android's `CoreBindingsTest` (the names of the last ones).
 
 ## 7. Hand it to the user
 

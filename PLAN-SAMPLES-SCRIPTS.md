@@ -459,7 +459,8 @@ into this file.
   set by ear on the console; this file gets the numbers.
 - **S5 — presets and the listening pass**: ✅ round 1–2 on 2026-10-15
   (`syn-bench --listen` + `.claude/skills/new-preset/listen.py`, the
-  user's verdicts on 29 + 27 drafts): five presets over the liked ones —
+  user's verdicts on 29 + 27 drafts, then rounds 3–8): six presets over
+  the liked ones —
   **Night meadow** (Fractal garden; owls in several voices 0.45, crickets
   bed 0.08, a far nightingale 0.2), **Workshop** (Overtone steppe;
   woodblock (3,8), slit-drum, clinks), **Glass loom** (Loom & copper;
@@ -510,7 +511,15 @@ into this file.
   sounds on a background thread, `SoundPlayer.setBank`. ✅ the web app
   (`b6d0c74`, smoke checks Night meadow's sounds reach the worklet) and
   Android (`0fffdcf`, the bank packed into the APK by `fetchBank`) on
-  core `fe04915`.
+  core `fe04915`. Then ⚙ Settings in both (2026-10-15): the web page's
+  Layers section (tempo, four layer cards: a sound by group, hits or bed,
+  a built-in rhythm or the point's own pattern checked as it is typed,
+  gain, speed, density, humanize, past the effects; data in
+  `settings-page.json` `layers`), Android's generated Layer sections with
+  a pattern field and a humanize slider (`PointEdit.pattern/setPattern/
+  humanize`). And the picture's flash guard (`sim::calm`, the user saw
+  the screen strobe with the drums): `syn-bench --flashes`, every preset
+  at most one flash a second.
 - **S8 — a metric for the layers, by ear** (proposed by the user
   2026-10-15, who offered to be the listener): the fractality score is
   for the sound under the layers; how good a layer is over it gets a
