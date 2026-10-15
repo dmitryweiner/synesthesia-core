@@ -325,7 +325,8 @@ impl Voice {
         !matches!(self.src, Source::Idle)
     }
 
-    /// Starts `src` `delay` samples into the next block rendered.
+    /// Starts `src` `delay` samples into the next block rendered (or a later
+    /// one: a humanized hit may land past this block's end).
     pub(crate) fn start(&mut self, src: Source, gain: f64, dry: bool, delay: usize, id: u64, sr: f64) {
         *self = Voice { src, gain, env: 0.0, step: 1.0 / (RAMP * sr), releasing: false, id, dry, delay };
     }
@@ -338,7 +339,11 @@ impl Voice {
 
     /// Adds the voice into `out`.
     pub(crate) fn render(&mut self, out: &mut [f32]) {
-        let from = self.delay.min(out.len());
+        if self.delay >= out.len() {
+            self.delay -= out.len();
+            return;
+        }
+        let from = self.delay;
         self.delay = 0;
         let (mut env, step, gain) = (self.env, self.step, self.gain);
         let mut ended = false;

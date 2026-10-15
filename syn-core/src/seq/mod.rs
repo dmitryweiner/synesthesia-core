@@ -91,6 +91,15 @@ pub struct Layer {
     /// Straight to the master, past the FX chain.
     pub dry: bool,
     pub mode: Mode,
+    /// 0–1: how far each hit is from the machine — up to 30 % quieter and
+    /// 15 ms later, by hash, the same every render. Not a gene (yet): kept
+    /// with the point like a hand-written pattern.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub humanize: f64,
+}
+
+fn is_zero(x: &f64) -> bool {
+    *x == 0.0
 }
 
 impl Default for Layer {
@@ -104,6 +113,7 @@ impl Default for Layer {
             density: 1.0,
             dry: false,
             mode: Mode::Hits,
+            humanize: 0.0,
         }
     }
 }

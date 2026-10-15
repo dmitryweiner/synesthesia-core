@@ -264,6 +264,7 @@ pub fn decode_genome(g: &Genome) -> AppState {
                 density: read_value(g, &id("density")),
                 dry: get_raw(g, &id("dry")) == 1.0,
                 mode: if get_raw(g, &id("bed")) == 1.0 { Mode::Bed } else { Mode::Hits },
+                humanize: 0.0,
             }
         })
         .collect();
@@ -277,11 +278,13 @@ pub fn decode_genome(g: &Genome) -> AppState {
 /// [`decode_genome`], with what the genome does not carry of the layers
 /// taken from `base` (the point the search or the page started from): a
 /// layer whose rhythm gene is "custom" keeps `base`'s pattern for that slot,
-/// and a layer still on `base`'s sound keeps its variant (`crickets:3`).
+/// a layer still on `base`'s sound keeps its variant (`crickets:3`), and
+/// every layer keeps `base`'s `humanize`.
 pub fn decode_genome_over(g: &Genome, base: &SeqState) -> AppState {
     let mut state = decode_genome(g);
     for (i, l) in state.seq.layers.iter_mut().enumerate() {
         let Some(b) = base.layers.get(i) else { continue };
+        l.humanize = b.humanize;
         if get_raw(g, &format!("seq.{i}.rhythm")) == 0.0 {
             l.pattern = b.pattern.clone();
         }

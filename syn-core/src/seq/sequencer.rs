@@ -33,6 +33,12 @@ const SLOTS: usize = VOICES + 4;
 const DENSITY_SALT: u64 = 0xd3_15_17_7e;
 /// The salt of a drum's noise seed.
 const NOISE_SALT: u64 = 0x5eed;
+/// The salts of `humanize`'s two draws: how much quieter, how much later.
+const HUMAN_GAIN_SALT: u64 = 0x6a17;
+const HUMAN_TIME_SALT: u64 = 0x7173;
+/// At `humanize` 1: a hit up to this much quieter, and this many seconds late.
+const HUMAN_GAIN: f64 = 0.3;
+const HUMAN_LATE: f64 = 0.015;
 /// How fast a bed's level follows its gain (and fades in and out), seconds.
 const BED_SMOOTH: f64 = 0.3;
 /// `cps` is kept inside this, whatever the point says.
@@ -47,6 +53,7 @@ pub struct LiveLayer {
     pub speed: f64,
     pub density: f64,
     pub dry: bool,
+    pub humanize: f64,
 }
 
 /// The layers' numbers for one block, as a fixed array: the engine fills it
@@ -60,9 +67,16 @@ pub struct SeqLive {
 impl SeqLive {
     /// The section's own numbers, unmodulated.
     pub fn of(seq: &SeqState) -> SeqLive {
-        let mut layers = [LiveLayer { gain: 0.0, speed: 1.0, density: 1.0, dry: false }; LAYERS];
+        let mut layers =
+            [LiveLayer { gain: 0.0, speed: 1.0, density: 1.0, dry: false, humanize: 0.0 }; LAYERS];
         for (o, l) in layers.iter_mut().zip(&seq.layers) {
-            *o = LiveLayer { gain: l.gain, speed: l.speed, density: l.density, dry: l.dry };
+            *o = LiveLayer {
+                gain: l.gain,
+                speed: l.speed,
+                density: l.density,
+                dry: l.dry,
+                humanize: l.humanize,
+            };
         }
         SeqLive { cps: seq.cps, layers }
     }
@@ -318,6 +332,7 @@ impl Sequencer {
             return;
         }
         let (gain, speed, density, dry) = (live.gain, live.speed, live.density, live.dry);
+        let human = if live.humanize.is_finite() { live.humanize.clamp(0.0, 1.0) } else { 0.0 };
         let seed = self.layer_seed(li);
         self.events.clear();
         self.program.layers[li].pattern.query(self.at, end, seed, &mut self.events);
@@ -352,8 +367,16 @@ impl Sequencer {
                 }
             };
             let into = (e.onset.to_f64() - self.cycle) / (c1 - self.cycle);
-            let offset = ((into * n as f64) as usize).min(n - 1);
-            self.start_voice(src, gain_of(gain), dry, offset);
+            // An onset on a sample boundary must land on that sample, not
+            // one before it by a rounding error: a millionth of a sample.
+            let mut offset = ((into * n as f64 + 1e-6) as usize).min(n - 1);
+            let mut g = gain_of(gain);
+            if human > 0.0 {
+                // A drummer's hand: never early, sometimes softer.
+                g *= 1.0 - HUMAN_GAIN * human * unit_hash(e.onset, HUMAN_GAIN_SALT, seed);
+                offset += (HUMAN_LATE * human * unit_hash(e.onset, HUMAN_TIME_SALT, seed) * self.sr) as usize;
+            }
+            self.start_voice(src, g, dry, offset);
         }
     }
 
@@ -645,6 +668,30 @@ mod tests {
         q.reset(10.0, 2.0);
         assert!((q.cycle() - 20.0).abs() < 1e-12);
         assert!(!q.voices.iter().any(Voice::is_active));
+    }
+
+    #[test]
+    fn humanize_is_late_and_soft_never_early_and_the_same_every_time() {
+        let b = bank();
+        let step = SR as usize / 8; // "0*8" at cps 1
+        let (straight, _, _) = play(&seq(1.0, vec![layer("blip", "0*8")]), Some(&b), 2.0);
+        let human = Layer { humanize: 1.0, ..layer("blip", "0*8") };
+        let (loose, _, _) = play(&seq(1.0, vec![human.clone()]), Some(&b), 2.0);
+        let (again, _, _) = play(&seq(1.0, vec![human]), Some(&b), 2.0);
+        assert_eq!(loose, again);
+        assert_eq!(onsets(&straight, 1000), (0..16).map(|k| k * step).collect::<Vec<_>>());
+        let late: Vec<usize> = onsets(&loose, 1000).iter().enumerate().map(|(k, &o)| o - k * step).collect();
+        assert_eq!(late.len(), 16);
+        assert!(late.iter().all(|&d| d <= (0.015 * SR) as usize), "{late:?}");
+        assert!(late.iter().any(|&d| d > 48), "{late:?}");
+        let peak =
+            |k: usize, x: &[f32]| x[k * step..k * step + 1500].iter().fold(0.0f32, |m, v| m.max(v.abs()));
+        let peaks: Vec<f32> = (0..16).map(|k| peak(k, &loose)).collect();
+        let (lo, hi) = peaks.iter().fold((f32::MAX, 0.0f32), |(a, c), &p| (a.min(p), c.max(p)));
+        assert!(
+            hi <= peak(0, &straight) + 1e-6 && lo < 0.9 * hi && lo >= 0.69 * peak(0, &straight),
+            "{peaks:?}"
+        );
     }
 
     #[test]

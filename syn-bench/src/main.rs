@@ -347,6 +347,16 @@ fn listen(a: &Args) {
         .enumerate()
         .filter_map(|(i, d)| {
             let state = syn_core::point::sanitize(d.get("state")?)?;
+            // sanitize keeps a pattern that does not parse as "": say so.
+            let given =
+                d.pointer("/state/seq/layers").and_then(|l| l.as_array()).cloned().unwrap_or_default();
+            for (l, g) in state.seq.layers.iter().zip(&given) {
+                let want = g.get("pattern").and_then(|p| p.as_str()).unwrap_or("");
+                if l.pattern != want {
+                    let why = syn_core::seq::parse(want).err().map_or_else(String::new, |e| e.to_string());
+                    eprintln!("draft {i}: pattern {want:?} dropped: {why}");
+                }
+            }
             let x = render_offline_with(&state, bank.as_ref(), secs, sr, 1);
             let file = format!("{i:02}.wav");
             fs::write(Path::new(dir).join(&file), syn_core::wav::encode_mono(&x, sr as u32)).ok()?;

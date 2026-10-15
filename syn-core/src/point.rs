@@ -158,6 +158,7 @@ fn sanitize_layer(v: &Value) -> Option<crate::seq::Layer> {
         density: num("density", d.density),
         dry: v.get("dry").and_then(Value::as_bool).unwrap_or(false),
         mode: if v.get("mode").and_then(Value::as_str) == Some("bed") { Mode::Bed } else { Mode::Hits },
+        humanize: finite(v.get("humanize")).map_or(0.0, |x| clamp(x, 0.0, 1.0)),
     })
 }
 

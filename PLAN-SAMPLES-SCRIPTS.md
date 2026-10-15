@@ -200,6 +200,10 @@ Freesound CC0 pages found while looking, a starting list for the curator
 - `density` is Strudel's `degradeBy(1 − density)`: the fraction of events
   kept, decided by the hash of decision 8.
 - `speed` is playback rate (pitch); `dry` is decision 10.
+- `humanize` (0–1, added in S5, omitted when 0): each hit up to 30 %
+  quieter and up to 15 ms late — never early — by the hash of decision 8,
+  so it is the same every render. Not a gene yet: like a hand-written
+  pattern, the session and the Settings page carry it over the genome.
 - An absent or empty section serializes to nothing (`skip_serializing_if`),
   so canonical JSON, point ids and the `fixtures/points.json` cases are
   untouched for every point that has no layers.
@@ -460,8 +464,19 @@ into this file.
   bed 0.08, a far nightingale 0.2), **Workshop** (Overtone steppe;
   woodblock (3,8), slit-drum, clinks), **Glass loom** (Loom & copper;
   mark-trees, chimes, clinks), **Molten groove** (Molten Polivoks; bd, sd,
-  hh, conga — levels taken from the round's "ok"s, confirmed in round 3),
-  **Bell walk** (Bell spots; bd (3,8) 0.4, hats 0.12). By ear: layers want
+  hh, conga), **Bell walk** (Bell spots; a kick and hats).
+  Rounds 4–5 (drums that do not tire — the user: birds, glass and creaks
+  never wear, drums will): fills in the middle of a phrase were disliked,
+  as were drums that leave for bars; a slow LFO that *breathes* the hats'
+  density and a layer's gain was the best, a pattern that changes by
+  phrase (`<0(3,8)!3 0(5,8) …>`) good, `humanize` good. So Molten groove
+  is now a plain groove at bd 0.28 / sd 0.18 / hh 0.12 / conga 0.12,
+  humanize 0.5, LFO 1 thinning the hats and swelling the conga (its routes
+  on `flow.driftY` and `fx.chorusDepth` made room); Bell walk plays
+  (3,8) ×3 then (5,8), rotated every 8th bar, hats doubling on the 4th,
+  humanize 0.5, the hats' density and the kick's gain breathing (bd 0.32,
+  hh 0.1). Each was confirmed by ear in round 5, byte for byte the file
+  heard. By ear: layers want
   to be quieter than a sample's −1 dBFS suggests (beds ~0.1, bd ~0.4),
   always wet (every `dry` draft was rejected — the point's echo is the
   point), rhythms neither fast nor slow. Their pictures are their bases'
