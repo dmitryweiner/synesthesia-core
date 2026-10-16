@@ -116,8 +116,8 @@ The built-in points are `assets/presets.json`, edited here by hand: 15
 from the web app (Fractal garden, Stillness ink, Whale coral, Molten
 Polivoks, Aurora, Silver maze, Space breccia, Cave coral, Loom & copper,
 Wind ash, Bell spots, Subway basalt, Overtone steppe, Candle glaze,
-Tanpura halo) and six with sample and drum layers (Night meadow, Workshop,
-Glass loom, Molten groove, Bell walk, Magic forest).
+Tanpura halo) and five with sample and drum layers (Night meadow, Workshop,
+Glass loom, Magic forest, Sea shore).
 `syn-core/tests/presets.rs` holds what every preset must be; the
 `new-preset` skill describes how one is made and checked.
 

@@ -118,9 +118,6 @@ nothing is interpreted while the audio runs.
 | preset | layer | pattern | what you hear |
 |---|---|---|---|
 | Workshop | `woodblock` | `0(3,8)` | a tresillo |
-| Molten groove | `hh` | `0*8?0.3` | eighth-note hats, about a third missing |
-| Molten groove | `conga` | `<0 1>(5,8)` | a 5-in-8 Euclidean figure, alternating two variants by bar |
-| Bell walk | `frame-drum` | `<0(3,8)!3 0(5,8) 0(3,8)!3 0(3,8,2)>` | three bars of tresillo, then a variation, in a long cycle |
 | Night meadow | `owl` | `<0 3 [5 ~] 10 ~ 11 ~ ~>/2` | a different owl every two bars, sometimes none |
 | Night meadow | `crickets:1` | — (bed) | crickets under everything |
 | Magic forest | `great-tit` | `[~ 0? ~ ~] \| [~ ~ robin:1? ~] \| … \| ~` | each bar, one random bird (or silence) at a random beat |

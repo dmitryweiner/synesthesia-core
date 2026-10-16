@@ -487,7 +487,11 @@ into this file.
   (`?`), humanize 0.6: birds (great tit, robin, blackbird, goldfinch,
   oriole, dove, canary) 0.35, bottles 0.25, creaks 0.25, ringing
   (chimes, mark-trees, a hand bell, a triangle) 0.25. Asked for over the
-  sea (Wind ash's `ocean`); the user chose it over Stillness ink instead. By ear: layers want
+  sea (Wind ash's `ocean`); the user chose it over Stillness ink instead.
+  **Sea shore** (2026-10-16, the user's own point `YCndE23cwR`, byte for
+  byte): Magic forest's layers over `ocean` alone. Molten groove and Bell
+  walk were dropped at the same time (the user's call), so Magic forest
+  is preset 18 and Sea shore 19. By ear: layers want
   to be quieter than a sample's −1 dBFS suggests (beds ~0.1, bd ~0.4),
   always wet (every `dry` draft was rejected — the point's echo is the
   point), rhythms neither fast nor slow. Their pictures are their bases'

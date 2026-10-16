@@ -275,8 +275,8 @@ mod tests {
         let ps = presets();
         assert_eq!(
             ps.len(),
-            21,
-            "the web app's 15 built-in points, then the six with sample and drum layers"
+            20,
+            "the web app's 15 built-in points, then the five with sample and drum layers"
         );
         for p in ps {
             assert!(!p.state.enabled_formulas().is_empty(), "{} has no sound", p.name);

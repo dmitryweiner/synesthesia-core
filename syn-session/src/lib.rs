@@ -855,7 +855,7 @@ mod tests {
 
     #[test]
     fn undo_takes_back_a_hand_written_pattern_and_humanize() {
-        let base = layered("Molten groove");
+        let base = layered("Magic forest");
         let was = base.seq.layers[0].clone();
         let mut s = Session::new("", &base, opts());
         s.open_settings(0.0);
@@ -873,9 +873,9 @@ mod tests {
 
     #[test]
     fn an_edit_of_only_the_text_is_a_step_too() {
-        let base = layered("Molten groove");
+        let base = layered("Magic forest");
         let changes: [fn(&mut syn_core::seq::Layer); 3] =
-            [|l| l.pattern = "0 ~ 0 ~".into(), |l| l.humanize = 0.9, |l| l.sound = "conga:1".into()];
+            [|l| l.pattern = "0 ~ 0 ~".into(), |l| l.humanize = 0.9, |l| l.sound = "creak:1".into()];
         for change in changes {
             let mut s = Session::new("", &base, opts());
             s.open_settings(0.0);
@@ -891,7 +891,7 @@ mod tests {
 
     #[test]
     fn undo_walks_back_through_several_text_edits_and_a_load_forgets_them() {
-        let base = layered("Molten groove");
+        let base = layered("Magic forest");
         let mut s = Session::new("", &base, opts());
         for (k, p) in ["0 ~", "0 0 ~", "0 0 0 ~"].iter().enumerate() {
             s.open_settings(k as f64);
