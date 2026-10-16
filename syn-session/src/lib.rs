@@ -229,6 +229,9 @@ pub struct Session {
     /// a sound's variant — laid back over every point the search decodes
     /// (`decode_genome_over`), so a 👍 does not lose them.
     base_seq: SeqState,
+    /// `base_seq` as it was before each step the explorer can undo, in
+    /// step with its history: an undo brings back the text with the genes.
+    seq_history: Vec<SeqState>,
     playing: bool,
     settings_open: bool,
     /// The point that is audible: `morph_from` eased towards `morph_to`.
@@ -264,6 +267,7 @@ impl Session {
             steps: 0,
             master_gain: point.audio.master_gain,
             base_seq: point.seq.clone(),
+            seq_history: Vec::new(),
             playing: false,
             settings_open: false,
             live: g.clone(),
@@ -405,6 +409,7 @@ impl Session {
             ScoutKind::Like => self.explorer.like(proposal, &mut self.rng),
             ScoutKind::Dislike => self.explorer.dislike(proposal, &mut self.rng),
         };
+        self.remember_seq(self.base_seq.clone());
         self.steps += 1;
         self.after_action(now, &prev, self.opts.morph_seconds, picked, &mut fx);
         fx
@@ -423,6 +428,9 @@ impl Session {
         let target = encode_genome(&preset.state);
         let name = preset.name.clone();
         self.explorer.surprise(&target, &mut self.rng);
+        // The preset's own patterns and variants, which its genes cannot carry.
+        let before = std::mem::replace(&mut self.base_seq, preset.state.seq.clone());
+        self.remember_seq(before);
         // A fresh start, as a load is — but heard as a morph, not a switch.
         self.base_name = format!("near {name}");
         self.steps = 0;
@@ -439,6 +447,9 @@ impl Session {
         if self.explorer.undo().is_none() {
             self.say(&mut fx, "nothing to undo".to_string());
             return fx;
+        }
+        if let Some(seq) = self.seq_history.pop() {
+            self.base_seq = seq;
         }
         self.steps = self.steps.saturating_sub(1);
         self.after_action(now, &prev, self.opts.undo_morph_seconds, None, &mut fx);
@@ -457,6 +468,7 @@ impl Session {
         self.steps = 0;
         self.master_gain = point.audio.master_gain;
         self.base_seq = point.seq.clone();
+        self.seq_history.clear();
         let g = encode_genome(point);
         self.explorer.load(g.clone());
         self.live = g.clone();
@@ -506,16 +518,20 @@ impl Session {
         let mut fx = Vec::new();
         self.settings_open = false;
         self.master_gain = point.audio.master_gain;
-        self.base_seq = point.seq.clone();
         let prev = self.explorer.current.clone();
+        let text_before = self.point().seq;
         let g = encode_genome(point);
         // Not an exact comparison: the point went out through the codec and
         // comes back through it, which moves the last bits (`same_genome`).
-        if same_genome(&g, &prev) {
+        // A pattern, a variant or humanize is not a gene: changing only one
+        // of those is a step as well.
+        if same_genome(&g, &prev) && same_text(&text_before, &point.seq) {
             self.on_settled(now, &mut fx);
             return fx;
         }
+        let before = std::mem::replace(&mut self.base_seq, point.seq.clone());
         self.explorer.edit(g);
+        self.remember_seq(before);
         self.steps += 1;
         self.named = false;
         self.live = self.explorer.current.clone();
@@ -714,6 +730,14 @@ impl Session {
         self.say(fx, msg);
     }
 
+    /// Called right after the explorer took a step: keeps `seq_history` as
+    /// long as its history, which drops the oldest step past its depth.
+    fn remember_seq(&mut self, before: SeqState) {
+        self.seq_history.push(before);
+        let excess = self.seq_history.len().saturating_sub(self.explorer.undo_depth());
+        self.seq_history.drain(..excess);
+    }
+
     fn say(&mut self, fx: &mut Vec<Effect>, message: String) {
         self.status = message.clone();
         fx.push(Effect::Status(message));
@@ -725,6 +749,19 @@ impl Session {
         s.preset_name = (self.named && !self.base_name.is_empty()).then(|| self.base_name.clone());
         s
     }
+}
+
+/// The layers' text — what the genes do not carry — is the same in both.
+fn same_text(a: &SeqState, b: &SeqState) -> bool {
+    if a.is_silent() && b.is_silent() {
+        return true;
+    }
+    let n = a.layers.len().max(b.layers.len());
+    let fresh = syn_core::seq::Layer::default();
+    (0..n).all(|i| {
+        let (x, y) = (a.layers.get(i).unwrap_or(&fresh), b.layers.get(i).unwrap_or(&fresh));
+        x.pattern == y.pattern && x.sound == y.sound && (x.humanize - y.humanize).abs() < 1e-9
+    })
 }
 
 struct Pick {
@@ -810,6 +847,87 @@ mod tests {
             }
         }
         assert!(kept > 0, "the custom pattern never came back");
+    }
+
+    fn layered(name: &str) -> AppState {
+        presets().iter().find(|p| p.name == name).expect("a layered preset").state.clone()
+    }
+
+    #[test]
+    fn undo_takes_back_a_hand_written_pattern_and_humanize() {
+        let base = layered("Molten groove");
+        let was = base.seq.layers[0].clone();
+        let mut s = Session::new("", &base, opts());
+        s.open_settings(0.0);
+        let mut edit = s.point();
+        edit.seq.layers[0].pattern = "0 [0 0] ~ 0".into();
+        edit.seq.layers[0].humanize = 0.0;
+        edit.seq.layers[0].gain = 0.3;
+        s.close_settings(1.0, &edit);
+        assert_eq!(s.point().seq.layers[0].pattern, "0 [0 0] ~ 0");
+        s.undo(2.0);
+        let l = &s.point().seq.layers[0];
+        assert_eq!((l.pattern.as_str(), l.humanize), (was.pattern.as_str(), was.humanize));
+        assert!((l.gain - was.gain).abs() < 1e-9);
+    }
+
+    #[test]
+    fn an_edit_of_only_the_text_is_a_step_too() {
+        let base = layered("Molten groove");
+        let changes: [fn(&mut syn_core::seq::Layer); 3] =
+            [|l| l.pattern = "0 ~ 0 ~".into(), |l| l.humanize = 0.9, |l| l.sound = "conga:1".into()];
+        for change in changes {
+            let mut s = Session::new("", &base, opts());
+            s.open_settings(0.0);
+            let mut edit = s.point();
+            change(&mut edit.seq.layers[2]);
+            s.close_settings(1.0, &edit);
+            assert_eq!(s.point().seq.layers[2], edit.seq.layers[2]);
+            assert!(s.explorer.can_undo(), "{:?}", edit.seq.layers[2]);
+            s.undo(2.0);
+            assert_eq!(s.point().seq.layers[2], base.seq.layers[2]);
+        }
+    }
+
+    #[test]
+    fn undo_walks_back_through_several_text_edits_and_a_load_forgets_them() {
+        let base = layered("Molten groove");
+        let mut s = Session::new("", &base, opts());
+        for (k, p) in ["0 ~", "0 0 ~", "0 0 0 ~"].iter().enumerate() {
+            s.open_settings(k as f64);
+            let mut edit = s.point();
+            edit.seq.layers[0].pattern = (*p).into();
+            s.close_settings(k as f64 + 0.5, &edit);
+        }
+        let mut seen = Vec::new();
+        while s.explorer.can_undo() {
+            s.undo(10.0);
+            seen.push(s.point().seq.layers[0].pattern.clone());
+        }
+        assert_eq!(seen, ["0 0 ~", "0 ~", base.seq.layers[0].pattern.as_str()]);
+        let workshop = layered("Workshop");
+        s.load(20.0, "", &workshop);
+        assert_eq!(s.point().seq, workshop.seq);
+        assert!(!s.explorer.can_undo());
+    }
+
+    #[test]
+    fn a_surprise_near_a_layered_preset_plays_its_patterns() {
+        let start = presets()[0].state.clone();
+        let mut s = Session::new("", &start, opts());
+        let forest = layered("Magic forest");
+        for k in 0..200 {
+            s.surprise(k as f64 * 10.0);
+            if s.name() != "near Magic forest" {
+                continue;
+            }
+            let p = s.point();
+            for (l, f) in p.seq.layers.iter().zip(&forest.seq.layers) {
+                assert_eq!((l.pattern.as_str(), l.humanize), (f.pattern.as_str(), f.humanize));
+            }
+            return;
+        }
+        panic!("two hundred surprises and never near Magic forest");
     }
 
     /// Without the scout, so a test spends no time rendering candidates.
