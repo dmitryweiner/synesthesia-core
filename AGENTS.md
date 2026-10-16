@@ -52,6 +52,11 @@ what each prints. An agent cannot hear: read the `--png` waterfall.
   preset must be). Nothing re-dumps it any more. A preset that uses a new
   generator, LFO shape or FX parameter needs the model to have it first, or
   it loads and plays with that instrument silently missing.
+- **Update `docs/` after implementing a feature.** It says how each part
+  works (generators, layers, LFOs, effects, picture, search): a new
+  feature, a change to what a part does, or to its ranges and defaults in
+  `assets/`, updates its page — or adds one, linked from `docs/README.md`
+  and the README — in the same commit.
 - **`golden/` is frozen**: the 69 takes the TypeScript rendered are what
   "unchanged" means for a generator. Never re-render or hand-edit them.
   `golden/drums/` holds the synth drums' takes (`tests/drums.rs`), under

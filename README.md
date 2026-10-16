@@ -9,6 +9,20 @@ are CC0 / public domain, in
 [synesthesia-samples](https://github.com/dmitryweiner/synesthesia-samples)
 (`bank.bin`, its release `bank-v1`); the core takes them as bytes.
 
+**How it works** — one page per part, in [`docs/`](docs/README.md):
+
+- [Generators](docs/generators.md) — the 23 formula synthesizers and their sliders
+- [Sample and drum layers](docs/layers.md) — recorded sounds and synth drums in
+  mini-notation rhythms, the sample bank
+  ([listen to the samples](https://dmitryweiner.github.io/synesthesia-samples/))
+- [LFOs and modulation](docs/lfo.md) — the four LFOs, their shapes, the routes
+- [Effects](docs/effects.md) — filter, chorus/flanger, phaser, delay with shimmer,
+  reverb, limiter; effect presets
+- [The picture](docs/picture.md) — reaction-diffusion, palette, how the sound
+  drives it, the flash guard
+- [Points, search and presets](docs/search.md) — the point and its genes,
+  👍 👎 🎲 ↩, the morph, the scout, presets, share links
+
 It is Rust with no I/O and no threads of its own. Three apps run on it
 today, each one *device + screen + storage* around the same model, each
 pinning a git revision of this repository:
@@ -103,6 +117,8 @@ golden/     63 reference takes of the 21 generators, rendered by the web app;
             golden/drums/: the five synth drums' takes
 fixtures/   the TypeScript's behaviour, frozen: points (sanitize, canonical
             JSON, ids), status lines, measurements, preset genomes
+docs/       how it works, one page per part (generators, layers, LFOs,
+            effects, picture, search)
 scripts/    check.sh; dump-points.mjs and dump-analysis.mjs (need ../synesthesia,
             and only until its TypeScript model is deleted)
 TODO.md     agreed follow-ups that are not done yet
