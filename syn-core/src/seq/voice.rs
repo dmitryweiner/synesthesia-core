@@ -303,6 +303,8 @@ pub(crate) struct Voice {
     /// Start order: the oldest is stolen first.
     pub(crate) id: u64,
     pub(crate) dry: bool,
+    /// The layer that started it — where a stereo engine puts it in space.
+    pub(crate) layer: usize,
     /// Samples into the current block before it starts.
     delay: usize,
 }
@@ -317,6 +319,7 @@ impl Voice {
             releasing: false,
             id: 0,
             dry: false,
+            layer: 0,
             delay: 0,
         }
     }
@@ -327,8 +330,18 @@ impl Voice {
 
     /// Starts `src` `delay` samples into the next block rendered (or a later
     /// one: a humanized hit may land past this block's end).
-    pub(crate) fn start(&mut self, src: Source, gain: f64, dry: bool, delay: usize, id: u64, sr: f64) {
-        *self = Voice { src, gain, env: 0.0, step: 1.0 / (RAMP * sr), releasing: false, id, dry, delay };
+    pub(crate) fn start(
+        &mut self,
+        src: Source,
+        gain: f64,
+        at: (bool, usize),
+        delay: usize,
+        id: u64,
+        sr: f64,
+    ) {
+        let (dry, layer) = at;
+        *self =
+            Voice { src, gain, env: 0.0, step: 1.0 / (RAMP * sr), releasing: false, id, dry, layer, delay };
     }
 
     /// Fades out over [`RAMP`] (a stolen voice).

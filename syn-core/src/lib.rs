@@ -18,16 +18,17 @@ pub mod settings;
 pub mod settings_page;
 pub mod share;
 pub mod sim;
+pub mod spatial;
 pub mod state;
 pub mod visualizer;
 pub mod wav;
 
 pub use dsp::generator::{FormulaGenerator, FormulaId, Params};
-pub use engine::{render_offline, render_offline_with, Engine};
+pub use engine::{render_offline, render_offline_stereo, render_offline_with, Engine};
 pub use features::{AudioFeatures, FeatureTracker, OnsetDetector};
 pub use fx::FxChain;
 pub use modmatrix::{effective_param, lfo_value, LfoDef, LfoShape, ModRoute, ModState};
-pub use state::{AppState, AudioState, FormulaSnapshot, FxState, Preset};
+pub use state::{AppState, AudioState, BinState, FormulaSnapshot, FxState, Preset};
 
 /// Samples per processing block — the size the browser's AudioWorklet uses,
 /// and the size every golden take was rendered in (`scripts/dump-golden.mjs`).

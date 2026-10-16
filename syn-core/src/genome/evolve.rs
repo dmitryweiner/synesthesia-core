@@ -315,6 +315,27 @@ fn layer_rechoose(g: &mut Genome, rng: &mut dyn Rng, sound: bool) -> bool {
 }
 
 const MOVE_WEIGHTS: [f64; 7] = [3.0, 2.0, 1.0, 1.0, 1.5, 1.0, 2.5];
+/// The binaural beat on or off (PLAN-BINAURAL.md): a rare move — a point
+/// beats or it does not, the way it is bright or dark, and the search
+/// should not flip it often.
+const BIN_MOVE_WEIGHT: f64 = 0.5;
+/// Where a beat the search switches on starts: theta to alpha, Hz.
+const BIN_BEAT_START: (f64, f64) = (4.0, 12.0);
+
+/// The binaural beat: switched off, or on at a beat between theta and
+/// alpha (from there the continuous moves take it anywhere in its range).
+fn bin_toggle(g: &mut Genome, rng: &mut dyn Rng) -> bool {
+    let on = gene_index("bin.on");
+    if g[on] == 1.0 {
+        g[on] = 0.0;
+        return true;
+    }
+    g[on] = 1.0;
+    let beat = gene_index("bin.beat");
+    let (lo, hi) = BIN_BEAT_START;
+    g[beat] = super::genes::gene_from_value(&genes()[beat], lo + rng.next() * (hi - lo));
+    true
+}
 /// The layers' three moves — toggle one, rechoose its sound, its rhythm —
 /// together weighted like the formula toggles. They join only when a layer
 /// is on: the search varies the layers the user put in, it does not add
@@ -325,11 +346,10 @@ const LAYER_MOVE_WEIGHTS: [f64; 3] = [1.0, 1.0, 1.0];
 
 fn structural_move(g: &mut Genome, rng: &mut dyn Rng, avoid: &HashSet<usize>) {
     let layers = any_layer_on(g);
-    let weights: Vec<f64> = if layers {
-        MOVE_WEIGHTS.iter().chain(&LAYER_MOVE_WEIGHTS).copied().collect()
-    } else {
-        MOVE_WEIGHTS.to_vec()
-    };
+    let mut weights: Vec<f64> = MOVE_WEIGHTS.iter().chain(&[BIN_MOVE_WEIGHT]).copied().collect();
+    if layers {
+        weights.extend(LAYER_MOVE_WEIGHTS);
+    }
     let sum: f64 = weights.iter().sum();
     for _ in 0..4 {
         let mut r = rng.next() * sum;
@@ -346,8 +366,9 @@ fn structural_move(g: &mut Genome, rng: &mut dyn Rng, avoid: &HashSet<usize>) {
                 4 => rechoose_one_of(g, rng, &[gene_index("v.palette.paletteId")], false),
                 5 => rechoose_one_of(g, rng, lfo_shape_idx(), false),
                 6 => route_move(g, rng, avoid),
-                7 => layer_toggle(g, rng),
-                8 => layer_rechoose(g, rng, true),
+                7 => bin_toggle(g, rng),
+                8 => layer_toggle(g, rng),
+                9 => layer_rechoose(g, rng, true),
                 _ => layer_rechoose(g, rng, false),
             };
             if done {
@@ -437,8 +458,25 @@ pub fn random_genome(rng: &mut dyn Rng) -> Genome {
     for f in &schema().formulas {
         g[gene_index(&format!("a.{}.gain", f.id))] = 0.05 + rng.next() * 0.45;
     }
-    repair(&g, rng)
+    let mut g = repair(&g, rng);
+    // Space (PLAN-BINAURAL.md), drawn after everything else so the earlier
+    // genes get the numbers they always did: every voice somewhere around
+    // the head, the point 0.3–0.8 wide — a 🎲 point is not flat by
+    // accident. No beat: the search switches it on (`bin_toggle`).
+    for f in &schema().formulas {
+        let i = gene_index(&format!("a.{}.az", f.id));
+        g[i] = if g[gene_index(&format!("a.{}.enabled", f.id))] == 1.0 {
+            RANDOM_AZ.0 + rng.next() * (RANDOM_AZ.1 - RANDOM_AZ.0)
+        } else {
+            no_layers()[i]
+        };
+    }
+    g[gene_index("bin.width")] = 0.3 + rng.next() * 0.5;
+    g
 }
+
+/// A random voice's azimuth, normalized: ±72° — wide, but not glued to an ear.
+const RANDOM_AZ: (f64, f64) = (0.1, 0.9);
 
 /// Morph position between two genomes. Continuous genes interpolate; discrete
 /// ones switch as soon as `t > 0` — except a gate closing, which stays open

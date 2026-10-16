@@ -40,6 +40,7 @@ never in this repository.
 | `density` | the fraction of events kept, 0–1 (Strudel's `degradeBy(1 − density)`) |
 | `dry` | the layer skips the FX chain and goes straight to the master — for drums that must not be smeared by the reverb or the phaser |
 | `humanize` | 0–1: each hit up to 30 % quieter and up to 15 ms late (never early). Optional, omitted when 0, and not a gene |
+| `az` | −90 … 90°: where the layer sits around the head in a stereo app ([Space and binaural beats](binaural.md)). Optional, omitted when 0 |
 
 A point with no layer on has no `seq` section at all, so it serializes —
 and gets its id — exactly as before layers existed.

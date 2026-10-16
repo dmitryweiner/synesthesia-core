@@ -185,16 +185,38 @@ impl SoundPlayer {
         }))
     }
 
+    /// A stereo player (PLAN-BINAURAL.md): the point's space and binaural
+    /// beat, for headphones — read it with [`SoundPlayer::render_stereo`]
+    /// into a stereo `AudioTrack`. On a phone's speaker, use [`SoundPlayer::new`].
+    #[uniffi::constructor]
+    pub fn new_stereo(sample_rate: u32, point_json: String) -> Result<Arc<Self>, CoreError> {
+        let state = parse_point(&point_json)?;
+        Ok(Arc::new(SoundPlayer {
+            inner: syn_player::Player::new_stereo(f64::from(sample_rate), &state),
+            scratch: Mutex::new(Vec::new()),
+        }))
+    }
+
+    /// 1 or 2: what this player renders.
+    pub fn channels(&self) -> u32 {
+        self.inner.channels() as u32
+    }
+
     /// The next `frames` mono samples as 32-bit float, little-endian — the
-    /// layout of a float PCM buffer.
+    /// layout of a float PCM buffer. A stereo player gives its downmix.
     pub fn render(&self, frames: u32) -> Vec<u8> {
         let mut buf = self.scratch.lock().unwrap_or_else(|e| e.into_inner());
         self.inner.render_into(frames as usize, &mut buf);
-        let mut bytes = Vec::with_capacity(buf.len() * 4);
-        for s in buf.iter() {
-            bytes.extend_from_slice(&s.to_le_bytes());
-        }
-        bytes
+        to_le_bytes(&buf)
+    }
+
+    /// The next `frames` stereo frames, interleaved L R, as 32-bit float
+    /// little-endian (2 × `frames` samples) — a stereo float PCM buffer. A
+    /// mono player puts its sound in both ears.
+    pub fn render_stereo(&self, frames: u32) -> Vec<u8> {
+        let mut buf = self.scratch.lock().unwrap_or_else(|e| e.into_inner());
+        self.inner.render_stereo_into(frames as usize, &mut buf);
+        to_le_bytes(&buf)
     }
 
     /// Glide to a point: parameters move, nothing is rebuilt.
@@ -248,6 +270,14 @@ impl SoundPlayer {
     pub fn latest_frame(&self) -> Option<AudioFrame> {
         self.inner.latest_frame().map(AudioFrame::from)
     }
+}
+
+fn to_le_bytes(samples: &[f32]) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(samples.len() * 4);
+    for s in samples {
+        bytes.extend_from_slice(&s.to_le_bytes());
+    }
+    bytes
 }
 
 /// Loudness of an offline render, for the bench.
@@ -313,6 +343,24 @@ mod tests {
         assert_eq!(f.spectrum.len(), 64);
         p.switch_to(preset_state_json(5).unwrap()).unwrap();
         p.render(1024);
+    }
+
+    #[test]
+    fn a_stereo_player_renders_interleaved_ears() {
+        let mut point: serde_json::Value = serde_json::from_str(&preset_state_json(0).unwrap()).unwrap();
+        point["bin"] = serde_json::json!({ "on": true, "beat": 6, "width": 0.8 });
+        let p = SoundPlayer::new_stereo(48000, point.to_string()).unwrap();
+        assert_eq!(p.channels(), 2);
+        p.fade_in();
+        let mut last = Vec::new();
+        for _ in 0..10 {
+            last = p.render_stereo(4800);
+        }
+        assert_eq!(last.len(), 2 * 4800 * 4);
+        let s: Vec<f32> = last.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes(*c)).collect();
+        assert!(s.as_chunks::<2>().0.iter().any(|[l, r]| l != r), "two ears");
+        assert!((p.time() - 1.0).abs() < 1e-9);
+        assert_eq!(SoundPlayer::new(48000, preset_state_json(0).unwrap()).unwrap().channels(), 1);
     }
 
     #[test]

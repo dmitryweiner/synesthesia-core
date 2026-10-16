@@ -11,8 +11,9 @@
 pub mod biquad;
 pub mod chain;
 pub mod delayline;
+pub mod hilbert;
 pub mod limiter;
 pub mod reverb;
 pub mod shimmer;
 
-pub use chain::FxChain;
+pub use chain::{FxChain, Space};

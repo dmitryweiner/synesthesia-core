@@ -19,6 +19,9 @@ never proposes more. Code: `syn-core/src/dsp/` (`generator.rs`,
   them at block rate; see [LFOs and modulation](lfo.md).
 - **On/off fades** over 5 blocks (~13 ms); a faded-out generator costs
   nothing.
+- **`az`, −90° … 90° (0).** Where the voice sits around the head in a
+  stereo app; the generator itself never reads it, and a centred one is not
+  written into the point. See [Space and binaural beats](binaural.md).
 - The noise generators draw from a seeded `mulberry32`, so a render of a
   point is repeatable.
 - The generators are bit-exact with the web app's original TypeScript:

@@ -79,18 +79,19 @@ a parameter or LFO that does not exist is skipped.
 
 ## What can be modulated
 
-146 targets in all; the full list with labels is `modTargets`.
+175 targets in all; the full list with labels is `modTargets`.
 
 | target | parameters |
 |---|---|
-| each generator | its sliders, including `gain` (see [Generators](generators.md)) |
+| each generator | its sliders, including `gain` and `az` — where it sits around the head (see [Generators](generators.md)) |
 | `fx` | filter cutoff (exp), Q, gain, vowel, comb feedback; chorus rate (exp), depth, mix, feedback; delay time (exp), feedback, mix, shimmer; phaser rate (exp), depth, feedback, mix; reverb mix; limiter threshold and release. Not the on/off switches, the filter type, the chorus mode, the phaser's stage count or the reverb's decay |
 | `reaction` | feed, kill, diffU, diffV, speed |
 | `fieldVariation` | feed/kill amount, scale (exp), warp |
 | `flow` | curl strength, curl scale (exp), drift X/Y, advect amount, evolve rate |
 | `palette` | shift, contrast, bands, relief, light angle, gloss |
 | `seq` | `cps` (exp) — the tempo |
-| `seq.0` … `seq.3` | `gain`, `speed` (exp), `density` |
+| `seq.0` … `seq.3` | `gain`, `speed` (exp), `density`, `az` |
+| `bin` | `beat` (exp), `width` — see [Space and binaural beats](binaural.md) |
 
 ## In the search
 

@@ -24,6 +24,12 @@
 //! syn-bench --seq [--bank FILE] [--preset 0,10] [--wav DIR]
 //!                                             what layers cost (ns a sample) and do to the score (S0, S2);
 //!                                             --wav: the drums, a groove, and every probe render
+//! syn-bench --stereo [--preset 0,13] [--secs 10 --sr 48000] [--wav DIR] [--bank FILE]
+//!                                             PLAN-BINAURAL.md: ns a sample, mono vs the stereo engine
+//!                                             (neutral and spread: voices around the head, width 0.8, a
+//!                                             6 Hz beat), the head model and the shifter alone, the ITD
+//!                                             at ±90° and each ear's pitch; --wav: each point spread, stereo
+//! syn-bench --listen DIR --points drafts.json --stereo   the drafts as stereo WAVs (headphones)
 //! ```
 //!
 //! Points render in parallel on every core; each render is deterministic,
@@ -269,6 +275,9 @@ fn main() {
     if a.has("flashes") {
         return flashes(&a);
     }
+    if a.has("stereo") && !a.has("listen") {
+        return stereo(&a);
+    }
     let points = candidates(&a);
     if points.is_empty() {
         eprintln!("no points to measure");
@@ -497,9 +506,19 @@ fn listen(a: &Args) {
                     eprintln!("draft {i}: pattern {want:?} dropped: {why}");
                 }
             }
-            let x = render_offline_with(&state, bank.as_ref(), secs, sr, 1);
+            // --stereo: both ears (the point's space and beat), for headphones;
+            // the numbers below are the downmix's.
+            let (x, wav) = if a.has("stereo") {
+                let (l, r) = syn_core::render_offline_stereo(&state, bank.as_ref(), secs, sr, 1);
+                let wav = syn_core::wav::encode_stereo(&l, &r, sr as u32);
+                (l.iter().zip(&r).map(|(l, r)| 0.5 * (l + r)).collect::<Vec<f32>>(), wav)
+            } else {
+                let x = render_offline_with(&state, bank.as_ref(), secs, sr, 1);
+                let wav = syn_core::wav::encode_mono(&x, sr as u32);
+                (x, wav)
+            };
             let file = format!("{i:02}.wav");
-            fs::write(Path::new(dir).join(&file), syn_core::wav::encode_mono(&x, sr as u32)).ok()?;
+            fs::write(Path::new(dir).join(&file), wav).ok()?;
             let rms = (x.iter().map(|v| f64::from(*v).powi(2)).sum::<f64>() / x.len().max(1) as f64).sqrt();
             let peak = x.iter().fold(0.0f32, |m, v| m.max(v.abs()));
             Some(serde_json::json!({
@@ -515,6 +534,172 @@ fn listen(a: &Args) {
     fs::write(Path::new(dir).join("list.json"), serde_json::to_string_pretty(&list).unwrap())
         .expect("list.json");
     println!("{} drafts → {dir}", list.len());
+}
+
+/// A point with its voices spread around the head (enabled formulas evenly
+/// from −70° to 70°, layers alternating ±50°), width 0.8 and a 6 Hz beat —
+/// every part of the stereo engine working.
+fn spread(s: &AppState) -> AppState {
+    use syn_core::state::{BinState, AZ};
+    let mut s = s.clone();
+    let on = s.enabled_formulas().iter().map(|id| id.to_string()).collect::<Vec<_>>();
+    for (k, id) in on.iter().enumerate() {
+        let az = if on.len() == 1 { 40.0 } else { -70.0 + 140.0 * k as f64 / (on.len() - 1) as f64 };
+        if let Some(f) = s.audio.formulas.get_mut(id) {
+            f.params.insert(AZ.into(), az);
+        }
+    }
+    for (k, l) in s.seq.layers.iter_mut().enumerate() {
+        l.az = if k % 2 == 0 { -50.0 } else { 50.0 };
+    }
+    s.bin = BinState { on: true, beat: 6.0, width: 0.8 };
+    s
+}
+
+/// PLAN-BINAURAL.md B0/B1: what the stereo engine costs and whether it
+/// does what the head model and the shifter say.
+fn stereo(a: &Args) {
+    use syn_core::fx::hilbert::{rotation, Shifter};
+    use syn_core::render_offline_stereo;
+    use syn_core::seq::{SampleBank, SeqProgram};
+    use syn_core::spatial::{itd, HeadModel};
+
+    let (sr, secs) = (a.num("sr", 48000.0), a.num("secs", 10.0));
+    let bank = a.get("bank").and_then(|p| fs::read(p).ok()).and_then(|b| SampleBank::from_bytes(b).ok());
+    let blocks = (secs * sr) as usize / BLOCK;
+    let per = |t0: Instant| t0.elapsed().as_nanos() as f64 / (blocks * BLOCK) as f64;
+    let all: Vec<usize> = (0..presets().len()).collect();
+    println!(
+        "{} {:>8} {:>8} {:>8} {:>7} {:>8}   ns/sample ({sr} Hz, {secs} s, native)",
+        pad("point", 26),
+        "mono",
+        "stereo",
+        "spread",
+        "×mono",
+        "% core"
+    );
+    for i in a.list("preset").unwrap_or(all) {
+        let Some(p) = presets().get(i) else { continue };
+        let time = |state: &AppState, two: bool| {
+            let mut e = if two { Engine::new_stereo(sr, state, 1) } else { Engine::new(sr, state, 1) };
+            e.set_seq(Box::new(SeqProgram::new(&state.seq, bank.as_ref())));
+            let (mut l, mut r) = (vec![0.0f32; BLOCK], vec![0.0f32; BLOCK]);
+            let t0 = Instant::now();
+            for _ in 0..blocks {
+                if two {
+                    e.render_stereo(&mut l, &mut r);
+                } else {
+                    e.render(&mut l);
+                }
+            }
+            per(t0)
+        };
+        let (mono, neutral, wide) =
+            (time(&p.state, false), time(&p.state, true), time(&spread(&p.state), true));
+        println!(
+            "{} {mono:>8.1} {neutral:>8.1} {wide:>8.1} {:>6.2}× {:>7.2} %",
+            pad(&format!("{i}: {}", p.name), 26),
+            wide / mono,
+            wide * sr / 1e7
+        );
+        if let Some(dir) = a.get("wav") {
+            let (l, r) = render_offline_stereo(&spread(&p.state), bank.as_ref(), 30.0, sr, 1);
+            let _ = fs::create_dir_all(dir);
+            let path = Path::new(dir).join(format!("{i:02}_{}_spread.wav", file_name(&p.name)));
+            if let Err(e) = fs::write(&path, syn_core::wav::encode_stereo(&l, &r, sr as u32)) {
+                eprintln!("{}: {e}", path.display());
+            }
+        }
+    }
+
+    let x = [0.1f32; BLOCK];
+    let (mut l, mut r) = ([0.0f32; BLOCK], [0.0f32; BLOCK]);
+    for sources in [1usize, 5] {
+        let mut heads: Vec<HeadModel> = (0..sources).map(|_| HeadModel::new(sr)).collect();
+        let t0 = Instant::now();
+        for b in 0..blocks {
+            for (k, h) in heads.iter_mut().enumerate() {
+                h.process(&x, 0.3 + 0.001 * ((b + k) % 1000) as f64, &mut l, &mut r);
+            }
+        }
+        println!(
+            "head model, {sources} source(s): {:7.1} ns/sample (both ears; budget 30 a source)",
+            per(t0)
+        );
+    }
+    let mut sh = [Shifter::new(sr), Shifter::new(sr)];
+    let rot = [rotation(-3.0, sr), rotation(3.0, sr)];
+    let t0 = Instant::now();
+    for _ in 0..blocks {
+        for (a, b) in l.iter_mut().zip(r.iter_mut()) {
+            *a = sh[0].tick(f64::from(*a), rot[0]) as f32 * 0.5;
+            *b = sh[1].tick(f64::from(*b), rot[1]) as f32 * 0.5;
+        }
+        sh[0].renormalize();
+        sh[1].renormalize();
+    }
+    println!("shifter, both ears:        {:7.1} ns/sample (budget 60)", per(t0));
+
+    // The ITD at 90°: an impulse, its arrival in each ear.
+    let mut h = HeadModel::new(sr);
+    let n = 4 * BLOCK;
+    let (mut il, mut ir) = (vec![0.0f32; n], vec![0.0f32; n]);
+    h.process(&[0.0; BLOCK], std::f64::consts::FRAC_PI_2, &mut il[..BLOCK], &mut ir[..BLOCK]);
+    let mut imp = vec![0.0f32; n];
+    imp[BLOCK + 10] = 1.0;
+    for k in 1..4 {
+        let s = k * BLOCK..(k + 1) * BLOCK;
+        h.process(&imp[s.clone()], std::f64::consts::FRAC_PI_2, &mut il[s.clone()], &mut ir[s]);
+    }
+    let centre = |x: &[f32]| {
+        let (m, w) = x.iter().enumerate().fold((0.0, 0.0), |(m, w), (i, v)| {
+            let v = f64::from(v.abs()).powi(4);
+            (m + i as f64 * v, w + v)
+        });
+        m / w
+    };
+    println!(
+        "ITD at 90°: {:.2} samples, Woodworth {:.2} ({:.3} ms)",
+        centre(&il) - centre(&ir),
+        itd(std::f64::consts::FRAC_PI_2) * sr,
+        itd(std::f64::consts::FRAC_PI_2) * 1e3
+    );
+
+    // Each ear's pitch: a 440 Hz sine through the chain with a 6 Hz beat.
+    let tone = syn_core::state::AppState::new();
+    let mut s = tone.clone();
+    if let Some(f) = s.audio.formulas.get_mut("additive") {
+        f.enabled = true;
+        f.params.insert("fund".into(), 440.0);
+        f.params.insert("N".into(), 1.0);
+        f.params.insert("move".into(), 0.01);
+    }
+    s.audio.fx.limiter_on = false;
+    s.bin = syn_core::state::BinState { on: true, beat: 6.0, width: 0.0 };
+    let (l, r) = render_offline_stereo(&s, None, 8.0, sr, 1);
+    let peak = |x: &[f32], around: f64| {
+        let x = &x[(2.0 * sr) as usize..];
+        let power = |hz: f64| {
+            let (mut re, mut im) = (0.0, 0.0);
+            for (k, v) in x.iter().enumerate() {
+                let w = 0.5 - 0.5 * (std::f64::consts::TAU * k as f64 / x.len() as f64).cos();
+                let ph = std::f64::consts::TAU * hz * k as f64 / sr;
+                re += w * f64::from(*v) * ph.cos();
+                im += w * f64::from(*v) * ph.sin();
+            }
+            re * re + im * im
+        };
+        let mut best = around;
+        for step in [0.5, 0.05, 0.005] {
+            let c = best;
+            best = (-20..=20)
+                .map(|k| c + f64::from(k) * step)
+                .max_by(|a, b| power(*a).total_cmp(&power(*b)))
+                .unwrap_or(c);
+        }
+        best
+    };
+    println!("a 440 Hz voice, 6 Hz beat: left {:.3} Hz, right {:.3} Hz", peak(&l, 437.0), peak(&r, 443.0));
 }
 
 /// PLAN-SAMPLES-SCRIPTS.md's open probes. First the cost: the sequencer

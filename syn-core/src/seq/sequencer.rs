@@ -54,6 +54,8 @@ pub struct LiveLayer {
     pub density: f64,
     pub dry: bool,
     pub humanize: f64,
+    /// Azimuth, degrees: read by a stereo engine, not by the sequencer.
+    pub az: f64,
 }
 
 /// The layers' numbers for one block, as a fixed array: the engine fills it
@@ -68,7 +70,7 @@ impl SeqLive {
     /// The section's own numbers, unmodulated.
     pub fn of(seq: &SeqState) -> SeqLive {
         let mut layers =
-            [LiveLayer { gain: 0.0, speed: 1.0, density: 1.0, dry: false, humanize: 0.0 }; LAYERS];
+            [LiveLayer { gain: 0.0, speed: 1.0, density: 1.0, dry: false, humanize: 0.0, az: 0.0 }; LAYERS];
         for (o, l) in layers.iter_mut().zip(&seq.layers) {
             *o = LiveLayer {
                 gain: l.gain,
@@ -76,6 +78,7 @@ impl SeqLive {
                 density: l.density,
                 dry: l.dry,
                 humanize: l.humanize,
+                az: l.az,
             };
         }
         SeqLive { cps: seq.cps, layers }
@@ -304,7 +307,16 @@ impl Sequencer {
     /// One block: layers into `wet` (added: it goes on into the FX chain
     /// with the formulas) and `dry` (added: straight to the master).
     pub fn render(&mut self, live: &SeqLive, wet: &mut [f32], dry: &mut [f32]) {
-        let n = wet.len();
+        self.render_buses(live, wet, dry, 1);
+    }
+
+    /// [`Sequencer::render`] with each layer on a bus of its own — what a
+    /// stereo engine puts in space (PLAN-BINAURAL.md). `wet` and `dry` hold
+    /// `buses` blocks back to back; layer `li` adds into bus
+    /// `min(li, buses − 1)`, so one bus is [`Sequencer::render`].
+    pub fn render_buses(&mut self, live: &SeqLive, wet: &mut [f32], dry: &mut [f32], buses: usize) {
+        let buses = buses.max(1);
+        let n = wet.len() / buses;
         if n == 0 {
             return;
         }
@@ -315,10 +327,11 @@ impl Sequencer {
                 self.start_events(li, &live.layers[li], end, c1, n);
             }
         }
-        self.render_beds(live, wet, dry);
+        self.render_beds(live, wet, dry, buses);
         for v in &mut self.voices {
             if v.is_active() {
-                v.render(if v.dry { &mut *dry } else { &mut *wet });
+                let at = v.layer.min(buses - 1) * n;
+                v.render(if v.dry { &mut dry[at..at + n] } else { &mut wet[at..at + n] });
             }
         }
         self.cycle = c1;
@@ -376,11 +389,11 @@ impl Sequencer {
                 g *= 1.0 - HUMAN_GAIN * human * unit_hash(e.onset, HUMAN_GAIN_SALT, seed);
                 offset += (HUMAN_LATE * human * unit_hash(e.onset, HUMAN_TIME_SALT, seed) * self.sr) as usize;
             }
-            self.start_voice(src, g, dry, offset);
+            self.start_voice(src, g, (dry, li), offset);
         }
     }
 
-    fn start_voice(&mut self, src: Source, gain: f64, dry: bool, offset: usize) {
+    fn start_voice(&mut self, src: Source, gain: f64, at: (bool, usize), offset: usize) {
         let live = self.voices.iter().filter(|v| v.is_active() && !v.releasing).count();
         if live >= VOICES {
             if let Some(v) =
@@ -395,17 +408,19 @@ impl Sequencer {
             // Every slot busy, most of them releasing: the oldest is cut.
             None => (0..SLOTS).min_by_key(|&i| self.voices[i].id).unwrap_or(0),
         };
-        self.voices[slot].start(src, gain, dry, offset, self.next_id, self.sr);
+        self.voices[slot].start(src, gain, at, offset, self.next_id, self.sr);
         self.next_id += 1;
     }
 
-    fn render_beds(&mut self, live: &SeqLive, wet: &mut [f32], dry: &mut [f32]) {
+    fn render_beds(&mut self, live: &SeqLive, wet: &mut [f32], dry: &mut [f32], buses: usize) {
         let coef = self.bed_coef;
+        let n = wet.len() / buses;
         for li in 0..LAYERS {
             let l = &live.layers[li];
             let playing = self.program.bed(li).is_some();
             let (gain, speed, to_dry) = (gain_of(l.gain), speed_of(l.speed), l.dry);
-            let out: &mut [f32] = if to_dry { &mut *dry } else { &mut *wet };
+            let at = li.min(buses - 1) * n;
+            let out: &mut [f32] = if to_dry { &mut dry[at..at + n] } else { &mut wet[at..at + n] };
             for (slot, bed) in self.beds[li].iter_mut().enumerate() {
                 let Some(r) = &mut bed.r else { continue };
                 let target = if slot == 0 && playing { gain } else { 0.0 };

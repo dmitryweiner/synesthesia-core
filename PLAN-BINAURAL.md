@@ -16,6 +16,12 @@ This file is the record: what was looked at, the decisions and why, the
 data shapes, the phases, the budget and the measurement each phase owes.
 Numbers go in as they are measured; `TODO.md` carries the open items.
 
+**Status (2026-10-16):** B0–B4 done in the core (`syn-core`, `syn-player`,
+`syn-wasm`, `syn-ffi`, `syn-bench --stereo`); the apps' bumps (B4's
+second half) and the listening pass (B5) are open. How it works now:
+[docs/binaural.md](docs/binaural.md). What changed on the way is marked
+**Since agreed** below.
+
 The model is mono today, end to end: `Engine::render` fills one buffer,
 `syn-player` hands out mono, the worklet copies one buffer to every output
 channel, the FFI returns mono f32, the console pipes `--channels 1`. The
@@ -45,6 +51,34 @@ the user wants *that* in the two ears, Δ apart. Options:
 | stereo width tricks only (mid/side, Haas, decorrelated reverb) | **as part of 4, not instead** | the stereo FDN and the 90°-offset chorus/phaser LFOs come for free with the stereo chain; width is the `width` gene scaling every azimuth |
 
 ## Decisions (agreed with the user, 2026-10-15)
+
+**Since agreed (2026-10-16, with the user):**
+
+- *Width governs every difference between the ears*, not only the
+  azimuths: the reverb's even/odd split is `wet ± width·side` and the right
+  ear's chorus/phaser LFOs run `width`·90° ahead. So at width 0 with the
+  beat off L ≡ R ≡ the mono render — bit for bit for a point without
+  layers, ≤ 1e-6 with them (each layer sums on its own bus) — and the
+  limiter can be linked on the louder ear, max(|L|, |R|), which also
+  holds a voice panned hard to one side. (Decision 5 as written would
+  have decorrelated the tails at width 0 and forced a mid-driven limiter.)
+- *The layers' azimuths (`seq.<i>.az`) are in*: the layers landed first,
+  so this plan appended them — 30 genes, not 26; 29 mod targets, not 25.
+- *The Hilbert pair is 7 + 7 sections designed for the sample rate*
+  (HIIR's elliptic half-band method), not Niemitalo's published 4 + 4:
+  measured, those hold 90° only to ±1.2° over 20 Hz – 20 kHz at 48 kHz.
+  7 + 7 gives 0.033° at 48 kHz, 0.030° at 44.1 kHz (6 + 6: 0.108°, too
+  wide for the budget); pinned by `fx::hilbert`'s test.
+- *The head shadow is taken relative to straight ahead* (H(θ)/H(0) = 1 +
+  g·HP with a fixed high-pass), so az 0 is the identity bit for bit; at
+  90° the near ear gets up to +7 dB on top, the far ear −18 dB.
+- *No `Spatializer` trait yet*: one implementation (`spatial::HeadModel`);
+  the trait comes with the second (B6's HRTFs).
+- *The dry layers join after the chain and do not beat* (the shift sits
+  before the limiter, the dry bus after it, as in mono); they are placed
+  in space like every other source.
+- *Switching the beat crossfades over 50 ms* between the plain and the
+  shifted ears (a step would click).
 
 1. **Stereo arrives beside mono, not instead of it.** `Engine` gets a
    stereo mode (`Engine::new_stereo`, `render_stereo(l, r)`); the mono
@@ -230,26 +264,26 @@ assets/schema.json, presets.json, settings-page.json
 Each phase ends green on `./scripts/check.sh` and with its numbers in this
 file.
 
-- **B0 — probes (throwaway, `syn-bench --stereo`)**: the heaviest preset in
+- **B0 — probes (throwaway, `syn-bench --stereo`)** — *done 2026-10-16*: the heaviest preset in
   mono and with a second chain instance; the head model for one and five
   sources; the shifter — ns a sample each, native and in wasm (`node
   --cpu-prof`), against PLAN-CORE's phone gate. The number decides whether
   the chain is duplicated (decision 5) or only the chorus/phaser/delay are,
   with the filter before the spatializer.
-- **B1 — stereo in the engine, nothing audible yet**: `Mode`,
+- **B1 — stereo in the engine, nothing audible yet** — *done*: `Mode`,
   `render_stereo`, `StereoChain` with two chains and the FDN's two outputs,
   the linked limiter, the analyser on the downmix; `render` untouched. The
   test: the downmix equals `render` to 1e-6 for every preset, and the
   golden and fixture tests pass unchanged.
-- **B2 — space**: `HeadModel`, the `az` sliders and `bin.width`, the
+- **B2 — space** — *done*: `HeadModel`, the `az` sliders and `bin.width`, the
   codec, sanitize, Settings; tests: an impulse at +90° reaches the right
   ear first by Woodworth's τ and louder above 2 kHz; az 0 gives L = R; a
   source swept by an LFO never clicks (the continuity test's method).
-- **B3 — beats**: the Hilbert pair (a swept sine shows 90° ± 0.1° from
+- **B3 — beats** — *done*: the Hilbert pair (a swept sine shows 90° ± 0.1° from
   20 Hz to 20 kHz), the shifter (a 440 Hz sine comes out at 440 ∓ Δ/2 in
   each ear, measured by FFT), `bin.on`/`bin.beat`, their genes and targets.
-- **B4 — hosts**: `render_stereo_into`, `renderStereo`, `render_stereo`;
-  then each app bumps on its own schedule: the console first (`channels =
+- **B4 — hosts**: `render_stereo_into`, `renderStereo`, `render_stereo`
+  (*done in the core*); then each app bumps on its own schedule (*open*): the console first (`channels =
   2`, `pw-cat --channels 2`, the `verify` ladder: `bench` ≥ 8× realtime in
   stereo, `soak.py` 0 xruns in 30 min), the worklet (`outputChannelCount:
   [2]`, one interleaved view, de-interleaved into `outputs[0][0..2]`
@@ -268,18 +302,18 @@ file.
 
 ## Budget (thresholds; checked by the bench, filled in as measured)
 
-| metric | target | measured |
+| metric | target | measured (M1, 2026-10-16) |
 |---|---|---|
-| stereo mode, heaviest preset | ≤ 1.6× its mono cost native; inside the phones' 35 % quantum gate in wasm | B0 / B1 |
-| head model, per source | ≤ 30 ns a sample (both ears) | B0 |
-| the shifter, both ears | ≤ 60 ns a sample | B0 |
-| downmix vs mono render, width 0, beat off | ≤ 1e-6 on every preset | B1 (test) |
-| ITD at ±90° | 0.65 ms ± 1 sample | B2 (test) |
-| Hilbert phase error | ≤ 0.1° over 20 Hz – 20 kHz at 48 kHz; ≤ 0.2° at 44.1 and 22.05 kHz | B3 (test) |
-| shift accuracy | each ear's peak within 0.05 Hz of f ∓ Δ/2 | B3 (test) |
-| allocations in `render_stereo` | 0 | B1 (test) |
-| genes | +26, the earlier ones unchanged; `fixtures/points.json` unchanged | B2/B3 (tests) |
-| console, stereo live | ≥ 8× realtime offline, 0 xruns in 30 min | B4 |
+| stereo mode, heaviest preset | ≤ 1.6× its mono cost native; inside the phones' 35 % quantum gate in wasm | everything on (voices spread, width 0.8, 6 Hz beat): native 1.16× (Fractal garden), 1.38× (Night meadow), 1.36× (Tanpura halo); the light presets up to 1.75× (Whale coral, 92 → 162 ns — the second chain's fixed cost). wasm 1.22–1.55×, the heaviest 806 ns a sample = 3.9 % of a core at 48 kHz. Not measured on a phone yet (B4, Android) |
+| head model, per source | ≤ 30 ns a sample (both ears) | 9.7 ns native, 6.8 ns wasm |
+| the shifter, both ears | ≤ 60 ns a sample | 33 ns native, 55 ns wasm (7 + 7 sections) |
+| downmix vs mono render, width 0, beat off | ≤ 1e-6 on every preset | L ≡ R ≡ mono bit for bit without layers; ≤ 1e-6 with (`engine::tests`); features, spectrum and hits identical |
+| ITD at ±90° | 0.65 ms ± 1 sample | τ = 0.656 ms = 31.5 samples at 48 kHz; measured 32.5 (`spatial` test: ±1) |
+| Hilbert phase error | ≤ 0.1° over 20 Hz – 20 kHz at 48 kHz; ≤ 0.2° at 44.1 and 22.05 kHz | 0.033° / 0.030° / 0.012° (design); the test sweeps 40 tones |
+| shift accuracy | each ear's peak within 0.05 Hz of f ∓ Δ/2 | 437.000 / 443.000 Hz for 440 ± 3 (bench); Δ 0.5, 6, 40 in the chain's test |
+| allocations in `render_stereo` | 0 | 0 (`syn-noalloc`, every preset, spread, LFOs on space, beat on and fading out) |
+| genes | +26, the earlier ones unchanged; `fixtures/points.json` unchanged | +30 (313), the first 283 unchanged; fixtures unchanged |
+| console, stereo live | ≥ 8× realtime offline, 0 xruns in 30 min | B4 (console) |
 
 ## Risks and open questions
 

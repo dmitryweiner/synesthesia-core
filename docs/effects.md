@@ -16,6 +16,13 @@ parameter meanings — with its own DSP (the browser's nodes are not
 re-implemented), calibrated against the browser so the presets sound as
 they were tuned.
 
+In a **stereo** app the chain runs once per ear with the same settings:
+the right ear's chorus and phaser LFOs run `width` × 90° ahead, the reverb
+is one room whose even lines are heard on the left and odd ones on the
+right, the binaural beat's shift sits between the reverb and the limiter,
+and one limiter gain holds both ears. See
+[Space and binaural beats](binaural.md).
+
 ## Shared behaviour
 
 - **Every numeric parameter glides** to its new value with a 30 ms time

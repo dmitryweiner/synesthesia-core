@@ -102,6 +102,30 @@ impl Fdn {
         }
         sum * self.norm / LINES as f64
     }
+
+    /// One room, two ears (PLAN-BINAURAL.md decision 5): `(wet, side)`,
+    /// where `wet` is exactly what [`Fdn::tick`] returns and `side` is half
+    /// the difference of the even lines and the odd ones. `wet ± side` hears
+    /// the even lines in the left ear and the odd ones in the right — tails
+    /// that differ between the ears at no extra line.
+    #[inline]
+    pub fn tick_stereo(&mut self, x: f64) -> (f64, f64) {
+        let mut read = [0.0f64; LINES];
+        let mut sum = 0.0;
+        let mut diff = 0.0;
+        for (i, r) in read.iter_mut().enumerate() {
+            let v = self.lines[i].read(self.delays[i]);
+            self.damp_state[i] += self.damp * (v - self.damp_state[i]);
+            *r = self.damp_state[i] * self.feedback[i];
+            sum += *r;
+            diff += if i % 2 == 0 { *r } else { -*r };
+        }
+        let corr = 2.0 / LINES as f64 * sum;
+        for (i, line) in self.lines.iter_mut().enumerate() {
+            line.write(x + read[i] - corr);
+        }
+        (sum * self.norm / LINES as f64, diff * self.norm / LINES as f64)
+    }
 }
 
 #[cfg(test)]
@@ -159,6 +183,24 @@ mod tests {
         for (decay, level) in [0.5, 2.8, 8.0].iter().zip(&levels) {
             assert!((0.05..=0.30).contains(level), "decay {decay}: wet/dry {level:.2}");
         }
+    }
+
+    #[test]
+    fn the_two_ears_hear_the_same_room_from_different_lines() {
+        let (mut a, mut b) = (Fdn::new(48000.0), Fdn::new(48000.0));
+        let (mut corr, mut ll, mut rr) = (0.0, 0.0, 0.0);
+        for i in 0..48000 * 2 {
+            let x = if i == 0 { 1.0 } else { 0.0 };
+            let mono = a.tick(x);
+            let (wet, side) = b.tick_stereo(x);
+            assert_eq!(mono, wet, "the mid is the mono reverb, bit for bit");
+            let (l, r) = (wet + side, wet - side);
+            corr += l * r;
+            ll += l * l;
+            rr += r * r;
+        }
+        let c = corr / (ll * rr).sqrt();
+        assert!(c.abs() < 0.5, "the tails are decorrelated: {c:.2}");
     }
 
     #[test]

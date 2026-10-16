@@ -16,6 +16,12 @@
 //!   frame at the *played* time, which the app reads from its device.
 //! - **Fades.** Output starts silent and fades in, and fades out before a
 //!   stop, so neither clicks; the point's own master gain is not touched.
+//! - **Mono or stereo** (PLAN-BINAURAL.md decision 1): [`Player::new`] plays
+//!   the mono engine, [`Player::new_stereo`] the stereo one — space and the
+//!   binaural beat, for headphones. A host picks one when it builds the
+//!   player; the engine never computes both. Either player answers either
+//!   call ([`Player::render_into`], [`Player::render_stereo_into`]): a mono
+//!   one copies its sound to both ears, a stereo one gives its downmix.
 //!
 //! No threads and no clocks of its own: the app supplies both.
 
@@ -92,11 +98,16 @@ struct RenderSide {
     engine: Engine,
     commands: Receiver<Command>,
     retired: Sender<Retired>,
+    /// 1 or 2: what the engine renders.
+    channels: usize,
     /// The engine always renders whole blocks (its FX chain runs on a
     /// 128-sample quantum, as Web Audio's does); what a caller did not take
-    /// of the last block waits here for the next call.
+    /// of the last block waits here for the next call. Stereo: L R L R ….
     block: Vec<f32>,
+    /// Frames of `block` already handed out.
     block_pos: usize,
+    /// The stereo engine's two ears, before they are interleaved.
+    ears: [Vec<f32>; 2],
     /// Samples handed to the caller so far — the clock of [`Player::time`].
     delivered: u64,
     since_frame: usize,
@@ -125,9 +136,25 @@ pub struct Player {
 impl Player {
     /// A player for `state` at `sample_rate`, silent until [`Player::fade_in`].
     pub fn new(sample_rate: f64, state: &AppState) -> Self {
+        Player::build(sample_rate, state, 1)
+    }
+
+    /// A stereo player (PLAN-BINAURAL.md): the point's space and its
+    /// binaural beat, for headphones. Read it with
+    /// [`Player::render_stereo_into`].
+    pub fn new_stereo(sample_rate: f64, state: &AppState) -> Self {
+        Player::build(sample_rate, state, 2)
+    }
+
+    fn build(sample_rate: f64, state: &AppState, channels: usize) -> Self {
         let (tx, rx) = channel();
         let (tx_retired, rx_retired) = channel();
-        let mut engine = Engine::new(sample_rate, state, state_seed(state));
+        let seed = state_seed(state);
+        let mut engine = if channels == 2 {
+            Engine::new_stereo(sample_rate, state, seed)
+        } else {
+            Engine::new(sample_rate, state, seed)
+        };
         // No bank yet: a point's synth drums play from the start, its samples
         // once `set_bank` brings them.
         engine.set_seq(Box::new(SeqProgram::new(&state.seq, None)));
@@ -139,8 +166,10 @@ impl Player {
                 engine,
                 commands: rx,
                 retired: tx_retired,
-                block: vec![0.0; BLOCK],
+                channels,
+                block: vec![0.0; BLOCK * channels],
                 block_pos: BLOCK,
+                ears: [vec![0.0; BLOCK], vec![0.0; BLOCK]],
                 delivered: 0,
                 since_frame: 0,
                 frame_peak: 0.0,
@@ -157,6 +186,11 @@ impl Player {
 
     pub fn sample_rate(&self) -> f64 {
         self.sample_rate
+    }
+
+    /// 1 or 2: what the engine renders.
+    pub fn channels(&self) -> usize {
+        self.render.lock().unwrap_or_else(|e| e.into_inner()).channels
     }
 
     /// Glide to `state`: parameters move, nothing is rebuilt — unless its
@@ -252,10 +286,24 @@ impl Player {
 
     /// Renders `frames` mono samples into `out` (resized to fit), applying
     /// pending commands first. Called by the app's audio thread only. The
-    /// samples do not depend on how a stream is cut into calls.
+    /// samples do not depend on how a stream is cut into calls. A stereo
+    /// player gives the downmix of its ears.
     pub fn render_into(&self, frames: usize, out: &mut Vec<f32>) {
         out.clear();
         out.resize(frames, 0.0);
+        self.render_frames(frames, out, 1);
+    }
+
+    /// Renders `frames` stereo frames into `out`, interleaved — L R L R …,
+    /// `2 · frames` samples (resized to fit). A mono player puts its sound
+    /// in both ears.
+    pub fn render_stereo_into(&self, frames: usize, out: &mut Vec<f32>) {
+        out.clear();
+        out.resize(2 * frames, 0.0);
+        self.render_frames(frames, out, 2);
+    }
+
+    fn render_frames(&self, frames: usize, out: &mut [f32], out_channels: usize) {
         let mut r = self.render.lock().unwrap_or_else(|e| e.into_inner());
         r.apply_commands(self.sample_rate);
         let mut done = 0;
@@ -277,7 +325,24 @@ impl Player {
             }
             let n = (frames - done).min(BLOCK - r.block_pos);
             let from = r.block_pos;
-            out[done..done + n].copy_from_slice(&r.block[from..from + n]);
+            let into = &mut out[done * out_channels..(done + n) * out_channels];
+            match (r.channels, out_channels) {
+                (1, 1) | (2, 2) => {
+                    into.copy_from_slice(&r.block[from * out_channels..(from + n) * out_channels])
+                }
+                (1, _) => {
+                    for (o, v) in into.as_chunks_mut::<2>().0.iter_mut().zip(&r.block[from..from + n]) {
+                        o.fill(*v);
+                    }
+                }
+                _ => {
+                    for (o, [a, b]) in
+                        into.iter_mut().zip(r.block[2 * from..2 * (from + n)].as_chunks::<2>().0)
+                    {
+                        *o = 0.5 * (a + b);
+                    }
+                }
+            }
             r.block_pos += n;
             done += n;
         }
@@ -296,7 +361,9 @@ impl Player {
     /// been handed out (and before any fade in).
     pub fn is_silent(&self) -> bool {
         let r = self.render.lock().unwrap_or_else(|e| e.into_inner());
-        r.level == 0.0 && r.level_target == 0.0 && r.block[r.block_pos..].iter().all(|v| *v == 0.0)
+        r.level == 0.0
+            && r.level_target == 0.0
+            && r.block[r.block_pos * r.channels..].iter().all(|v| *v == 0.0)
     }
 
     /// The frame describing what is heard at engine time `t`: the latest one
@@ -342,9 +409,20 @@ impl RenderSide {
     }
 
     fn render_block(&mut self) {
-        self.engine.render(&mut self.block);
+        let ch = self.channels;
+        if ch == 2 {
+            let [l, r] = &mut self.ears;
+            self.engine.render_stereo(l, r);
+            for (k, (a, b)) in l.iter().zip(r.iter()).enumerate() {
+                self.block[2 * k] = *a;
+                self.block[2 * k + 1] = *b;
+            }
+        } else {
+            self.engine.render(&mut self.block);
+        }
         self.block_pos = 0;
-        for s in self.block.iter_mut() {
+        // One level per frame, for both ears.
+        for frame in self.block.chunks_exact_mut(ch) {
             if self.level != self.level_target {
                 if self.level < self.level_target {
                     self.level = (self.level + self.level_step).min(self.level_target);
@@ -352,10 +430,12 @@ impl RenderSide {
                     self.level = (self.level - self.level_step).max(self.level_target);
                 }
             }
-            let v = *s * self.level;
-            *s = v;
-            self.frame_peak = self.frame_peak.max(v.abs());
-            self.frame_sum += f64::from(v) * f64::from(v);
+            for s in frame {
+                let v = *s * self.level;
+                *s = v;
+                self.frame_peak = self.frame_peak.max(v.abs());
+                self.frame_sum += f64::from(v) * f64::from(v) / ch as f64;
+            }
         }
         self.frame_n += BLOCK;
     }
@@ -571,6 +651,68 @@ mod tests {
         let tick = vec![Sample { sr: 22050, data: vec![9000; 300], mode: Mode::Hits }];
         p.add_sound("tick", tick.into());
         assert!(rms(&render(&p, SR as usize)) > 1e-3);
+    }
+
+    fn stereo(p: &Player, frames: usize) -> Vec<f32> {
+        let mut out = Vec::new();
+        p.render_stereo_into(frames, &mut out);
+        out
+    }
+
+    #[test]
+    fn a_stereo_player_hands_out_interleaved_ears_however_it_is_cut() {
+        use syn_core::state::BinState;
+        let state =
+            AppState { bin: BinState { on: true, beat: 6.0, width: 0.7 }, ..presets()[0].state.clone() };
+        let (a, b) = (Player::new_stereo(SR, &state), Player::new_stereo(SR, &state));
+        assert_eq!(a.channels(), 2);
+        a.fade_in();
+        b.fade_in();
+        let whole = stereo(&a, 5000);
+        assert_eq!(whole.len(), 10000);
+        let mut parts = Vec::new();
+        for n in [1, 127, 128, 129, 1000, 3615] {
+            parts.extend(stereo(&b, n));
+        }
+        assert_eq!(whole, parts);
+        // Faded in from the start, it is the offline stereo render.
+        let (l, r) = syn_core::render_offline_stereo(&state, None, 5000.0 / SR, SR, state_seed(&state));
+        let fade = (FADE_SECONDS * SR) as usize + BLOCK;
+        for i in fade..5000 {
+            assert_eq!((whole[2 * i], whole[2 * i + 1]), (l[i], r[i]), "frame {i}");
+        }
+        assert_ne!(l[fade..], r[fade..], "the ears beat");
+        // Asked for mono, it gives the downmix.
+        let c = Player::new_stereo(SR, &state);
+        c.fade_in();
+        let mono = render(&c, 5000);
+        for i in 0..5000 {
+            assert_eq!(mono[i], 0.5 * (whole[2 * i] + whole[2 * i + 1]));
+        }
+    }
+
+    #[test]
+    fn a_mono_player_puts_its_sound_in_both_ears() {
+        let (a, b) = (Player::new(SR, &presets()[3].state), Player::new(SR, &presets()[3].state));
+        a.fade_in();
+        b.fade_in();
+        let mono = render(&a, 3000);
+        let two = stereo(&b, 3000);
+        for i in 0..3000 {
+            assert_eq!((two[2 * i], two[2 * i + 1]), (mono[i], mono[i]));
+        }
+        assert_eq!(a.channels(), 1);
+    }
+
+    #[test]
+    fn a_stereo_player_fades_out_to_silence() {
+        let p = Player::new_stereo(SR, &presets()[0].state);
+        p.fade_in();
+        stereo(&p, SR as usize);
+        p.fade_out();
+        let x = stereo(&p, (FADE_SECONDS * SR) as usize + 2 * BLOCK);
+        assert!(p.is_silent());
+        assert!(x[x.len() - 2 * BLOCK..].iter().all(|v| *v == 0.0));
     }
 
     #[test]

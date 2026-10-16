@@ -123,7 +123,7 @@ pub struct SoundGroup {
 }
 
 /// The sample and drum layers as the page shows them: the tempo, each
-/// layer's sliders (`gain speed density humanize`), how it plays, and its
+/// layer's sliders (`gain speed density humanize az`), how it plays, and its
 /// sounds in groups. The sounds and the rhythms themselves are the schema's
 /// (`seqSounds`, `seqRhythms`).
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -135,6 +135,19 @@ pub struct LayersPage {
     pub sound_groups: Vec<SoundGroup>,
     /// How the rhythm picker names "the point's own pattern".
     pub custom_rhythm: String,
+}
+
+/// Space and the binaural beat as the page shows them (PLAN-BINAURAL.md):
+/// one section, its width, its beat and the beat's switch. Each formula's
+/// and each layer's azimuth is a slider of its own section.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct BinauralPage {
+    pub title: String,
+    pub tag: String,
+    /// The beat's switch.
+    pub on: String,
+    pub beat: Control,
+    pub width: Control,
 }
 
 /// The page's data (`assets/settings-page.json`).
@@ -152,6 +165,7 @@ pub struct SettingsPage {
     pub new_route_depth: f64,
     pub target_groups: TargetGroups,
     pub layers: LayersPage,
+    pub binaural: BinauralPage,
 }
 
 pub const SETTINGS_PAGE_JSON: &str = include_str!("../../assets/settings-page.json");
@@ -208,10 +222,10 @@ pub fn target_groups(domain: Domain) -> &'static [TargetGroup] {
 }
 
 /// Whether a route's target is audible or visible now: its formula or card
-/// is on; a layer is on (the layers' tempo: any of them); the effects, and
-/// the cards that are always on, always are.
+/// is on; a layer is on (the layers' tempo: any of them); the effects, the
+/// binaural section and the cards that are always on, always are.
 pub fn is_target_on(point: &AppState, target: &str) -> bool {
-    if target == FX_TARGET || schema().always_on_card_ids.iter().any(|id| id == target) {
+    if target == FX_TARGET || target == "bin" || schema().always_on_card_ids.iter().any(|id| id == target) {
         return true;
     }
     if target == "seq" {
@@ -235,7 +249,9 @@ pub fn new_route(point: &AppState, domain: Domain) -> ModRoute {
     let groups = target_groups(domain);
     let group = groups
         .iter()
-        .find(|g| g.id != FX_TARGET && is_target_on(point, &g.id))
+        // The effects and the binaural section are always on: a new route
+        // goes to a voice that is, when there is one.
+        .find(|g| g.id != FX_TARGET && g.id != "bin" && is_target_on(point, &g.id))
         .or(groups.last())
         .expect("a side has targets");
     let param = &group.params[0];
@@ -283,7 +299,7 @@ fn key(s: &AppState) -> Value {
         .collect();
     let mut v = json!({
         "fx": s.audio.fx, "formulas": s.audio.formulas, "visual": s.visual, "coupling": s.coupling,
-        "lfos": s.modulation.lfos, "routes": routes, "seq": s.seq,
+        "lfos": s.modulation.lfos, "routes": routes, "seq": s.seq, "bin": s.bin,
     });
     round(&mut v);
     v
@@ -324,7 +340,7 @@ mod tests {
         catalogue.sort_unstable();
         assert_eq!(grouped, catalogue, "every sound of the catalogue in exactly one group");
         let keys: Vec<&str> = l.sliders.iter().map(|c| c.k.as_str()).collect();
-        assert_eq!(keys, ["gain", "speed", "density", "humanize"]);
+        assert_eq!(keys, ["gain", "speed", "density", "humanize", "az"]);
         for c in l.sliders.iter().filter(|c| c.k != "humanize") {
             let g = crate::genome::genes::gene_by_id(&format!("seq.0.{}", c.k)).expect("a gene");
             assert_eq!((c.min, c.max), (g.min, g.max), "{}: the slider is the gene's range", c.k);
@@ -333,5 +349,14 @@ mod tests {
         assert_eq!((l.tempo.min, l.tempo.max), (cps.min, cps.max));
         let modes: Vec<&str> = l.modes.iter().map(|m| m.value.as_str()).collect();
         assert_eq!(modes, ["hits", "bed"]);
+    }
+
+    #[test]
+    fn the_binaural_section_has_its_genes_ranges() {
+        let b = &page().binaural;
+        for c in [&b.beat, &b.width] {
+            let g = crate::genome::genes::gene_by_id(&format!("bin.{}", c.k)).expect("a gene");
+            assert_eq!((c.min, c.max, c.exp == Some(true)), (g.min, g.max, g.exp), "{}", c.k);
+        }
     }
 }

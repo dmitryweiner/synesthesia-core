@@ -5,7 +5,7 @@
 use crate::modmatrix::{LfoDef, LfoShape, ModRoute};
 use crate::schema::{schema, seq_sound_index, GeneKind};
 use crate::seq::{split_sound, Layer, Mode, SeqState};
-use crate::state::AppState;
+use crate::state::{is_neutral_param, AppState, BinState};
 
 use super::genes::{
     gene_from_value, gene_index, genes, mod_target_index, mod_targets, read_value, route_slots, Genome,
@@ -159,7 +159,14 @@ pub fn encode_genome(state: &AppState) -> Genome {
         set_value(&mut g, &id("density"), l.density);
         set_raw(&mut g, &id("dry"), f64::from(l.dry));
         set_raw(&mut g, &id("bed"), f64::from(l.mode == Mode::Bed));
+        set_value(&mut g, &id("az"), l.az);
     }
+
+    // Space and the binaural beat (PLAN-BINAURAL.md). The formulas'
+    // azimuths are their sliders, encoded above.
+    set_raw(&mut g, "bin.on", f64::from(state.bin.on));
+    set_value(&mut g, "bin.beat", state.bin.beat);
+    set_value(&mut g, "bin.width", state.bin.width);
     g
 }
 
@@ -171,7 +178,13 @@ pub fn decode_genome(g: &Genome) -> AppState {
         if let Some(snap) = state.audio.formulas.get_mut(&f.id) {
             snap.enabled = get_raw(g, &format!("a.{}.enabled", f.id)) == 1.0;
             for sl in &f.sliders {
-                snap.params.insert(sl.k.clone(), read_value(g, &format!("a.{}.{}", f.id, sl.k)));
+                let v = read_value(g, &format!("a.{}.{}", f.id, sl.k));
+                // A centred azimuth is no azimuth (see `FormulaSnapshot`).
+                if is_neutral_param(&sl.k, v) {
+                    snap.params.remove(&sl.k);
+                } else {
+                    snap.params.insert(sl.k.clone(), v);
+                }
             }
         }
     }
@@ -265,6 +278,7 @@ pub fn decode_genome(g: &Genome) -> AppState {
                 dry: get_raw(g, &id("dry")) == 1.0,
                 mode: if get_raw(g, &id("bed")) == 1.0 { Mode::Bed } else { Mode::Hits },
                 humanize: 0.0,
+                az: read_value(g, &id("az")),
             }
         })
         .collect();
@@ -272,6 +286,11 @@ pub fn decode_genome(g: &Genome) -> AppState {
     if layers.iter().any(|l| l.on) {
         state.seq = SeqState { cps: read_value(g, "seq.cps"), layers };
     }
+    state.bin = BinState {
+        on: get_raw(g, "bin.on") == 1.0,
+        beat: read_value(g, "bin.beat"),
+        width: read_value(g, "bin.width"),
+    };
     state
 }
 

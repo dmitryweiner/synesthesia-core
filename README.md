@@ -18,6 +18,8 @@ are CC0 / public domain, in
 - [LFOs and modulation](docs/lfo.md) — the four LFOs, their shapes, the routes
 - [Effects](docs/effects.md) — filter, chorus/flanger, phaser, delay with shimmer,
   reverb, limiter; effect presets
+- [Space and binaural beats](docs/binaural.md) — stereo for headphones: voices
+  around the head, width, the binaural beat
 - [The picture](docs/picture.md) — reaction-diffusion, palette, how the sound
   drives it, the flash guard
 - [Points, search and presets](docs/search.md) — the point and its genes,

@@ -82,7 +82,7 @@ fn is_mod_target(target: &str, param: &str) -> bool {
     if target == "fx" {
         return is_fx_mod_param(param);
     }
-    if target == "seq" || target.starts_with("seq.") {
+    if target == "seq" || target.starts_with("seq.") || target == "bin" {
         return schema().mod_targets.iter().any(|t| t.target == target && t.param == param);
     }
     if schema().formula_ids.iter().any(|id| id == target) {
@@ -159,6 +159,7 @@ fn sanitize_layer(v: &Value) -> Option<crate::seq::Layer> {
         dry: v.get("dry").and_then(Value::as_bool).unwrap_or(false),
         mode: if v.get("mode").and_then(Value::as_str) == Some("bed") { Mode::Bed } else { Mode::Hits },
         humanize: finite(v.get("humanize")).map_or(0.0, |x| clamp(x, 0.0, 1.0)),
+        az: num("az", 0.0),
     })
 }
 
@@ -176,6 +177,26 @@ fn sanitize_seq(v: &Value) -> Option<Value> {
         (0..schema().seq_layers).map(|i| given.get(i).and_then(sanitize_layer).unwrap_or_default()).collect();
     let seq = SeqState { cps, layers };
     (!seq.is_silent()).then(|| serde_json::to_value(seq).expect("a SeqState serializes"))
+}
+
+/// The `bin` section made safe (PLAN-BINAURAL.md), or `None` when it is
+/// neutral — such a point has no section, as before there was one.
+fn sanitize_bin(v: &Value) -> Option<Value> {
+    use crate::state::{bin_range, BinState};
+    if !is_record(v) {
+        return None;
+    }
+    let d = BinState::default();
+    let num = |k: &str, default: f64| {
+        let (lo, hi) = bin_range(&format!("bin.{k}"));
+        finite(v.get(k)).map_or(default, |x| clamp(x, lo, hi))
+    };
+    let bin = BinState {
+        on: v.get("on").and_then(Value::as_bool).unwrap_or(false),
+        beat: num("beat", d.beat),
+        width: num("width", d.width),
+    };
+    (!bin.is_neutral()).then(|| serde_json::to_value(bin).expect("a BinState serializes"))
 }
 
 /// The web app's `sanitizeState` + `stateToAppState`: `None` only when the
@@ -302,6 +323,9 @@ pub fn sanitize(u: &Value) -> Option<AppState> {
 
     if let Some(seq) = u.get("seq").and_then(sanitize_seq) {
         state["seq"] = seq;
+    }
+    if let Some(bin) = u.get("bin").and_then(sanitize_bin) {
+        state["bin"] = bin;
     }
 
     // `if (partial.presetName)`: an empty name is no name. The new spelling

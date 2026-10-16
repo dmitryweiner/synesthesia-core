@@ -11,6 +11,7 @@ decisions behind work in progress are in the plan files next to it.
 | [Sample and drum layers](layers.md) | four layers of recorded sounds and synth drums, in Strudel-style rhythms; the sample bank |
 | [LFOs and modulation](lfo.md) | the four shared LFOs, their shapes, and the routes that move sound, layer and picture parameters |
 | [Effects](effects.md) | the FX chain: filter (biquads, formants, comb), chorus/flanger, phaser, delay with shimmer, reverb, limiter; the effect presets |
+| [Space and binaural beats](binaural.md) | the stereo engine: voices around the head (azimuth, width), the binaural beat, mono and stereo apps |
 | [The picture](picture.md) | Gray–Scott reaction-diffusion, field variation, flow, palette; how the sound drives it; the flash guard |
 | [Points, search and presets](search.md) | the point and its genes, 👍 👎 🎲 ↩, the morph, the scout and the fractality score, presets, share links |
 
@@ -59,7 +60,10 @@ In words (`syn-core/src/engine.rs`):
 3. The mix runs through the **FX chain** in a fixed order. The dry layers
    are added after it.
 4. The **master gain** (default 0.75, glides over 50 ms) scales the result.
-   The model is mono.
+   This is the mono path every app plays; a stereo app's engine places
+   each voice around the head, runs the chain once per ear and adds the
+   binaural beat ([Space and binaural beats](binaural.md)) — at width 0
+   with the beat off, both its ears are this mono sound.
 5. The engine **listens to its own output** the way the browser's
    `AnalyserNode` did (a 2048-point FFT, 60 frames a second) and publishes
    loudness, swell, brightness, three band levels, an onset envelope and

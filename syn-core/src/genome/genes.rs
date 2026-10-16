@@ -124,17 +124,24 @@ mod tests {
     fn the_gene_list_is_the_one_the_web_app_derives() {
         let g = genes();
         // 250 from the web app, then the sample/drum layers appended
-        // (PLAN-SAMPLES-SCRIPTS.md): the first 250 never move.
-        assert_eq!(g.len(), 283, "gene count changed — share compatibility depends on it");
+        // (PLAN-SAMPLES-SCRIPTS.md), then space and the binaural beat
+        // (PLAN-BINAURAL.md): the earlier genes never move.
+        assert_eq!(g.len(), 313, "gene count changed — share compatibility depends on it");
         assert_eq!(g[0].id, "a.additive.enabled");
         assert_eq!(g[249].id, "c.spectrumToTint");
         assert_eq!(g[250].id, "seq.cps");
         assert_eq!(g[282].id, "seq.3.bed");
+        assert_eq!(g[283].id, "a.additive.az");
+        assert_eq!(g[306].id, "seq.0.az");
+        assert_eq!(g[310].id, "bin.on");
+        assert_eq!(g[312].id, "bin.width");
         assert_eq!(gene_index("fx.filterOn"), gene_index_of("fx.filterOn").unwrap());
         assert_eq!(route_slots(), 12);
-        assert_eq!(mod_targets().len(), 146);
+        assert_eq!(mod_targets().len(), 175);
         assert_eq!(mod_targets()[132].label, "Palette · Gloss", "the first 133 never move");
-        assert_eq!(genes()[gene_index("route.0.target")].max, 145.0);
+        assert_eq!(mod_targets()[145].label, "Layer 4 · Density", "nor the layers' 13");
+        assert_eq!(mod_targets()[174].label, "Binaural · Width");
+        assert_eq!(genes()[gene_index("route.0.target")].max, 174.0);
     }
 
     #[test]

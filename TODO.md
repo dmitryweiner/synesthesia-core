@@ -21,5 +21,11 @@ Agreed follow-ups that are not done yet. Remove an item when it is done.
   decode), the fix is here — build the program outside the lock.
 - **Binaural sound** — PLAN-BINAURAL.md (agreed 2026-10-15): a stereo
   mode beside mono, sources around the head (structural head model),
-  binaural beats by single-sideband shift, all as genes. Next: B0, the
-  probes.
+  binaural beats by single-sideband shift, all as genes. Done: B0–B4 in
+  the core (313 genes; `Player::new_stereo`, `renderStereo`,
+  `SoundPlayer.newStereo`; `syn-bench --stereo`). Next: the apps bump —
+  the console (`channels = 2`, the `verify` ladder), the worklet
+  (`outputChannelCount: [2]`), Android (a stereo `AudioTrack`, and the
+  first phone measurement of the stereo engine); the web Settings page's
+  Binaural section (`settings-page.json` · `binaural`); B5, the presets'
+  azimuths, widths and a beat or two by ear on headphones.

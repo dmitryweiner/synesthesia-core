@@ -511,6 +511,11 @@
       "k": "move",
       "name": "Move (Hz)",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -551,6 +556,11 @@
      {
       "k": "lAmp",
       "name": "Amp scale",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -593,6 +603,11 @@
       "k": "rossAmp",
       "name": "Amp scale",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -613,6 +628,11 @@
      {
       "k": "k",
       "name": "k",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -639,6 +659,11 @@
      {
       "k": "shepOctaves",
       "name": "Octaves",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -676,6 +701,11 @@
       "k": "bellPeriod",
       "name": "Strike every (s)",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -701,6 +731,11 @@
      {
       "k": "rissPeriod",
       "name": "Strike every (s)",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -728,6 +763,11 @@
       "k": "I",
       "name": "Index I",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -748,6 +788,11 @@
      {
       "k": "df",
       "name": "Δf (Hz)",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -770,6 +815,11 @@
       "k": "f2pm",
       "name": "f2 (Hz)",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -796,6 +846,11 @@
       "k": "wq",
       "name": "w",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -827,6 +882,11 @@
       "k": "lfoHz",
       "name": "Update rate (Hz)",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -847,6 +907,11 @@
      {
       "k": "alpha",
       "name": "α",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -874,6 +939,11 @@
       "k": "ksBright",
       "name": "Brightness",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -895,6 +965,11 @@
       "k": "bbRate",
       "name": "Rate (Hz)",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -920,6 +995,11 @@
      {
       "k": "oceanDepth",
       "name": "Swell depth",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -947,6 +1027,11 @@
       "k": "rainBed",
       "name": "Bed level",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -963,6 +1048,11 @@
       "k": "nCut",
       "name": "Cutoff (Hz)",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -978,6 +1068,11 @@
      {
       "k": "pinkBright",
       "name": "Brightness",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -995,6 +1090,11 @@
       "k": "brownStep",
       "name": "Step size",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -1011,6 +1111,11 @@
       "k": "velvetDensity",
       "name": "Density (imp/s)",
       "exp": true
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -1047,6 +1152,11 @@
       "k": "tanBright",
       "name": "Pluck brightness",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -1072,6 +1182,11 @@
      {
       "k": "bowlBright",
       "name": "Upper modes",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -1105,6 +1220,11 @@
       "k": "density",
       "name": "Density",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -1125,6 +1245,11 @@
      {
       "k": "density",
       "name": "Density",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
       "exp": false
      }
     ]
@@ -1147,6 +1272,11 @@
       "k": "density",
       "name": "Density",
       "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
      }
     ]
    },
@@ -1167,6 +1297,27 @@
      {
       "k": "density",
       "name": "Density",
+      "exp": false
+     },
+     {
+      "k": "az",
+      "name": "Azimuth",
+      "exp": false
+     }
+    ]
+   },
+   {
+    "id": "bin",
+    "title": "Binaural",
+    "params": [
+     {
+      "k": "beat",
+      "name": "Beat",
+      "exp": true
+     },
+     {
+      "k": "width",
+      "name": "Width",
       "exp": false
      }
     ]
@@ -1458,6 +1609,13 @@
     "min": 0,
     "max": 1,
     "step": 0.01
+   },
+   {
+    "k": "az",
+    "name": "Azimuth (°)",
+    "min": -90,
+    "max": 90,
+    "step": 1
    }
   ],
   "modes": [
@@ -1545,5 +1703,25 @@
    }
   ],
   "customRhythm": "custom (write your own)"
+ },
+ "binaural": {
+  "title": "Binaural",
+  "tag": "headphones · stereo",
+  "on": "Beat",
+  "beat": {
+   "k": "beat",
+   "name": "Beat (Hz)",
+   "min": 0.5,
+   "max": 40,
+   "step": 0.1,
+   "exp": true
+  },
+  "width": {
+   "k": "width",
+   "name": "Width",
+   "min": 0,
+   "max": 1,
+   "step": 0.01
+  }
  }
 }

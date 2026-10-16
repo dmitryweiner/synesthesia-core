@@ -19,6 +19,7 @@ AppState v1
 ├── mod                      4 LFOs and the routes          → lfo.md
 ├── coupling                 9 sound → image amounts        → picture.md
 ├── seq                      tempo and 4 layers (omitted when none is on) → layers.md
+├── bin                      width and the binaural beat (omitted when neutral) → binaural.md
 └── preset_name              optional
 ```
 
@@ -28,7 +29,7 @@ are omitted when unused.
 
 ## The genome
 
-For the search, a point is a vector of **283 genes**, each normalized to
+For the search, a point is a vector of **313 genes**, each normalized to
 [0, 1] (`genes` in `assets/schema.json`, `genome/codec.rs`):
 
 | group | genes |
@@ -39,12 +40,14 @@ For the search, a point is a vector of **283 genes**, each normalized to
 | `lfo.<i>.*` | shape, rate, phase |
 | `route.<i>.*` | 12 route slots: on, source, target, depth, exp |
 | `c.*` | the nine couplings |
-| `seq.*` | tempo and per layer: on, sound, rhythm, gain, speed, density, dry, bed |
+| `seq.*` | tempo and per layer: on, sound, rhythm, gain, speed, density, dry, bed, azimuth |
+| `bin.*` | the binaural beat on/off and its rate, the width; with each generator's azimuth, see [Space and binaural beats](binaural.md) |
 
 Genes are continuous (`cont`, some on a log scale), booleans or choices. A
 gene can be **gated**: a generator's sliders matter only while it is on. The
 order is a compatibility contract — new genes are only ever appended (the
-first 250 are the web app's original genome; the layers' 33 came after).
+first 250 are the web app's original genome; the layers' 33 came after,
+then space and the binaural beat's 30).
 What is not a gene — the name, the master gain, a hand-written pattern's
 text — is carried over from the point being listened to.
 
@@ -71,8 +74,9 @@ A step (`genome/evolve.rs`) nudges six continuous genes by Gaussian noise
 of width σ, and sometimes makes one **structural move**: toggle a
 generator, toggle an effect module, change the filter type / chorus mode
 / phaser stages, toggle a picture card, change the palette, change an LFO
-shape, add/move/remove a route — and, when the point has layers, toggle a
-layer or choose another sound or rhythm for one. Every proposal is then
+shape, add/move/remove a route, switch the binaural beat on (at 4–12 Hz)
+or off — and, when the point has layers, toggle a layer or choose another
+sound or rhythm for one. Every proposal is then
 **repaired**: one to five generators on, and the explicit sound → image
 couplings summing to at least 1.2, so a point never goes silent or deaf.
 

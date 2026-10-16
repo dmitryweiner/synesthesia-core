@@ -12,6 +12,10 @@ const RATIO: f64 = 20.0;
 #[derive(Clone, Debug)]
 pub struct Limiter {
     look: DelayLine,
+    /// The right ear's look-ahead and the analysis tap's, for
+    /// [`Limiter::tick_linked`] (a few hundred samples each).
+    look_r: DelayLine,
+    look_m: DelayLine,
     look_samples: f64,
     env_db: f64,
     gain_db: f64,
@@ -28,6 +32,8 @@ impl Limiter {
         let look_samples = ATTACK * sr;
         let mut l = Self {
             look: DelayLine::new(look_samples as usize + 4),
+            look_r: DelayLine::new(look_samples as usize + 4),
+            look_m: DelayLine::new(look_samples as usize + 4),
             look_samples,
             env_db: -120.0,
             gain_db: 0.0,
@@ -44,6 +50,8 @@ impl Limiter {
 
     pub fn clear(&mut self) {
         self.look.clear();
+        self.look_r.clear();
+        self.look_m.clear();
         self.env_db = -120.0;
         self.gain_db = 0.0;
     }
@@ -84,6 +92,29 @@ impl Limiter {
         let delayed = self.look.tick(x, self.look_samples);
         delayed * 10f64.powf(self.gain_db / 20.0) * self.makeup
     }
+
+    /// Both ears and the analysis tap `m` under one gain (PLAN-BINAURAL.md:
+    /// the limiter is never un-linked, so the image does not lurch), taken
+    /// from the louder ear. With `l = r = m` it is [`Limiter::tick`] three
+    /// times over, bit for bit.
+    #[inline]
+    pub fn tick_linked(&mut self, l: f64, r: f64, m: f64) -> (f64, f64, f64) {
+        let level = l.abs().max(r.abs());
+        let la = self.look_samples;
+        if level <= self.threshold_lin && self.gain_db > -1e-4 {
+            self.gain_db = 0.0;
+            let k = self.makeup;
+            return (self.look.tick(l, la) * k, self.look_r.tick(r, la) * k, self.look_m.tick(m, la) * k);
+        }
+        let level_db = 20.0 * level.max(1e-9).log10();
+        let over = (level_db - self.threshold_db).max(0.0);
+        let target = -over * (1.0 - 1.0 / RATIO);
+        let coef = if target < self.gain_db { self.attack_coef } else { self.release_coef };
+        self.gain_db += coef * (target - self.gain_db);
+        let g = 10f64.powf(self.gain_db / 20.0);
+        let k = self.makeup;
+        (self.look.tick(l, la) * g * k, self.look_r.tick(r, la) * g * k, self.look_m.tick(m, la) * g * k)
+    }
 }
 
 #[cfg(test)]
@@ -121,6 +152,32 @@ mod tests {
             }
         }
         assert!(peak < 1.4, "12 dB over the threshold came out at {peak:.3}");
+    }
+
+    #[test]
+    fn linked_it_is_the_mono_limiter_when_the_ears_agree_and_one_gain_when_they_do_not() {
+        let sr = 48000.0;
+        let (mut a, mut b) = (Limiter::new(sr), Limiter::new(sr));
+        let mut worst_l: f64 = 0.0;
+        for i in 0..(sr as usize) {
+            let x = 3.0 * (std::f64::consts::TAU * 220.0 * i as f64 / sr).sin();
+            let y = a.tick(x);
+            let (l, r, m) = b.tick_linked(x, x, x);
+            assert_eq!((l, r, m), (y, y, y));
+        }
+        // A loud left ear pulls the quiet right one down with it.
+        let mut c = Limiter::new(sr);
+        for i in 0..(sr as usize) {
+            let x = (std::f64::consts::TAU * 220.0 * i as f64 / sr).sin();
+            let (l, r, _) = c.tick_linked(4.0 * x, 0.1 * x, 2.05 * x);
+            if i > sr as usize / 2 {
+                worst_l = worst_l.max(l.abs());
+                if x.abs() > 0.5 {
+                    assert!((l / r - 40.0).abs() < 1e-6, "one gain for both ears");
+                }
+            }
+        }
+        assert!(worst_l < 1.4, "{worst_l}");
     }
 
     #[test]

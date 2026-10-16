@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 
 use crate::modmatrix::ModState;
 use crate::schema::schema;
@@ -16,7 +16,59 @@ pub type Params = BTreeMap<String, f64>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FormulaSnapshot {
     pub enabled: bool,
+    /// The formula's sliders. Its azimuth ([`AZ`], PLAN-BINAURAL.md) is one
+    /// of them, but a centred one is never written: a point from before
+    /// there was space serializes — and gets its id — as it did.
+    #[serde(serialize_with = "params_without_centre")]
     pub params: Params,
+}
+
+/// The slider key of a source's azimuth, degrees (−90 … 90, 0 = centre).
+/// The generators never read it; the stereo engine does.
+pub const AZ: &str = "az";
+
+/// A value that is the same as no value: a centred azimuth.
+pub fn is_neutral_param(k: &str, v: f64) -> bool {
+    k == AZ && v == 0.0
+}
+
+fn params_without_centre<S: Serializer>(p: &Params, s: S) -> Result<S::Ok, S::Error> {
+    s.collect_map(p.iter().filter(|(k, v)| !is_neutral_param(k, **v)))
+}
+
+/// Binaural sound (PLAN-BINAURAL.md decision 2): how wide the point is and
+/// how fast its ears beat — properties of the point, heard only where a
+/// host renders stereo. Left out of a point that has neither, so such a
+/// point serializes exactly as before.
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct BinState {
+    /// The binaural beat is on.
+    pub on: bool,
+    /// The beat, Hz: the left ear hears the point Δ/2 lower, the right Δ/2
+    /// higher (0.5–40, the delta … gamma bands).
+    pub beat: f64,
+    /// 0–1: scales every source's azimuth, the reverb's and the chorus's
+    /// spread. 0 is the mono image.
+    pub width: f64,
+}
+
+impl Default for BinState {
+    fn default() -> Self {
+        BinState { on: false, beat: bin_range("bin.beat").0, width: 0.0 }
+    }
+}
+
+impl BinState {
+    /// Neither wide nor beating: the point sounds as it would without it.
+    pub fn is_neutral(&self) -> bool {
+        !self.on && self.width == 0.0
+    }
+}
+
+/// A `bin` gene's range.
+pub fn bin_range(id: &str) -> (f64, f64) {
+    crate::genome::genes::gene_by_id(id).map_or((0.0, 1.0), |g| (g.min, g.max))
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -194,6 +246,9 @@ pub struct AppState {
     /// exactly as it did before there were layers.
     #[serde(default, skip_serializing_if = "SeqState::is_silent")]
     pub seq: SeqState,
+    /// Width and the binaural beat (PLAN-BINAURAL.md), left out when neutral.
+    #[serde(default, skip_serializing_if = "BinState::is_neutral")]
+    pub bin: BinState,
 }
 
 impl AppState {
@@ -205,7 +260,12 @@ impl AppState {
             .formulas
             .iter()
             .map(|f| {
-                let params = f.sliders.iter().map(|sl| (sl.k.clone(), sl.value)).collect();
+                let params = f
+                    .sliders
+                    .iter()
+                    .filter(|sl| !is_neutral_param(&sl.k, sl.value))
+                    .map(|sl| (sl.k.clone(), sl.value))
+                    .collect();
                 (f.id.clone(), FormulaSnapshot { enabled: false, params })
             })
             .collect();
@@ -218,6 +278,7 @@ impl AppState {
             coupling: crate::schema::default_coupling(),
             preset_name: None,
             seq: SeqState::default(),
+            bin: BinState::default(),
         }
     }
 

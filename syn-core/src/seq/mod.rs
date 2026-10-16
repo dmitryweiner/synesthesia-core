@@ -96,6 +96,10 @@ pub struct Layer {
     /// with the point like a hand-written pattern.
     #[serde(default, skip_serializing_if = "is_zero")]
     pub humanize: f64,
+    /// Where the layer sits around the head, degrees (−90 … 90, 0 = centre;
+    /// PLAN-BINAURAL.md): heard in stereo only, not written when centred.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub az: f64,
 }
 
 fn is_zero(x: &f64) -> bool {
@@ -114,6 +118,7 @@ impl Default for Layer {
             dry: false,
             mode: Mode::Hits,
             humanize: 0.0,
+            az: 0.0,
         }
     }
 }

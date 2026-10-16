@@ -178,7 +178,8 @@ fn genes_in(group: &str) -> Vec<&'static GeneDef> {
 /// The page: every section, in the order it is shown.
 ///
 /// Sound: the FX modules, then the formulas, the sample and drum layers
-/// (their tempo, then each layer), then the LFOs and the routes.
+/// (their tempo, then each layer), the binaural section, then the LFOs and
+/// the routes.
 /// Picture: the cards, then the sound → image couplings.
 pub fn sections() -> Vec<Section> {
     let s = schema();
@@ -241,6 +242,24 @@ pub fn sections() -> Vec<Section> {
         let title = toggle.map_or_else(|| group.clone(), |t| t.label.clone());
         let description = s.seq_layer_description.clone();
         out.push(Section { id: group, title, description, tab: Tab::Sound, toggle, controls });
+    }
+
+    // "Binaural · Width" → the section is "Binaural". No switch of its own:
+    // the width and the beat are each their own.
+    let bin = genes_in("bin");
+    if let Some(first) = bin.first() {
+        let title = first
+            .label
+            .split_once(" · ")
+            .map_or_else(|| "Binaural".to_string(), |(head, _)| head.to_string());
+        out.push(Section {
+            id: "bin".into(),
+            title,
+            description: s.bin_description.clone(),
+            tab: Tab::Sound,
+            toggle: None,
+            controls: bin,
+        });
     }
 
     for i in 0..s.lfo_count {

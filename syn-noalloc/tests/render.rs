@@ -76,3 +76,66 @@ fn layers_allocate_nothing() {
         assert_eq!(n, 0, "{n} allocations in 3000 blocks with layers");
     }
 }
+
+/// The stereo engine (PLAN-BINAURAL.md): every voice and layer placed, the
+/// azimuths, the width and the beat under LFOs, the beat switched on and off
+/// — nothing allocated or freed either.
+#[test]
+fn render_stereo_allocates_nothing() {
+    use syn_core::seq::{Layer, SeqProgram, SeqState};
+    use syn_core::state::{AppState, BinState};
+    let (mut l, mut r) = (vec![0.0f32; BLOCK], vec![0.0f32; BLOCK]);
+    for p in presets() {
+        let mut s = AppState { bin: BinState { on: true, beat: 6.0, width: 0.8 }, ..p.state.clone() };
+        for (i, f) in s.audio.formulas.values_mut().enumerate() {
+            f.params.insert("az".into(), -60.0 + 25.0 * (i % 6) as f64);
+        }
+        s.seq = SeqState {
+            cps: 1.0,
+            layers: vec![
+                Layer { on: true, sound: "bd".into(), pattern: "0*4".into(), az: -40.0, ..Layer::default() },
+                Layer {
+                    on: true,
+                    sound: "hh".into(),
+                    pattern: "0*8".into(),
+                    az: 50.0,
+                    dry: true,
+                    ..Layer::default()
+                },
+            ],
+        };
+        for (target, param) in
+            [("fm", "az"), ("additive", "az"), ("bin", "width"), ("bin", "beat"), ("seq.0", "az")]
+        {
+            s.modulation.routes.push(syn_core::ModRoute {
+                src: 2,
+                target: target.into(),
+                param: param.into(),
+                depth: 0.5,
+                exp: false,
+            });
+        }
+        let mut e = Engine::new_stereo(48000.0, &s, 1);
+        e.set_seq(Box::new(SeqProgram::new(&s.seq, None)));
+        let off = AppState { bin: BinState { on: false, ..s.bin }, ..s.clone() };
+        e.render_stereo(&mut l, &mut r);
+        let mut blocks = || {
+            count(|| {
+                for _ in 0..200 {
+                    e.render_stereo(&mut l, &mut r);
+                }
+            })
+            .1
+        };
+        let beating = blocks();
+        // `set_state` clones the point: the control side's work, not counted.
+        e.set_state(&off);
+        let fading = count(|| {
+            for _ in 0..200 {
+                e.render_stereo(&mut l, &mut r);
+            }
+        })
+        .1;
+        assert_eq!((beating, fading), (0, 0), "{}: allocations in 400 stereo blocks", p.name);
+    }
+}

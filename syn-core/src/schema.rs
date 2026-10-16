@@ -166,6 +166,8 @@ pub struct Schema {
     /// and one layer.
     pub seq_description: String,
     pub seq_layer_description: String,
+    /// What the `bin` genes are, for the Settings page (PLAN-BINAURAL.md).
+    pub bin_description: String,
 }
 
 /// The index of a sound name in the catalogue.

@@ -28,8 +28,9 @@ the actual sound, as the web app's `analyze.mjs` did: `cargo run --release
 -p syn-bench -- [--preset 0,3] [--secs 30 --sr 22050] [--mutants N]
 [--random N] [--repeat N] [--character --ref 0,3,5,6,8] [--wav DIR]
 [--png DIR] [--json FILE]`, or one of `--onsets`, `--switch 0,3,10 --at 20`,
-`--configs 30@22050,24@11025`. The header of `syn-bench/src/main.rs` says
-what each prints. An agent cannot hear: read the `--png` waterfall.
+`--configs 30@22050,24@11025`, `--stereo` (PLAN-BINAURAL.md: the stereo
+engine's cost and checks; `--listen … --stereo` writes stereo drafts).
+The header of `syn-bench/src/main.rs` says what each prints. An agent cannot hear: read the `--png` waterfall.
 
 ## Rules
 
@@ -111,7 +112,11 @@ syn-core/src/modmatrix.rs LFOs as pure functions of time (sine … S&H, and pink
                           1/f value noise); routes onto fx, formulas and cards
 syn-core/src/fx/          the DSP chain (biquads, comb, chorus, phaser, delay
                           with the octave-up shimmer in its loop, FDN reverb,
-                          limiter)
+                          limiter); in stereo two fronts, one reverb with two
+                          outputs, a linked limiter, and hilbert (the binaural
+                          beat's all-pass pair and SSB shifter)
+syn-core/src/spatial.rs   the head model (PLAN-BINAURAL.md): Woodworth's ITD and
+                          the head shadow, per source, at block rate
 syn-core/src/analysis/    fft, fractal (the scout's score), and the web app's bench
                           metrics: character, clicks, a log spectrogram, the picture's
                           coverage/edges/change — each
@@ -129,7 +134,9 @@ syn-core/src/seq/         the sequencer layers (PLAN-SAMPLES-SCRIPTS.md): mini (
                           the engine's Sequencer)
 syn-core/src/engine.rs    Engine: render blocks, features, onset hits, time; render_offline
                           (formulas + FX — the scout's, without the layers) and
-                          render_offline_with (+ the point's layers, from a bank)
+                          render_offline_with (+ the point's layers, from a bank);
+                          new_stereo / render_stereo / render_offline_stereo (two
+                          ears; analyses (L+R)/2 before the beat)
 syn-core/src/features.rs  AnalyserNode emulation → AudioFeatures, onsets
 syn-core/src/genome/      codec, evolve, explorer, scout
 syn-core/src/sim/         the picture: field, noise, fields, advect, palette,
@@ -149,7 +156,8 @@ syn-core/src/settings.rs  the Settings page, derived from it: sections, their
                           edited (Edit). No label is written by hand
 syn-core/src/share.rs     `#s=` tokens, and what a link opens (parse_launch)
 syn-player/src/lib.rs     Player: commands in, whole-block rendering, PCM out in
-                          any chunk size, fades, frames stamped on the engine
+                          any chunk size (mono, or interleaved stereo from
+                          new_stereo), fades, frames stamped on the engine
                           clock and looked up by the played time
 syn-session/src/lib.rs    Session: the explorer and the 2 s morph, the scout's
                           scheduling and its pool, the name and step count,

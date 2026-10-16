@@ -134,6 +134,14 @@
      "step": 0.01,
      "value": 0.35,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -199,6 +207,14 @@
      "max": 1,
      "step": 0.001,
      "value": 0.25
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -264,6 +280,14 @@
      "max": 1,
      "step": 0.001,
      "value": 0.25
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -297,6 +321,14 @@
      "max": 2,
      "step": 0.001,
      "value": 0.15
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -338,6 +370,14 @@
      "max": 10,
      "step": 1,
      "value": 6
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -395,6 +435,14 @@
      "max": 20,
      "step": 0.5,
      "value": 6
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -436,6 +484,14 @@
      "max": 20,
      "step": 0.5,
      "value": 6
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -478,6 +534,14 @@
      "max": 20,
      "step": 0.01,
      "value": 3
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -511,6 +575,14 @@
      "max": 20,
      "step": 0.01,
      "value": 0.8
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -545,6 +617,14 @@
      "step": 0.1,
      "value": 3,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -587,6 +667,14 @@
      "step": 0.01,
      "value": 0.8,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -637,6 +725,14 @@
      "step": 1,
      "value": 40,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -670,6 +766,14 @@
      "max": 10,
      "step": 0.01,
      "value": 3
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -711,6 +815,14 @@
      "max": 1,
      "step": 0.001,
      "value": 0.5
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -744,6 +856,14 @@
      "step": 100,
      "value": 8000,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -786,6 +906,14 @@
      "max": 1,
      "step": 0.01,
      "value": 0.7
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -828,6 +956,14 @@
      "max": 1,
      "step": 0.01,
      "value": 0.15
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -853,6 +989,14 @@
      "step": 1,
      "value": 800,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -877,6 +1021,14 @@
      "max": 1,
      "step": 0.01,
      "value": 0.3
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -902,6 +1054,14 @@
      "step": 0.001,
      "value": 0.02,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -927,6 +1087,14 @@
      "step": 10,
      "value": 2000,
      "exp": true
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -986,6 +1154,14 @@
      "max": 1,
      "step": 0.01,
      "value": 0.45
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   },
@@ -1028,6 +1204,14 @@
      "max": 1,
      "step": 0.01,
      "value": 0.4
+    },
+    {
+     "k": "az",
+     "name": "Azimuth (°)",
+     "min": -90,
+     "max": 90,
+     "step": 1,
+     "value": 0
     }
    ]
   }
@@ -3351,7 +3535,7 @@
    "kind": "choice",
    "group": "route.0",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.0.on"
   },
   {
@@ -3396,7 +3580,7 @@
    "kind": "choice",
    "group": "route.1",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.1.on"
   },
   {
@@ -3441,7 +3625,7 @@
    "kind": "choice",
    "group": "route.2",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.2.on"
   },
   {
@@ -3486,7 +3670,7 @@
    "kind": "choice",
    "group": "route.3",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.3.on"
   },
   {
@@ -3531,7 +3715,7 @@
    "kind": "choice",
    "group": "route.4",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.4.on"
   },
   {
@@ -3576,7 +3760,7 @@
    "kind": "choice",
    "group": "route.5",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.5.on"
   },
   {
@@ -3621,7 +3805,7 @@
    "kind": "choice",
    "group": "route.6",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.6.on"
   },
   {
@@ -3666,7 +3850,7 @@
    "kind": "choice",
    "group": "route.7",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.7.on"
   },
   {
@@ -3711,7 +3895,7 @@
    "kind": "choice",
    "group": "route.8",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.8.on"
   },
   {
@@ -3756,7 +3940,7 @@
    "kind": "choice",
    "group": "route.9",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.9.on"
   },
   {
@@ -3801,7 +3985,7 @@
    "kind": "choice",
    "group": "route.10",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.10.on"
   },
   {
@@ -3846,7 +4030,7 @@
    "kind": "choice",
    "group": "route.11",
    "min": 0,
-   "max": 145,
+   "max": 174,
    "activeIf": "route.11.on"
   },
   {
@@ -4240,6 +4424,333 @@
    "min": 0,
    "max": 1,
    "activeIf": "seq.3.on"
+  },
+  {
+   "id": "a.additive.az",
+   "label": "Harmonic Sum · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.additive",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.additive.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.lorenz.az",
+   "label": "Lorenz Attractor · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.lorenz",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.lorenz.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.rossler.az",
+   "label": "Rossler Attractor · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.rossler",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.rossler.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.gliss.az",
+   "label": "Exponential Glissando · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.gliss",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.gliss.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.shepard.az",
+   "label": "Shepard Tone · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.shepard",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.shepard.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.bell.az",
+   "label": "FM Bell · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.bell",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.bell.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.risset.az",
+   "label": "Risset Bell · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.risset",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.risset.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.fm.az",
+   "label": "FM Sine · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.fm",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.fm.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.beats.az",
+   "label": "Two Sines (Beats) · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.beats",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.beats.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.pm.az",
+   "label": "Phase Modulation · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.pm",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.pm.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.quasi.az",
+   "label": "Quasi-random LFO · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.quasi",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.quasi.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.logistic.az",
+   "label": "Logistic Map · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.logistic",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.logistic.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.dist.az",
+   "label": "Nonlinear Saturation · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.dist",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.dist.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.karplus.az",
+   "label": "Karplus–Strong (String) · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.karplus",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.karplus.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.bytebeat.az",
+   "label": "Bytebeat · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.bytebeat",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.bytebeat.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.ocean.az",
+   "label": "Ocean / Wind · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.ocean",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.ocean.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.rain.az",
+   "label": "Rain / Drops · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.rain",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.rain.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.noiselp.az",
+   "label": "Noise → Low-pass · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.noiselp",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.noiselp.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.pinknoise.az",
+   "label": "Pink Noise (1/f) · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.pinknoise",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.pinknoise.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.brownnoise.az",
+   "label": "Brown Noise (Brownian) · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.brownnoise",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.brownnoise.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.velvetnoise.az",
+   "label": "Velvet Noise · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.velvetnoise",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.velvetnoise.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.tanpura.az",
+   "label": "Tanpura · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.tanpura",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.tanpura.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "a.bowl.az",
+   "label": "Singing bowl · Azimuth (°)",
+   "kind": "cont",
+   "group": "a.bowl",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "a.bowl.enabled",
+   "neutral": 0.5
+  },
+  {
+   "id": "seq.0.az",
+   "label": "Layer 1 azimuth (°)",
+   "kind": "cont",
+   "group": "seq.0",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "seq.0.on",
+   "neutral": 0.5
+  },
+  {
+   "id": "seq.1.az",
+   "label": "Layer 2 azimuth (°)",
+   "kind": "cont",
+   "group": "seq.1",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "seq.1.on",
+   "neutral": 0.5
+  },
+  {
+   "id": "seq.2.az",
+   "label": "Layer 3 azimuth (°)",
+   "kind": "cont",
+   "group": "seq.2",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "seq.2.on",
+   "neutral": 0.5
+  },
+  {
+   "id": "seq.3.az",
+   "label": "Layer 4 azimuth (°)",
+   "kind": "cont",
+   "group": "seq.3",
+   "min": -90,
+   "max": 90,
+   "step": 1,
+   "activeIf": "seq.3.on",
+   "neutral": 0.5
+  },
+  {
+   "id": "bin.on",
+   "label": "Binaural · Beat",
+   "kind": "bool",
+   "group": "bin",
+   "min": 0,
+   "max": 1
+  },
+  {
+   "id": "bin.beat",
+   "label": "Binaural · Beat (Hz)",
+   "kind": "cont",
+   "group": "bin",
+   "min": 0.5,
+   "max": 40,
+   "step": 0.1,
+   "exp": true,
+   "activeIf": "bin.on",
+   "neutral": 0
+  },
+  {
+   "id": "bin.width",
+   "label": "Binaural · Width",
+   "kind": "cont",
+   "group": "bin",
+   "min": 0,
+   "max": 1,
+   "step": 0.01,
+   "neutral": 0
   }
  ],
  "modTargets": [
@@ -5118,6 +5629,180 @@
    "param": "density",
    "exp": false,
    "label": "Layer 4 · Density"
+  },
+  {
+   "target": "additive",
+   "param": "az",
+   "exp": false,
+   "label": "Harmonic Sum · Azimuth"
+  },
+  {
+   "target": "lorenz",
+   "param": "az",
+   "exp": false,
+   "label": "Lorenz Attractor · Azimuth"
+  },
+  {
+   "target": "rossler",
+   "param": "az",
+   "exp": false,
+   "label": "Rossler Attractor · Azimuth"
+  },
+  {
+   "target": "gliss",
+   "param": "az",
+   "exp": false,
+   "label": "Exponential Glissando · Azimuth"
+  },
+  {
+   "target": "shepard",
+   "param": "az",
+   "exp": false,
+   "label": "Shepard Tone · Azimuth"
+  },
+  {
+   "target": "bell",
+   "param": "az",
+   "exp": false,
+   "label": "FM Bell · Azimuth"
+  },
+  {
+   "target": "risset",
+   "param": "az",
+   "exp": false,
+   "label": "Risset Bell · Azimuth"
+  },
+  {
+   "target": "fm",
+   "param": "az",
+   "exp": false,
+   "label": "FM Sine · Azimuth"
+  },
+  {
+   "target": "beats",
+   "param": "az",
+   "exp": false,
+   "label": "Two Sines (Beats) · Azimuth"
+  },
+  {
+   "target": "pm",
+   "param": "az",
+   "exp": false,
+   "label": "Phase Modulation · Azimuth"
+  },
+  {
+   "target": "quasi",
+   "param": "az",
+   "exp": false,
+   "label": "Quasi-random LFO · Azimuth"
+  },
+  {
+   "target": "logistic",
+   "param": "az",
+   "exp": false,
+   "label": "Logistic Map · Azimuth"
+  },
+  {
+   "target": "dist",
+   "param": "az",
+   "exp": false,
+   "label": "Nonlinear Saturation · Azimuth"
+  },
+  {
+   "target": "karplus",
+   "param": "az",
+   "exp": false,
+   "label": "Karplus–Strong (String) · Azimuth"
+  },
+  {
+   "target": "bytebeat",
+   "param": "az",
+   "exp": false,
+   "label": "Bytebeat · Azimuth"
+  },
+  {
+   "target": "ocean",
+   "param": "az",
+   "exp": false,
+   "label": "Ocean / Wind · Azimuth"
+  },
+  {
+   "target": "rain",
+   "param": "az",
+   "exp": false,
+   "label": "Rain / Drops · Azimuth"
+  },
+  {
+   "target": "noiselp",
+   "param": "az",
+   "exp": false,
+   "label": "Noise → Low-pass · Azimuth"
+  },
+  {
+   "target": "pinknoise",
+   "param": "az",
+   "exp": false,
+   "label": "Pink Noise (1/f) · Azimuth"
+  },
+  {
+   "target": "brownnoise",
+   "param": "az",
+   "exp": false,
+   "label": "Brown Noise (Brownian) · Azimuth"
+  },
+  {
+   "target": "velvetnoise",
+   "param": "az",
+   "exp": false,
+   "label": "Velvet Noise · Azimuth"
+  },
+  {
+   "target": "tanpura",
+   "param": "az",
+   "exp": false,
+   "label": "Tanpura · Azimuth"
+  },
+  {
+   "target": "bowl",
+   "param": "az",
+   "exp": false,
+   "label": "Singing bowl · Azimuth"
+  },
+  {
+   "target": "seq.0",
+   "param": "az",
+   "exp": false,
+   "label": "Layer 1 · Azimuth"
+  },
+  {
+   "target": "seq.1",
+   "param": "az",
+   "exp": false,
+   "label": "Layer 2 · Azimuth"
+  },
+  {
+   "target": "seq.2",
+   "param": "az",
+   "exp": false,
+   "label": "Layer 3 · Azimuth"
+  },
+  {
+   "target": "seq.3",
+   "param": "az",
+   "exp": false,
+   "label": "Layer 4 · Azimuth"
+  },
+  {
+   "target": "bin",
+   "param": "beat",
+   "exp": true,
+   "label": "Binaural · Beat"
+  },
+  {
+   "target": "bin",
+   "param": "width",
+   "exp": false,
+   "label": "Binaural · Width"
   }
  ],
  "routeSlots": 12,
@@ -5743,5 +6428,6 @@
  ],
  "seqLayers": 4,
  "seqDescription": "Recorded sounds and drums over the formulas, in rhythms written in Strudel's mini-notation. The tempo is in cycles per second: 0.5 is a four-beat bar at 120 bpm.",
- "seqLayerDescription": "One sound — a recording or a synth drum — played to a rhythm (hits) or looped under everything (bed). It goes into the effects with the formulas."
+ "seqLayerDescription": "One sound — a recording or a synth drum — played to a rhythm (hits) or looped under everything (bed). It goes into the effects with the formulas.",
+ "binDescription": "Space and the binaural beat, heard where the app plays stereo (on headphones): Width spreads the voices around the head — each formula and layer has its own azimuth — and widens the reverb and the chorus; Beat puts the left ear a few hertz below the point and the right ear as far above it, and the brain hears the difference as a slow pulse in neither ear."
 }

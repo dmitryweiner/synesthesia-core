@@ -85,6 +85,25 @@ impl AudioCore {
         })
     }
 
+    /// [`AudioCore::create`] for two ears (PLAN-BINAURAL.md): the point's
+    /// space and binaural beat, for headphones. Read it with
+    /// [`AudioCore::render_stereo`]; the worklet's node then has two output
+    /// channels.
+    #[wasm_bindgen(js_name = createStereo)]
+    pub fn create_stereo(sample_rate: f64, point_utf8: &[u8], max_frames: usize) -> Option<AudioCore> {
+        let state = parse_point(point_utf8)?;
+        Some(AudioCore {
+            player: Player::new_stereo(sample_rate, &state),
+            out: Vec::with_capacity(2 * max_frames),
+            frame: vec![0.0; FRAME_LEN],
+        })
+    }
+
+    /// 1 or 2: what this core renders.
+    pub fn channels(&self) -> usize {
+        self.player.channels()
+    }
+
     /// Renders the next `frames` mono samples and returns where they are: a
     /// byte offset into the module's memory, `frames` × f32. Pending point
     /// changes and fades are applied first. The offset stays the same while
@@ -92,6 +111,16 @@ impl AudioCore {
     /// memory grew (its `buffer` changed).
     pub fn render(&mut self, frames: usize) -> usize {
         self.player.render_into(frames, &mut self.out);
+        self.out.as_ptr() as usize
+    }
+
+    /// Renders the next `frames` stereo frames, interleaved (L R L R …,
+    /// 2 × `frames` f32), and returns where they are, as
+    /// [`AudioCore::render`] does. The worklet de-interleaves the one view
+    /// into its two output channels. A mono core puts its sound in both.
+    #[wasm_bindgen(js_name = renderStereo)]
+    pub fn render_stereo(&mut self, frames: usize) -> usize {
+        self.player.render_stereo_into(frames, &mut self.out);
         self.out.as_ptr() as usize
     }
 
@@ -221,6 +250,25 @@ mod tests {
         assert_eq!(core.output().len(), 128);
         assert!(core.output().iter().any(|v| *v != 0.0), "the preset sounds");
         assert!((core.time() - 401.0 * 128.0 / 48000.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn a_stereo_quantum_renders_in_place_too() {
+        let mut point = serde_json::to_value(&syn_core::state::presets()[0].state).unwrap();
+        point["bin"] = serde_json::json!({ "on": true, "beat": 6, "width": 0.8 });
+        let bytes = serde_json::to_vec(&point).unwrap();
+        let mut core = AudioCore::create_stereo(48000.0, &bytes, 128).expect("a point");
+        assert_eq!(core.channels(), 2);
+        core.fade_in();
+        let first = core.render_stereo(128);
+        for _ in 0..400 {
+            assert_eq!(core.render_stereo(128), first, "the output does not move");
+        }
+        let out = core.output();
+        assert_eq!(out.len(), 256);
+        let (l, r): (Vec<f32>, Vec<f32>) = out.as_chunks::<2>().0.iter().map(|[l, r]| (*l, *r)).unzip();
+        assert_ne!(l, r, "two ears");
+        assert!(AudioCore::create_stereo(48000.0, b"{}", 128).is_none());
     }
 
     #[test]
