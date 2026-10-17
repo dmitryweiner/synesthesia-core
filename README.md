@@ -99,8 +99,8 @@ syn-core/   the model: generators, modulation, FX, engine, features,
             the per-frame driver every renderer shares, the flash guard,
             the quality ladder). No I/O, no threads, deterministic.
 syn-player/ the render side every app shares: the engine behind a command
-            queue, PCM out in any chunk size, fades, feature frames on the
-            played clock
+            queue, PCM out in any chunk size (mono, or stereo for
+            headphones), fades, feature frames on the played clock
 syn-session/ the control logic every app shares: 👍 👎 🎲 ↩, the morph, when
             the scout may render, the point's name, the status line. Pure:
             `tick(now)` and commands in, effects out
@@ -111,7 +111,8 @@ syn-wasm/   the same for JavaScript (wasm-bindgen): the web app's
             AudioWorklet, Web Workers and points Worker load it
 syn-bench/  the sound bench: render points and measure them (fractality,
             character, onsets, clicks at switches, render configs, PNGs,
-            the layers' cost, the picture's flashes, listening drafts)
+            the layers' cost, the picture's flashes, listening drafts,
+            the stereo engine's cost and checks)
 syn-noalloc/ test only: a counting allocator proves the render path
             allocates nothing
 assets/     presets.json, schema.json, fx-presets.json — the source, edited here
@@ -120,7 +121,7 @@ golden/     63 reference takes of the 21 generators, rendered by the web app;
 fixtures/   the TypeScript's behaviour, frozen: points (sanitize, canonical
             JSON, ids), status lines, measurements, preset genomes
 docs/       how it works, one page per part (generators, layers, LFOs,
-            effects, picture, search)
+            effects, space and binaural beats, picture, search)
 scripts/    check.sh; dump-points.mjs and dump-analysis.mjs (need ../synesthesia,
             and only until its TypeScript model is deleted)
 TODO.md     agreed follow-ups that are not done yet
@@ -139,11 +140,14 @@ cargo install wasm-bindgen-cli --version 0.2.129   # the version syn-wasm pins
   takes; they match to the last bit or two (worst difference 1.6e-16 as of
   2026-10-05, after Additive and Shepard were rewritten for speed).
 - **The genome is the web app's genome**: every preset encodes to the same
-  250 genes to 1.1e-16; the 33 genes of the layers are appended after them
-  (283 in all), and a point without layers adds only their default tail.
-- **Nothing allocates in `Engine::render`** (`syn-noalloc`), and **the
-  picture never strobes**: `syn-bench --flashes` counts flashes the WCAG
-  2.3.1 way, every preset at most one a second.
+  250 genes to 1.1e-16; the 33 genes of the layers and the 30 of space and
+  the binaural beat are appended after them (313 in all), and a point
+  without layers or space adds only their default tail.
+- **Nothing allocates in `Engine::render` or `render_stereo`**
+  (`syn-noalloc`); **the stereo engine at width 0 with the beat off is the
+  mono one**, bit for bit; and **the picture never strobes**:
+  `syn-bench --flashes` counts flashes the WCAG 2.3.1 way, every preset at
+  most one a second.
 - **The picture** has no reference samples (the browser seeds it with
   `Math.random()`); its invariants are the contract.
 
