@@ -25,7 +25,8 @@ Agreed follow-ups that are not done yet. Remove an item when it is done.
   the core (313 genes; `Player::new_stereo`, `renderStereo`,
   `SoundPlayer.newStereo`; `syn-bench --stereo`). Next: the apps bump —
   the console (`channels = 2`, the `verify` ladder), the worklet
-  (`outputChannelCount: [2]`), Android (a stereo `AudioTrack`, and the
-  first phone measurement of the stereo engine); the web Settings page's
+  (`outputChannelCount: [2]`), the first phone measurement of the stereo
+  engine (Android carries it since 2026-10-17: stereo on headphones, mono
+  on the speaker; its PLAN.md "Binaural"); the web Settings page's
   Binaural section (`settings-page.json` · `binaural`); B5, the presets'
   azimuths, widths and a beat or two by ear on headphones.
