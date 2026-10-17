@@ -23,10 +23,10 @@ Agreed follow-ups that are not done yet. Remove an item when it is done.
   mode beside mono, sources around the head (structural head model),
   binaural beats by single-sideband shift, all as genes. Done: B0–B4 in
   the core (313 genes; `Player::new_stereo`, `renderStereo`,
-  `SoundPlayer.newStereo`; `syn-bench --stereo`). Next: the apps bump —
-  the console (`channels = 2`, the `verify` ladder), the worklet
-  (`outputChannelCount: [2]`), the first phone measurement of the stereo
-  engine (Android carries it since 2026-10-17: stereo on headphones, mono
-  on the speaker; its PLAN.md "Binaural"); the web Settings page's
-  Binaural section (`settings-page.json` · `binaural`); B5, the presets'
-  azimuths, widths and a beat or two by ear on headphones.
+  `SoundPlayer.newStereo`; `syn-bench --stereo`). The apps: the web app
+  plays stereo since 2026-10-17 (the worklet, Settings' Space section,
+  azimuths; its PLAN.md #34); Android carries it since 2026-10-17 (stereo
+  on headphones, mono on the speaker; its PLAN.md "Binaural"). Next: the
+  console (`channels = 2`, the `verify` ladder); the first phone
+  measurement of the stereo engine; B5, the presets' azimuths, widths and
+  a beat or two by ear on headphones.
