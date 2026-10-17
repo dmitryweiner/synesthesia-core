@@ -146,3 +146,28 @@ fn a_preset_with_layers_plays_known_sounds_and_survives_the_genome() {
         assert!(same_point(&back, &p.state), "{}: the layers changed through the genome", p.name);
     }
 }
+
+/// PLAN-BINAURAL.md: a preset in space keeps its space through the JSON
+/// and the genome, and writes no centred azimuth (it would not survive its
+/// own round trip: a centred one is never serialized).
+#[test]
+fn a_preset_in_space_survives_and_writes_no_centred_azimuth() {
+    use syn_core::state::AZ;
+    let raw: serde_json::Value = serde_json::from_str(include_str!("../../assets/presets.json")).unwrap();
+    for p in raw.as_array().unwrap() {
+        let name = p["name"].as_str().unwrap();
+        for (id, f) in p["state"]["audio"]["formulas"].as_object().unwrap() {
+            assert_ne!(f["params"].get(AZ).and_then(|v| v.as_f64()), Some(0.0), "{name}: {id}");
+        }
+        for l in p["state"]["seq"]["layers"].as_array().into_iter().flatten() {
+            assert_ne!(l.get(AZ).and_then(|v| v.as_f64()), Some(0.0), "{name}: a layer");
+        }
+    }
+    let wide: Vec<_> = presets().iter().filter(|p| !p.state.bin.is_neutral()).collect();
+    assert!(wide.iter().any(|p| p.name == "Magic forest") && wide.iter().any(|p| p.name == "Sea shore"));
+    for p in wide {
+        let back = decode_genome(&encode_genome(&p.state));
+        assert_eq!((back.bin.on, back.bin.width), (p.state.bin.on, p.state.bin.width), "{}", p.name);
+        assert!((back.bin.beat - p.state.bin.beat).abs() < 1e-9, "{}", p.name);
+    }
+}

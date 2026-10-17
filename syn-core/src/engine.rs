@@ -780,9 +780,10 @@ mod tests {
     fn at_width_0_both_ears_are_the_mono_render() {
         let sr = 22050.0;
         for p in presets() {
-            assert!(p.state.bin.is_neutral(), "{}", p.name);
-            let mono = render_offline_with(&p.state, None, 3.0, sr, 1);
-            let (l, r) = render_offline_stereo(&p.state, None, 3.0, sr, 1);
+            // Its azimuths kept: at width 0 they must not be heard.
+            let state = AppState { bin: BinState::default(), ..p.state.clone() };
+            let mono = render_offline_with(&state, None, 3.0, sr, 1);
+            let (l, r) = render_offline_stereo(&state, None, 3.0, sr, 1);
             assert_eq!(l, r, "{}: L ≡ R", p.name);
             if p.state.seq.is_silent() {
                 assert_eq!(l, mono, "{}: bit for bit", p.name);

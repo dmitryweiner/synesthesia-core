@@ -7057,7 +7057,8 @@
        "rossC": 6.42,
        "rossBase": 345,
        "rossFreqScale": 38.4,
-       "rossAmp": 0.25
+       "rossAmp": 0.25,
+       "az": 30
       }
      },
      "gliss": {
@@ -7295,14 +7296,14 @@
       "phase": 0
      },
      {
-      "shape": "sine",
-      "rate": 0.05,
+      "shape": "pink",
+      "rate": 0.07,
       "phase": 0
      },
      {
       "shape": "sine",
-      "rate": 0.05,
-      "phase": 0
+      "rate": 0.043,
+      "phase": 0.25
      }
     ],
     "routes": [
@@ -7317,6 +7318,24 @@
       "target": "palette",
       "param": "gloss",
       "depth": 0.2
+     },
+     {
+      "src": 2,
+      "target": "seq.0",
+      "param": "az",
+      "depth": 0.4
+     },
+     {
+      "src": 3,
+      "target": "seq.3",
+      "param": "az",
+      "depth": 0.2
+     },
+     {
+      "src": 2,
+      "target": "palette",
+      "param": "shift",
+      "depth": 0.15
      }
     ]
    },
@@ -7354,7 +7373,8 @@
       "density": 1.0,
       "dry": false,
       "mode": "hits",
-      "humanize": 0.6
+      "humanize": 0.6,
+      "az": -60
      },
      {
       "on": true,
@@ -7365,7 +7385,8 @@
       "density": 1.0,
       "dry": false,
       "mode": "hits",
-      "humanize": 0.6
+      "humanize": 0.6,
+      "az": 70
      },
      {
       "on": true,
@@ -7376,11 +7397,17 @@
       "density": 1.0,
       "dry": false,
       "mode": "hits",
-      "humanize": 0.6
+      "humanize": 0.6,
+      "az": 35
      }
     ]
    },
-   "preset_name": "Magic forest"
+   "preset_name": "Magic forest",
+   "bin": {
+    "on": true,
+    "beat": 2.0,
+    "width": 1.0
+   }
   }
  },
  {
@@ -7690,14 +7717,14 @@
       "shape": "sine"
      },
      {
-      "phase": 0,
-      "rate": 0.05000000000000004,
-      "shape": "sine"
+      "shape": "pink",
+      "rate": 0.07,
+      "phase": 0
      },
      {
-      "phase": 0,
-      "rate": 0.05000000000000004,
-      "shape": "sine"
+      "shape": "sine",
+      "rate": 0.043,
+      "phase": 0.25
      }
     ],
     "routes": [
@@ -7712,6 +7739,24 @@
       "param": "gloss",
       "src": 1,
       "target": "palette"
+     },
+     {
+      "src": 2,
+      "target": "seq.0",
+      "param": "az",
+      "depth": 0.4
+     },
+     {
+      "src": 3,
+      "target": "seq.3",
+      "param": "az",
+      "depth": 0.2
+     },
+     {
+      "src": 2,
+      "target": "palette",
+      "param": "shift",
+      "depth": 0.15
      }
     ]
    },
@@ -7749,7 +7794,8 @@
       "on": true,
       "pattern": "~ | [bottle-clink:1? ~ ~ ~] | ~ | [~ bottle-clink:3? bottle-clink:4? ~] | ~ | ~",
       "sound": "bottle-clink",
-      "speed": 1
+      "speed": 1,
+      "az": -60
      },
      {
       "density": 1,
@@ -7760,7 +7806,8 @@
       "on": true,
       "pattern": "~ | ~ | [~ 13? ~ ~] | ~ | [8? ~ ~ ~] | ~ | [~ ~ 11? ~] | ~",
       "sound": "creak",
-      "speed": 1
+      "speed": 1,
+      "az": 70
      },
      {
       "density": 1,
@@ -7771,11 +7818,17 @@
       "on": true,
       "pattern": "[0? ~ ~ ~] | ~ | ~ | [~ ~ mark-trees? ~] | ~ | [~ hand-bell:1? ~ ~] | ~ | [triangle? ~ ~ ~] | ~ | [~ ~ chimes:2? ~]",
       "sound": "chimes",
-      "speed": 1
+      "speed": 1,
+      "az": 35
      }
     ]
    },
-   "preset_name": "Sea shore"
+   "preset_name": "Sea shore",
+   "bin": {
+    "on": true,
+    "beat": 2.0,
+    "width": 1.0
+   }
   }
  }
 ]

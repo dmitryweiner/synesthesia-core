@@ -288,7 +288,12 @@ file.
   stereo, `soak.py` 0 xruns in 30 min), the worklet (`outputChannelCount:
   [2]`, one interleaved view, de-interleaved into `outputs[0][0..2]`
   without allocating), Android.
-- **B5 — presets and the listening pass** (`new-preset`, `sound-check`):
+- **B5 — presets and the listening pass** (`new-preset`, `sound-check`)
+  — *begun 2026-10-17*: *Magic forest* rewritten in space (birds wandering
+  on a pink LFO, the voices spread, width 1, a delta 2 Hz beat — the
+  user's ★ of six drafts; alpha 10 Hz rejected), and *Sea shore* given
+  the same move. What the round taught is in the `new-preset` skill.
+  Still to come: the liked family below.
   the fifteen presets get azimuths and a width by ear on headphones (the
   liked family — *Fractal garden*, *Molten Polivoks*, *Silver maze*, *Space
   breccia*, *Loom & copper* — first), one or two with a beat (a theta

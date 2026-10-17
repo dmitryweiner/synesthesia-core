@@ -41,7 +41,8 @@ fn wide() -> AppState {
 
 #[test]
 fn a_point_without_space_is_written_as_before() {
-    for p in presets() {
+    // The presets made before space (Magic forest and Sea shore have it).
+    for p in presets().iter().filter(|p| p.state.bin.is_neutral()) {
         let json = canonical_json(&p.state);
         assert!(!json.contains("\"az\"") && !json.contains("\"bin\""), "{}", p.name);
         // Through the genome — which carries every azimuth, at 0 — and back.

@@ -34,7 +34,8 @@ Take what the family has and add **one** move it does not make yet; write
 it into the preset's name/comment in the commit. Already used: comb moiré,
 a peaking glow, a resonant LP sweep, Shepard grids, logistic bifurcations,
 FM fans, a Q-30 overtone whistle, the pink LFO, the tanpura, delay shimmer,
-the singing bowl. A move that needs a new generator, LFO shape or FX
+the singing bowl, space (voices around the head, birds wandering on a
+pink LFO, a delta beat — *Magic forest*, *Sea shore*). A move that needs a new generator, LFO shape or FX
 parameter needs the model first (AGENTS.md) — agree it with the user.
 
 The picture carries the idea through a **shared LFO**: the one that moves
@@ -69,6 +70,37 @@ open DIR/index.html   # ★ ✓ ✗, the layers' level, a note → verdicts.json
 Put the current version first in each group, as the thing to hear the
 others against. A chosen draft goes into `assets/presets.json` byte for
 byte: render it again with `--listen` and `cmp` it with the file heard.
+
+## 1¾. Space and binaural beats (PLAN-BINAURAL.md, docs/binaural.md)
+
+A point can place each formula and layer at an azimuth (`params.az`,
+`layers[i].az`, −90…90°), spread them with `bin.width` (0–1) and beat
+(`bin.on`, `bin.beat` Hz). Only a stereo player hears it: **render the
+drafts with `--listen DIR --points drafts.json --stereo`** and say
+"headphones" in the round's title. What the user's ear settled
+(2026-10-17, the *Magic forest* round, verdicts ★ for two drafts):
+
+- **Wandering beats still**, and is "very balanced": a layer's azimuth on a
+  **pink** LFO (~0.07 Hz, depth 0.4 → ±72°), so each bird call comes from
+  somewhere new; a slow sine (~0.04 Hz, depth 0.2) sways another layer.
+  Not S&H: a jump in azimuth mid-sound is a jump in ITD. A still,
+  well-spread scene was liked too (✓).
+- **The beat: delta 2 Hz is best (★), theta 6 Hz good, alpha 10 Hz
+  rejected.** Start a beat low.
+- The scene that was liked: the drone straight ahead (0°), the other voice
+  at +30°, birds ahead and wandering, bottles −60°, creaks +70°, chimes
+  +35° — sources on both sides, width 1.
+- The picture shares the gesture: the LFO that moves the birds also moves
+  `palette · shift` (depth 0.15).
+
+Check the scene, not only the sound: each ear's level (`L`, `R` dB of the
+stereo WAV — should be the mono point's, ±1 dB) over **minutes**, not one
+minute: a preset's own chorus at 0.01 Hz with feedback sways a width-1
+image ±2 dB over its 100 s period, and the stereo reverb leans 0.4 dB
+left by itself. To find what leans, turn the reverb, chorus and phaser
+off one at a time — with all three off a centred point is 0.00 dB.
+**`md5` the draft WAVs**: two drafts that came out identical mean the
+draft script, not the engine, is wrong.
 
 ## 2. Drafts, rendered side by side
 
