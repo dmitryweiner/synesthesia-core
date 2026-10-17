@@ -35,7 +35,8 @@ it into the preset's name/comment in the commit. Already used: comb moiré,
 a peaking glow, a resonant LP sweep, Shepard grids, logistic bifurcations,
 FM fans, a Q-30 overtone whistle, the pink LFO, the tanpura, delay shimmer,
 the singing bowl, space (voices around the head, birds wandering on a
-pink LFO, a delta beat — *Magic forest*, *Sea shore*). A move that needs a new generator, LFO shape or FX
+pink LFO, a delta beat — *Magic forest*; a still placed scene — *Sea
+shore*). A move that needs a new generator, LFO shape or FX
 parameter needs the model first (AGENTS.md) — agree it with the user.
 
 The picture carries the idea through a **shared LFO**: the one that moves
@@ -86,7 +87,10 @@ drafts with `--listen DIR --points drafts.json --stereo`** and say
   Not S&H: a jump in azimuth mid-sound is a jump in ITD. A still,
   well-spread scene was liked too (✓).
 - **The beat: delta 2 Hz is best (★), theta 6 Hz good, alpha 10 Hz
-  rejected.** Start a beat low.
+  rejected.** Start a beat low. **Not over a noise bed**: on *Sea shore*
+  (an ocean and the same layers) the same 2 Hz beat was "unpleasant
+  beating between the ears" — the point there is placed and still, no
+  beat, no wandering. A beat wants a tonal drone under it.
 - The scene that was liked: the drone straight ahead (0°), the other voice
   at +30°, birds ahead and wandering, bottles −60°, creaks +70°, chimes
   +35° — sources on both sides, width 1.
@@ -100,7 +104,9 @@ image ±2 dB over its 100 s period, and the stereo reverb leans 0.4 dB
 left by itself. To find what leans, turn the reverb, chorus and phaser
 off one at a time — with all three off a centred point is 0.00 dB.
 **`md5` the draft WAVs**: two drafts that came out identical mean the
-draft script, not the engine, is wrong.
+draft script, not the engine, is wrong (twice so far: a beat passed as the
+group's name; a reference state mutated in place — `copy.deepcopy` the
+reference before editing the draft).
 
 ## 2. Drafts, rendered side by side
 

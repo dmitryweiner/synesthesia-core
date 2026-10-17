@@ -291,8 +291,9 @@ file.
 - **B5 — presets and the listening pass** (`new-preset`, `sound-check`)
   — *begun 2026-10-17*: *Magic forest* rewritten in space (birds wandering
   on a pink LFO, the voices spread, width 1, a delta 2 Hz beat — the
-  user's ★ of six drafts; alpha 10 Hz rejected), and *Sea shore* given
-  the same move. What the round taught is in the `new-preset` skill.
+  user's ★ of six drafts; alpha 10 Hz rejected); *Sea shore* placed and
+  still — the same move with the beat was unpleasant between the ears
+  over its ocean, so it has neither the beat nor the wandering. What the round taught is in the `new-preset` skill.
   Still to come: the liked family below.
   the fifteen presets get azimuths and a width by ear on headphones (the
   liked family — *Fractal garden*, *Molten Polivoks*, *Silver maze*, *Space

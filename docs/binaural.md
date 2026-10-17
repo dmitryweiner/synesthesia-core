@@ -81,10 +81,12 @@ the head and a beat can drift between bands.
 
 ## In the presets
 
-*Magic forest* and *Sea shore* are the space presets: the drone ahead, the
-other voices spread to both sides, the birds wandering round the head on a
-pink LFO (the same LFO shifts the palette), the chimes swaying, width 1,
-and a slow delta beat at 2 Hz. On a speaker they play as before.
+*Magic forest* is the space preset: the drone ahead, the other voices
+spread to both sides, the birds wandering round the head on a pink LFO
+(the same LFO shifts the palette), the chimes swaying, width 1, and a slow
+delta beat at 2 Hz. *Sea shore* is placed and still: the ocean ahead, the
+birds, bottles, creaks and chimes each in their place, width 1, no beat.
+On a speaker both play as before.
 
 ## Mono and stereo apps
 
